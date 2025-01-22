@@ -1,0 +1,75 @@
+{
+  "name": "gggcode",
+  "version": "0.1.0",
+  "description": "G Code like general purpose meta-language.",
+  "main": "jsdist/index.js",
+  "bin": {
+    "ggg": "./bin/ggg.js"
+  },
+  "exports": {
+    ".": {
+      "browser": "./dist/browser/index.js",
+      "import": "./dist/node/index.js",
+      "require": "./dist/node/index.js"
+    },
+    "./ggg": {
+      "browser": "./dist/browser/ggg.js",
+      "import": "./dist/node/ggg.js",
+      "require": "./dist/node/ggg.js"
+    },
+    "./ggggx": {
+      "browser": "./dist/browser/ggggx.js",
+      "import": "./dist/node/ggggx.js",
+      "require": "./dist/node/ggggx.js"
+    },
+    "./ggggxCLI": {
+      "browser": "./dist/browser/ggggx-cli.js",
+      "import": "./dist/node/ggggx-cli.js",
+      "require": "./dist/node/ggggx-cli.js"
+    },
+    "./math": {
+      "browser": "./dist/browser/common/math.js",
+      "import": "./dist/node/common/math.js",
+      "require": "./dist/node/common/math.js"
+    },
+    "./ggggxSavePNG": {
+      "browser": "./dist/browser/ggggx/ggggxSavePNG.js",
+      "import": "./dist/node/ggggx/ggggxSavePNG.js",
+      "require": "./dist/node/ggggx/ggggxSavePNG.js"
+    },
+    "./ggggxLoadPNG": {
+      "browser": "./dist/browser/ggggx/ggggxLoadPNG.js",
+      "import": "./dist/node/ggggx/ggggxLoadPNG.js",
+      "require": "./dist/node/ggggx/ggggxLoadPNG.js"
+    }
+  },
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "npm run ts:build:browser && npm run ts:build:node",
+    "test": "npm run ts-test",
+    "cpp-defs": "bun run ts/cpp/makeCppDefs.ts",
+    "ts:build:browser": "tsc -p tsconfig.browser.json",
+    "ts:build:node": "tsc -p tsconfig.node.json",
+    "ts-test": "jest",
+    "test-watch": "jest --watchAll --bail",
+    "ts-lint": "eslint ts/**/*.ts",
+    "ts-lint-fix": "eslint --fix ts/**/*.ts"
+  },
+  "author": "Samm Zuest Cooper <koopero@gmail.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@typescript-eslint/eslint-plugin": "^7.0.1",
+    "@typescript-eslint/parser": "^7.0.1",
+    "eslint": "^8.56.0",
+    "eslint-plugin-react": "^7.33.2",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "fast-png": "^6.2.0",
+    "optimist": "^0.6.1",
+    "ws": "^8.16.0"
+  }
+}

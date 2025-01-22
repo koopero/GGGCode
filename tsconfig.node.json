@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist/node",
+    "target": "ES2019",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
+  },
+  "include": [
+    "ts/index.ts",
+    "ts/ggg.ts",
+    "ts/ggggx.ts",
+    "ts/cli.ts",
+    "ts/ggggx/ggggxSavePNG.ts",
+    "ts/ggggx/ggggxLoadPNG.ts",
+  ]
+}

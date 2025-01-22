@@ -1,0 +1,32 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Jest Tests",
+      "program": "${workspaceFolder}/node_modules/jest/bin/jest",
+      "args": [
+        "--runInBand",
+        "ts-test/current.test.ts"
+      ],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "cwd": "${workspaceFolder}",
+      "runtimeArgs": [
+        "--inspect-brk"
+      ],
+      "disableOptimisticBPs": true,
+      "env": {
+        "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.json"
+      },
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceFolder}/dist/**/*.js"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,295 @@
+import { GGG, gggHooks, gggToken, gggTokenArg, gggCommand, gggCommands, gggHookArgs, gggCasedString } from "./gggLang"
+import gggParseLines, { gggParseLinesArgs } from "./gggParseLines"
+import { EventEmitter } from "../common/events"
+import { isArray, isNumber, isString, isBoolean, isDefined } from "../common/util"
+import gggNamedList, { gggNamedListItem } from "./gggNamedList"
+import { gggSolver } from "./gggSolver"
+import GGGGX from "../ggggx/ggggxLang"
+
+type QueueItem = {
+  callback?: () => void
+  line?: gggToken
+  running?: Promise<any>|null
+  ref?: object
+}
+
+type StackItem = {
+  command:gggCommand,
+  state:{ [key:string]:any },
+  pointer?: QueueItem,
+}
+
+type gggRegister = gggNamedListItem
+
+type gggMachineRegisterList = gggNamedList<gggRegister>
+
+
+
+type gggMachineProps = {
+  commands?: gggCommands
+  state?:{ [key:string]:any }
+  limits?:gggMachineLimits
+}
+
+
+enum gggMachineEvents {
+  Output = "output",
+  Fail = "fail",
+}
+
+export enum gggMessage {
+  CommandNotFound = "Command not found",
+}
+
+type gggMachineLimits = {
+  maxRegisters?:number
+  maxRegisterSize?:number
+  maxQueue?:number
+  maxArgs?:number
+}
+
+function isBlankCommand( command:string ) {
+  const compare = gggCasedString( command.trim() )
+  return !compare || compare.startsWith( GGG.Okay )
+  }
+
+import ggggxBuffer from "../ggggx/ggggxBuffer"
+import { gggFormatOkayNumber } from "./gggFormat"
+const NumbersAspect = "numbers"
+const NumbersClass = ggggxBuffer
+
+
+
+export default class gggMachine extends EventEmitter  {
+  state:{ [key:string]:any } = {}
+
+  limits:gggMachineLimits = {}
+  
+  commands:gggCommands = {}
+  commandState:{ [key:string]:any } = {}
+  
+  stack:StackItem[] = []
+  queue:QueueItem[] = []
+  queuePointer:number = 0
+  runningCommand:gggCommand|null = null
+  registers:Map<object,gggNamedList<gggRegister>> = new Map<object,gggNamedList<gggRegister>>()
+
+  timeout:ReturnType<typeof setTimeout>|null = null
+  skip:boolean = false
+
+  constructor( props:gggMachineProps = {} ) {
+    super()
+    if ( props.commands ) {
+      this.addCommands( props.commands )
+    }
+
+    this.state = props.state ? props.state : {}
+    this.limits = props.limits ? props.limits : {}
+  }
+
+
+  write( code:string ) {
+    this.run( code )
+  }
+
+  addCommands( data: { [key:string]: gggCommand } ) {
+    for ( const key in data ) {
+      this.commands[key] = data[key]
+    }
+  }
+
+  output( tokens: string | string[] | gggToken | gggToken[] ) {
+    if ( isArray( tokens ) ) {
+      for ( const token of tokens ) {
+        this.emit( gggMachineEvents.Output, token )
+      }
+    } else {
+      this.emit( gggMachineEvents.Output, tokens )
+    }
+  }
+
+  outputOk( okay:number = 1, comment?:string ) {
+    const code = GGG.Okay
+    this.output( { code: `${code}${gggFormatOkayNumber(okay)}`, comment } )
+  }
+
+  tick() {
+    this.timeout = null
+    const { queue, queuePointer } = this
+    const item = queue[queuePointer]
+    const next = () => {
+      this.queuePointer++
+      if ( !this.timeout ) {
+        this.timeout = setTimeout( () => this.tick(), 0 )
+      }
+    }
+
+    if ( item ) {
+      const { running, callback, line } = item
+      if ( running ) return
+      if ( callback ) {
+        callback()
+        return next()
+      }
+
+      if ( line ) {
+        item.running = new Promise<void>( ( resolve ) => {
+          this.execLine( line )
+            .then(  () => {
+              item.running = null
+              resolve()
+              next()
+            })
+        })
+      }
+    }
+  }
+
+
+  getRegisterList( registerClass:object ) : gggNamedList<gggRegister> {
+    let registers = this.registers.get( registerClass )
+    if ( !registers ) {
+      registers = new gggNamedList<gggRegister>()
+      this.registers.set( registerClass, registers )
+    }
+    return registers
+  }
+  
+
+  getRegister( registerClass:object, id:string|number, defaultRegister?:gggRegister ) : gggRegister|undefined {
+    let registers = this.registers.get( registerClass )
+
+    if ( defaultRegister ) {
+      if ( !registers ) {
+        registers = new gggNamedList<gggRegister>()
+        this.registers.set( registerClass, registers )
+      }
+
+      const register = registers.get( id )
+      if ( !register ) {
+        registers.add( defaultRegister, id )
+        return defaultRegister
+      }
+    }
+
+    if ( !registers ) return
+    return registers.get( id )
+  }
+
+
+  // getRegister( id:string | number ) : gggRegister|undefined {
+  //   return this.registers.get( id )
+  // }
+
+  // getRegisterAspect( id:string | number, aspect:string, defaults?:object ) : any {
+  //   const { registers } = this
+  //   let register = registers.get( id )
+  //   if ( !register ) {
+  //     register = registers.add( { aspects: {} }, id )
+  //   }
+
+  //   const { aspects } = register
+  //   if ( !aspects ) return
+
+  //   if ( !aspects[aspect] ) {
+  //     aspects[aspect] = defaults
+  //   }
+
+  //   const item = aspects[aspect]
+  //   return item
+  // }
+
+  // getRegisterNumbers( id:string | number, create:boolean = false ) : any {
+  //   const { registers } = this
+  //   let register = registers.get( id )
+  //   if ( !register && create ) {
+  //     register = registers.add( { aspects: {} }, id )
+  //   }
+
+  //   if ( !register ) return
+
+  //   let numbers = register.aspects.numbers
+  //   if ( !numbers && create ) {
+  //     numbers = new NumbersClass()
+  //     register.aspects.numbers = numbers
+  //   }
+
+  //   return numbers
+  // }
+
+  *solve( value:any ) : Generator<number|string> {
+    yield *gggSolver( value, { getRegister: ( id ) => this.getRegister( GGGGX, id ) as ggggxBuffer } )
+  }
+
+  async execLine( line:gggToken ) {
+    const machine = this
+    if ( line.command ) {
+      const command = line.command
+      if ( isBlankCommand( command ) ) 
+        return
+
+      const { stack } = machine
+      const top = stack[stack.length-1]
+      if ( top ) {
+        const hook = top.command[gggHooks.Stack]
+        if ( hook ) {
+          await hook( { machine, command, state: top.state } )
+        }
+      }
+
+      const impl = this.commands[command]
+      if ( impl ) {
+        this.runningCommand = impl
+        const state = this.commandState[command] = this.commandState[command] || {}
+        await this.execCommandHook( gggHooks.Command, { machine, command, state } )
+        for ( const arg of line.args ) {
+          const { code, data } = arg
+          await this.execCommandHook( gggHooks.Code, { machine, command, state, code } )
+          for ( const value of this.solve( data ) ) {
+            await this.execCommandHook( gggHooks.Value, { machine, command, state, code, value } )
+          }
+          await this.execCommandHook( gggHooks.EndArg, { machine, command, state, code } )
+        }
+        await this.execCommandHook( gggHooks.End, { machine, state, command } )
+      } else if ( !isBlankCommand( command ) ) {
+        this.outputOk( 0, gggMessage.CommandNotFound )
+      }
+    }
+  }
+
+  async execCommandHook( hook:gggHooks, arg:gggHookArgs ) {
+    const command = this.runningCommand
+    if ( !command ) return
+    const func = command[hook]
+    if ( !func ) return
+    await func( arg )
+  }
+
+  async run( code:gggParseLinesArgs ) : Promise<gggToken[]> {
+    const { queue } = this
+    const lines = gggParseLines( code )
+    const result = new Promise<gggToken[]>( resolve => {
+      const output : gggToken[] = []
+
+      const onOutput = ( line:gggToken ) => output.push( line )
+
+      queue.push( { callback: () => {
+        this.on( gggMachineEvents.Output, onOutput )
+      }})
+      for ( const line of lines ) {
+        queue.push( { line } )
+      }
+      queue.push( { callback: () => {
+        this.off( gggMachineEvents.Output, onOutput )
+        resolve( output )
+      }})
+    })
+
+    this.tick()
+    return await result
+  }
+}
+
+export type gggMachineHookArgs = gggHookArgs & {
+  machine:gggMachine,
+}

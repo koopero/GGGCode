@@ -1,0 +1,6 @@
+class CommandStream {
+
+  async queue() {
+    
+  }
+}
