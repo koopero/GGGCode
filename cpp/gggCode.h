@@ -1,18 +1,7 @@
-#include <variant> 
-#include <vector>
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <unordered_map>
+#pragma once
 
-typedef char gggChar;
-typedef float gggNumber;
-typedef int gggIndex;
-typedef int gggInt;
-typedef std::string gggString;
-typedef std::vector<gggInt> gggDimensions;
-
-#include "./gggLang.h"
+#include "./Types.h"
+#include "./autogen.h"
 
 struct gggLimits {
   gggIndex maxAxes = 4;
@@ -140,15 +129,15 @@ public:
   }
 
   void ingest( gggNumber value, gggChar code ) {
-    if ( code == '*' ) {
+    if ( code == Multiplier ) {
       multiplier = value;
     } else if ( stage == Start ) {
       start = value;
       end = value;
 
-      if ( code == '/') {
+      if ( code == Count ) {
         divide = true;
-      } else if ( code == ':' ) {
+      } else if ( code == Range ) {
         inclusive = true;
       } else {
         inclusive = false;
@@ -161,7 +150,7 @@ public:
         stage = Done;
         return;
       }
-      if ( code == '/' ) {
+      if ( code == Count ) {
         divide = true;
       }
 

@@ -1,6 +1,6 @@
 import { isString, isObject, isArray, isDefined, isBoolean, isNumber } from "../common/util"
 import { floor } from "../common/math"
-import { GGG, gggPrimitive, gggCasedString, gggToken } from "./gggLang"
+import { GGG, gggPrimitive, gggCasedString, gggToken, gggRangeAxis, gggRangeAxes, gggReference } from "./gggLang"
 import { HexModifiers } from "./hexlist"
 
 function formatHexListItem( num, digits:number = 2, div:number = 1 ) {
@@ -17,7 +17,58 @@ function formatHexNumber( num:number ) {
   return `0${GGG.HexNumber}${num.toString(16)}`
 }
 
-export function gggFormatPrimitive( data:gggPrimitive ) : string {
+export function FormatNumber( data:number, encoding? ) {
+  return data.toString()
+}
+
+export function FormatRangeAxes( data:gggRangeAxes ) : string {
+  return data.axes.map( a => FormatRangeAxis( a ) ).join(GGG.NextAxis)
+}
+
+export function FormatReference( data:gggReference ) : string {
+  let { register, subscript } = data
+
+  return `${GGG.Reference}${register}[${FormatData(subscript)}]`
+}
+
+export function FormatRangeAxis( data:gggRangeAxis ) : string {
+  const { 
+    start,
+    end,
+    step,
+    count,
+    multiplier,
+    inclusive,
+  } = data
+  let result = ""
+
+  result += FormatNumber( start )
+
+  if ( inclusive ) {
+    result += GGG.Range
+  } else {
+    result += GGG.Uninclusive
+  }
+
+  result += FormatNumber( end )
+
+  if ( step ) {
+    result += GGG.Range
+    result += FormatNumber( step )
+  } else if ( count ) {
+    result += GGG.Count
+    result += FormatNumber( count )
+  }
+
+  if ( isDefined( multiplier ) ) {
+    result += GGG.Multiplier
+    result += FormatNumber( multiplier )
+  }
+
+  return result
+}
+
+export function FormatPrimitive( data:gggPrimitive ) : string {
   if ( isString( data ) ) {
     return JSON.stringify( data )
   }
@@ -30,13 +81,25 @@ export function gggFormatPrimitive( data:gggPrimitive ) : string {
     return data.toString()
   }
 
+  if ( isObject( data ) ) {
+    if ( "value" in data ) {
+      return FormatPrimitive( data.value )
+    } else if ( "axes" in data ) {
+      return FormatRangeAxes( data )
+    } else if ( "register" in data ) {
+      return FormatReference( data )
+    } else {
+      return FormatRangeAxis( data )
+    }
+  }
+
   throw new Error(`Invalid data: ${data}`)
 }
 
 
-export function gggFormatData( data:string|number|boolean|gggPrimitive|gggPrimitive[], encoding:string = "" ) : string {
+export function FormatData( data:string|number|boolean|gggPrimitive|gggPrimitive[], encoding:string = "" ) : string {
   if ( isString( data ) ) {
-    return gggFormatPrimitive( data )
+    return FormatPrimitive( data )
   }
 
   if ( isBoolean( data ) ) {
@@ -51,7 +114,7 @@ export function gggFormatData( data:string|number|boolean|gggPrimitive|gggPrimit
 
   switch ( encoding ) {
     case GGG.HexNumber:
-      return data.map( d => isNumber(d) ? formatHexNumber( d ) : gggFormatPrimitive( d ) ).join(GGG.Comma)
+      return data.map( d => isNumber(d) ? formatHexNumber( d ) : FormatPrimitive( d ) ).join(GGG.Comma)
 
     case GGG.HexList1:
     case GGG.HexList2:
@@ -69,30 +132,30 @@ export function gggFormatData( data:string|number|boolean|gggPrimitive|gggPrimit
 
     case "":
     case GGG.Value:
-      return data.map( d => gggFormatPrimitive(d) ).join(GGG.Comma)
+      return data.map( d => FormatPrimitive(d) ).join(GGG.Comma)
   }
 
   throw new Error(`Invalid encoding: ${encoding}`)
 }
 
-// type gggFormatToken = string | {
+// type FormatToken = string | {
 //   command?: string,
 //   code?: string,
 //   encoding?: string,
-//   args?: gggFormatToken[],
+//   args?: FormatToken[],
 //   data?: any,
 //   comment?: string,
-// } | gggFormatToken[]
+// } | FormatToken[]
 
-export type gggFormatProps = string | gggToken | string[] | gggToken[]
+export type FormatProps = string | gggToken | string[] | gggToken[]
 
-export default function gggFormat( token : gggFormatProps = "" ) {
+export default function Format( token : FormatProps = "" ) {
   if ( isString( token ) ) {
     return token
   }
 
   if ( isArray( token ) ) {
-    return token.map( t => gggFormat( t ) ).join("\n")+"\n"
+    return token.map( t => Format( t ) ).join("\n")+"\n"
   }
 
   if ( isObject( token ) ) {
@@ -113,12 +176,12 @@ export default function gggFormat( token : gggFormatProps = "" ) {
     }
 
     if ( isDefined( data ) ) {
-      result += gggFormatData( data, encoding )
+      result += FormatData( data, encoding )
     }
 
     if ( args ) {
       if ( result ) result += " "
-      result += args.map( t => gggFormat( t ) ).join(" ")
+      result += args.map( t => Format( t ) ).join(" ")
     }
 
     if ( comment ) {
@@ -132,7 +195,7 @@ export default function gggFormat( token : gggFormatProps = "" ) {
   return ""
 }
 
-export function gggFormatOkayNumber( num:number ) {
+export function FormatOkayNumber( num:number ) {
   switch ( num ) {
     case 0: return GGG.EncodedZero
     case 1: return GGG.EncodedOne

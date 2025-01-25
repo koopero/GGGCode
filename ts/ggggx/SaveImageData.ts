@@ -1,4 +1,4 @@
-import ggggxBuffer from "./ggggxBuffer"
+import Matrix from "./Matrix"
 import { StorageClass } from "./Storage"
 import { isNumber, isArray, isObject } from "../common/util"
 import { DimPad, DimOffset } from "./Dim"
@@ -44,12 +44,12 @@ function SaveImageDataParseOptions( options:SaveImageDataOptions ) {
   return options
 }
 
-export type SaveSource = ggggxBuffer | number[]
+export type SaveSource = Matrix | number[]
 
 
 function resolveSaveSourceBuffer( buffer:SaveSource ) {
   if ( isArray( buffer ) ) {
-    return new ggggxBuffer( {
+    return new Matrix( {
       data: buffer,
       dim: [ buffer.length ]
     } )

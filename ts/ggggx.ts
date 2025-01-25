@@ -1,8 +1,8 @@
-import ggggxBuffer from "./ggggx/ggggxBuffer"
-export { ggggxBuffer }
+import Matrix from "./ggggx/Matrix"
+export { Matrix }
 
-import ggggxSample from "./ggggx/ggggxSample"
-export { ggggxSample }
+import Sample from "./ggggx/Sample"
+export { Sample }
 
 import ggggxContext from "./ggggx/ggggxContext"
 export { ggggxContext }

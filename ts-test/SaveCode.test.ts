@@ -1,20 +1,20 @@
-import ggggxBuffer from "../ts/ggggx/ggggxBuffer"
+import Matrix from "../ts/ggggx/Matrix"
 import { GGG } from "../ts/ggg/gggLang"
 import { ggggxCodes } from "../ts/ggggx/ggggxLang"
-import gggFormat from "../ts/ggg/gggFormat"
+import Format from "../ts/ggg/Format"
 
-describe("ggggxBuffer", () => {
+describe("Matrix", () => {
   test("saveCode", () => {
     const name = "Test"
     const index = 2
     const dim = [ 2, 3 ]
     const data = [1,2,3,4,5,6] 
     const chunk = 3
-    const buffer = new ggggxBuffer( { dim, name, index } )
+    const buffer = new Matrix( { dim, name, index } )
     buffer.write( data )
 
     const lines = buffer.saveCode( { chunk }  )
-    const codes = lines.map( ( line ) => gggFormat( line ) )
+    const codes = lines.map( ( line ) => Format( line ) )
     const [ header, data0, data1 ] = codes
     const register = `${GGG.Register}${index}`
     expect( header ).toEqual( `${ggggxCodes.NumbersInit} ${register} ${GGG.Alias}"${name}" ${GGG.Size}${dim} ${GGG.Storage}"Array"` )

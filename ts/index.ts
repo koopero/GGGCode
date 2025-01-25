@@ -7,8 +7,8 @@ export { gggParseLines }
 import gggParseLine from "./ggg/gggParseLine"
 export { gggParseLine }
 
-import gggFormat from "./ggg/gggFormat"
-export { gggFormat }
+import Format from "./ggg/Format"
+export { Format }
 
 import gggMachine from "./ggg/gggMachine"
 export { gggMachine }

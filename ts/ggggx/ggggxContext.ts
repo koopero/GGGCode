@@ -1,7 +1,7 @@
-import ggggxBuffer, { clearOptions } from "./ggggxBuffer"
+import Matrix, { clearOptions } from "./Matrix"
 import GGGGX from "./ggggxLang"
 import gggMachine from "../ggg/gggMachine"
-import { gggSolver } from "../ggg/gggSolver"
+import { gggSolver } from "./Solve"
 import { clear } from "console"
 import { isDefined, isObject } from "../common/util"
 
@@ -10,8 +10,8 @@ type ggggxContextOptions = {
   machine?: gggMachine,
 }
 
-type BufferLocalArg = number | string | { name?:string, index?:number } | ggggxBuffer
-type BufferInitOptions = { name?:string, index?:number, dim?:number[], storage?:number }
+type BufferLocalArg = number | string | { name?:string, index?:number } | Matrix
+type MatrixInitOptions = { name?:string, index?:number, dim?:number[], storage?:number }
 
 export default function ggggxContext( options?: ggggxContextOptions ) {
 
@@ -23,27 +23,27 @@ export default function ggggxContext( options?: ggggxContextOptions ) {
 
   if ( registers ) {
     for ( let name in registers ) {
-      let register = machine.getRegister( GGGGX, name, new ggggxBuffer() ) as ggggxBuffer
+      let register = machine.getRegister( GGGGX, name, new Matrix() ) as Matrix
       let clearData = registers[name]
       register.clear( clearData )
     }
   }
 
-  const getRegister = ( name ) => {
-    return machine.getRegister( GGGGX, name ) as ggggxBuffer
+  const MatrixResolve = ( name ) => {
+    return machine.getRegister( GGGGX, name ) as Matrix
   }
 
   // function addRegister( name, data ) {
-  //   let register = machine.getRegister( GGGGX, name, new ggggxBuffer() ) as ggggxBuffer
+  //   let register = machine.getRegister( GGGGX, name, new Matrix() ) as Matrix
   //   register.clear( data )
   // }
 
-  function *solver( arg, options = {}) {
-    yield *gggSolver( arg, { getRegister, ...options } )
+  function *Solve( arg, options = {}) {
+    yield *gggSolver( arg, { MatrixResolve, ...options } )
   }
 
-  function BufferInit( lookup:BufferLocalArg, clear?:BufferInitOptions ) {
-    if ( lookup instanceof ggggxBuffer ) {
+  function MatrixInit( lookup:BufferLocalArg, clear?:MatrixInitOptions ) {
+    if ( lookup instanceof Matrix ) {
       return lookup
     } 
     
@@ -59,9 +59,9 @@ export default function ggggxContext( options?: ggggxContextOptions ) {
     }
     
     let search = name || index
-    let buffer = getRegister( search )
+    let buffer = MatrixResolve( search )
     if ( !buffer ) {
-      buffer = new ggggxBuffer( { name, index } )
+      buffer = new Matrix( { name, index } )
       machine?.getRegister( GGGGX, search, buffer )
     }
 
@@ -74,8 +74,8 @@ export default function ggggxContext( options?: ggggxContextOptions ) {
 
   return {
     machine,
-    getRegister,
-    BufferInit,
-    solver,
+    MatrixResolve,
+    MatrixInit,
+    Solve,
   }
 }

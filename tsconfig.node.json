@@ -11,7 +11,7 @@
     "ts/ggg.ts",
     "ts/ggggx.ts",
     "ts/cli.ts",
-    "ts/ggggx/ggggxSavePNG.ts",
-    "ts/ggggx/ggggxLoadPNG.ts",
+    "ts/ggggx/SavePNG.ts",
+    "ts/ggggx/LoadPNG.ts",
   ]
 }

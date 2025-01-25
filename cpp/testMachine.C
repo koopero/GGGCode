@@ -1,32 +1,84 @@
 // cling_script.C
 #include "./gggCode.h"
+#include "./Format.h"
 
-class TestCommandState : virtual public gggCommandState {
-
-};
-
-class TestCommand : virtual public gggCommand {
+class PrintCommand : virtual public gggCommand {
 public:
-  TestCommand() {
-    name = "T10";
+  bool sentCommand = false;
+  gggChar sentCode = 0;
+  gggChar nextSeperator = 0;
+
+  PrintCommand() {
+    name = PrintCommandName;
   }
   void hookBefore() override { }
   void hookCommand() override { 
-    printf("\n  T-1; hookCommand %s\n", name.c_str() );
+    sentCommand = false;
     okay = 1;
   }
   void hookCode() override {
-    printf("; hookCode (%c)\n", code );
+    // printf("; hookCode %c\n", code );
   }
   void hookString() override {
-    printf("; hookPrimitive %s\n", string.c_str() );
+    if ( code == Command ) {
+      if ( !sentCommand ) {
+        machine->output( string );
+        sentCommand = true;
+        nextSeperator = EndArgument;
+      }
+      return;
+    } 
+    
+    if ( !sentCommand ) {
+      machine->output( PrintResponseName );
+      sentCommand = true;
+      nextSeperator = EndArgument;
+    }
+    
+    if ( nextSeperator ) {
+      machine->output( nextSeperator );
+    }
+
+    if ( code != sentCode ) {
+      machine->output( code );
+      sentCode = code;
+    }
+
+    machine->output( FormatString( string ) );
+    nextSeperator = Comma;
   }
+
   void hookNumber() override {
-    hookNumberOkay();
-    printf("; hookNumber %f\n", number );
+    if ( code == Command ) {
+      if ( !sentCommand ) {
+        machine->output( PrintPrefix );
+        machine->output( FormatNumber( number ) );
+        sentCommand = true;
+        nextSeperator = EndArgument;
+      }
+      return;
+    } 
+    
+    if ( !sentCommand ) {
+      machine->output( PrintResponseName );
+      sentCommand = true;
+      nextSeperator = EndArgument;
+    }
+    
+    if ( nextSeperator ) {
+      machine->output( nextSeperator );
+    }
+
+    if ( code != sentCode ) {
+      machine->output( code );
+      sentCode = code;
+    }
+
+    machine->output( FormatNumber( number ) );
+    nextSeperator = Comma;
   }
   void hookFinish() override {
-    printf("; hookFinish\n");
+    machine->output( End );
     machine->outputOK( okay );
   }
 
@@ -38,12 +90,12 @@ protected:
 
 public:
   PrintString() {
-    name = "P11";
+    name = PrintCommentCommandName;
   }
 
   void startLine() {
     if ( !didStartLine ) {
-      machine->output("; ");
+      machine->output( Comment );
       didStartLine = true;
     }
   }
@@ -52,7 +104,7 @@ public:
     didStartLine = false;
   }
   void hookString() override {
-    if ( code != 'V' ) return;
+    if ( code != Data ) return;
     startLine();
 
     machine->output( string );
@@ -60,7 +112,7 @@ public:
 
 
   void hookNumber() override {
-    if ( code != 'V' ) return;
+    if ( code != Data ) return;
     startLine();
 
     unsigned int codepoint = number;
@@ -87,7 +139,7 @@ public:
 
   void hookFinish() override {
     if ( didStartLine ) {
-      machine->output('\n');
+      machine->output( End);
     }
     machine->outputOK();
   }
@@ -98,7 +150,7 @@ public:
 class TestMachine : public gggMachine {
 public:
   void setup() override {
-    TestCommand *T10 = new TestCommand(); 
+    PrintCommand *T10 = new PrintCommand(); 
     addCommand( T10 );
     PrintString *P1 = new PrintString();
     addCommand( P1 );

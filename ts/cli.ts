@@ -6,7 +6,7 @@ import gggMachine from "./ggg/gggMachine"
 import * as readline from "readline"
 import { createReadStream, ReadStream  } from "fs"
 import { Readable, pipeline } from 'stream'
-import gggFormat from "./ggg/gggFormat"
+import Format from "./ggg/Format"
 import gggWebSocketServer from "./websocket/gggWebSocketServer"
 
 export function addStandardOptions( parser ) {
@@ -150,7 +150,7 @@ export function runCLI() {
   const machine = machineGenerator()
 
   machine.on( "output", line => {
-    line = gggFormat( line )
+    line = Format( line )
     console.log( line )
   })
 

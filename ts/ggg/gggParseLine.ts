@@ -1,4 +1,4 @@
-import { gggFormatPrimitive } from "./gggFormat"
+import { FormatPrimitive } from "./Format"
 import { GGG, gggToken } from "./gggLang"
 import { gggLimits } from "./gggLimits"
 import gggParseArgument from "./gggParseArgument"
@@ -10,7 +10,7 @@ function formatCommand( token:gggToken ) {
   } = token
 
   const value = data[0]
-  const valueStr = gggFormatPrimitive( value )
+  const valueStr = FormatPrimitive( value )
 
   return `${code}${valueStr}`
 }

@@ -32,15 +32,15 @@
       "import": "./dist/node/common/math.js",
       "require": "./dist/node/common/math.js"
     },
-    "./ggggxSavePNG": {
-      "browser": "./dist/browser/ggggx/ggggxSavePNG.js",
-      "import": "./dist/node/ggggx/ggggxSavePNG.js",
-      "require": "./dist/node/ggggx/ggggxSavePNG.js"
+    "./SavePNG": {
+      "browser": "./dist/browser/ggggx/SavePNG.js",
+      "import": "./dist/node/ggggx/SavePNG.js",
+      "require": "./dist/node/ggggx/SavePNG.js"
     },
-    "./ggggxLoadPNG": {
-      "browser": "./dist/browser/ggggx/ggggxLoadPNG.js",
-      "import": "./dist/node/ggggx/ggggxLoadPNG.js",
-      "require": "./dist/node/ggggx/ggggxLoadPNG.js"
+    "./LoadPNG": {
+      "browser": "./dist/browser/ggggx/LoadPNG.js",
+      "import": "./dist/node/ggggx/LoadPNG.js",
+      "require": "./dist/node/ggggx/LoadPNG.js"
     }
   },
   "scripts": {

@@ -2,7 +2,7 @@ import { describe, test, expect } from "@jest/globals"
 
 import { gggHooks, GGG } from "../ts/ggg/gggLang"
 import gggdxCommands from "../ts/gggdx/gggdxCommands"
-import { gggParseLines, gggParseLine, gggParseArgument, gggMachine, gggFormat } from "../ts/index"
+import { gggParseLines, gggParseLine, gggParseArgument, gggMachine, Format } from "../ts/index"
 
 describe("ggg", () => {
   test("smork", () => {
@@ -64,25 +64,6 @@ describe("gggParseLine", () => {
         },
       ]
     })
-  })
-})
-
-
-describe("gggFormat", () => {
-  test("smork", () => {
-    expect( gggFormat( { code: 'G', data: [ 1 ]} ) ).toBe( "G1" )
-  })
-
-  test("hex", () => {
-    expect( gggFormat( { code: 'G', data: [ 16/255 ], encoding: GGG.HexNorm2 } ) ).toBe( `G0${GGG.HexNorm2}10` )
-  })
-
-  test("line", () => {
-    expect( gggFormat( { command: "G4", args: [ { code: 'X', data: [ 1 ]} ] } ) ).toBe( "G4 X1" )
-  })
-
-  test("okay", () => {
-    expect( gggFormat( { code: "O", encoding: GGG.EncodedOne, data: 1 } ) ).toBe( "OK" )
   })
 })
 

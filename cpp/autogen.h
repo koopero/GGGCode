@@ -11,7 +11,7 @@ typedef enum {
   Comment = ';',
   Failure = 'F',
   Value = 'V',
-  Size = 'L',
+  Size = 'S',
   Offset = 'P',
   Zero = '0',
   Number = '+',
@@ -25,9 +25,11 @@ typedef enum {
   EncodedZero = 'Z',
   Operator = 'Q',
   EncodedMinusOne = 'N',
+  Alias = 'L',
   StringToEOL = '`',
-  Decimal = 'D',
+  Dimension = 'D',
   Encoding = 'E',
+  Storage = 'T',
   Quote = '"',
   Comma = ',',
   Period = '.',
@@ -42,4 +44,8 @@ typedef enum {
   Subscript = '[',
   SubscriptEnd = ']',
   NextAxis = '|'
-} GGG;
+} GGG;// Strings
+#define PrintPrefix "P"
+#define PrintCommandName "P5"
+#define PrintResponseName "P-5"
+#define PrintCommentCommandName "P13"

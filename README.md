@@ -42,7 +42,7 @@ const machine = new gggMachine( { commands } )
 
 machine.run( "P0 S0,1")
 .then( result => {
-  result = gggFormat( result )
+  result = Format( result )
 })
 
 

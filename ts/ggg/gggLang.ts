@@ -113,14 +113,6 @@ export type gggToken = {
   data?:gggPrimitive|gggPrimitive[]
 }
 
-// type gggFormatToken = string | {
-//   command?: string,
-//   code?: string,
-//   args?: gggFormatToken[],
-//   data?: any,
-//   comment?: string,
-// } | gggFormatToken[]
-
 export type gggParseOptions = {
   lineSizeMax?:number
 }
@@ -149,6 +141,7 @@ export enum gggCommandConvention {
   Output = 15,
   Watch = 20,
   Display = 13,
+  DisplayResponse = -gggCommandConvention.Display,
 }
 
 

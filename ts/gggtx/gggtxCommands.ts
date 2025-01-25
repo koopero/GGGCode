@@ -1,6 +1,6 @@
 
 import { isString } from "../common/util"
-import { gggFormatData } from "../ggg/gggFormat"
+import { FormatData } from "../ggg/Format"
 import { GGG, gggCommandConvention, gggHooks } from "../ggg/gggLang"
 const gggtxRegisterPrefix = "R"
 
@@ -53,7 +53,7 @@ const gggtxRegisterCommands : gggCommands = {
         const { registers } = machine
         registers.eachPair( ( register, key ) => { 
           const { data } = register
-          const description = gggFormatData( data )
+          const description = FormatData( data )
           const comment = `;  ${key}: ${description}`
           machine.output( { comment } )
         })

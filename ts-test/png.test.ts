@@ -1,6 +1,6 @@
-import ggggxBuffer from "../ts/ggggx/ggggxBuffer"
-import ggggxSavePNG from "../ts/ggggx/ggggxSavePNG"
-import ggggxLoadPNG from "../ts/ggggx/ggggxLoadPNG"
+import Matrix from "../ts/ggggx/Matrix"
+import SavePNG from "../ts/ggggx/SavePNG"
+import LoadPNG from "../ts/ggggx/LoadPNG"
 import { writeToTestOutput } from "./test-utils"
 import { decode, encode } from "fast-png"
 
@@ -10,7 +10,7 @@ describe("png", () => {
     const width = 160
     const height = 120
 
-    const buffer = new ggggxBuffer({
+    const buffer = new Matrix({
       dim: [ 3,width,height ],
     })
 
@@ -21,17 +21,17 @@ describe("png", () => {
       }
     }
 
-    const data = ggggxSavePNG( buffer, {} )  
+    const data = SavePNG( buffer, {} )  
     await writeToTestOutput( "example.png", data )
   })
 
-  test("ggggxSavePNG", () => {
-    const writeBuffer = new ggggxBuffer({
+  test("SavePNG", () => {
+    const writeBuffer = new Matrix({
       dim: [ 3, 3 ],
       data: [ 1, 0, 0, 0, 1, 0, 0, 0, 1 ],
     })
 
-    const pngData = ggggxSavePNG( writeBuffer )
+    const pngData = SavePNG( writeBuffer )
 
     const result = decode( pngData )
 
@@ -44,16 +44,16 @@ describe("png", () => {
 
 
   // test("read back", async () => {
-  //   const writeBuffer = new ggggxBuffer({
+  //   const writeBuffer = new Matrix({
   //     dim: [ 3, 3 ],
   //     data: [ 1, 0, 0, 0, 1, 0, 0, 0, 1 ],
   //   })
 
-  //   const writeData = ggggxSavePNG( writeBuffer, {} )
+  //   const writeData = SavePNG( writeBuffer, {} )
 
   //   console.log( writeData )
 
-  //   const result = ggggxLoadPNG( writeData, {} )
+  //   const result = LoadPNG( writeData, {} )
 
 
   //   expect( result.dim ).toEqual( [ 3, 3 ] )

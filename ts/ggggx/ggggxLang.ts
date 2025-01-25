@@ -15,7 +15,7 @@ export enum ggggxCodes {
   WriteBuffer = `${ggggxPrefix}${gggCommandConvention.Write}`,
   ReadBuffer = `${ggggxPrefix}${gggCommandConvention.Read}`,
   ReadBufferResponse = `${ggggxPrefix}${gggCommandConvention.ReadResponse}`,
-  DumpBuffer = `${ggggxPrefix}${gggCommandConvention.Output}`,
+  MatrixDump = `${ggggxPrefix}${gggCommandConvention.Output}`,
   WatchBuffers = `${ggggxPrefix}${gggCommandConvention.Watch}`,
   Display = `${ggggxPrefix}${gggCommandConvention.Display}`,
 }

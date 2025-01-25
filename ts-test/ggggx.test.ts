@@ -1,9 +1,9 @@
-import ggggxBuffer from "../ts/ggggx/ggggxBuffer"
+import Matrix from "../ts/ggggx/Matrix"
 import { GGG } from "../ts/ggg/gggLang"
 import { ggggxCodes, ggggxEvents } from "../ts/ggggx/ggggxLang"
-import gggFormat from "../ts/ggg/gggFormat"
-import { RegionsAdd } from "../ts/ggggx/ggggxRegions"
-import ggggxSample from "../ts/ggggx/ggggxSample"
+import Format from "../ts/ggg/Format"
+import { RegionsAdd } from "../ts/ggggx/Regions"
+import Sample from "../ts/ggggx/Sample"
 import { writeDocsFiles } from "./test-utils"
 import gggMachine from "../ts/ggg/gggMachine"
 import ggggxCommands from "../ts/ggggx/ggggxCommands"
@@ -15,11 +15,11 @@ function ggggxMachine() {
 }
 
 
-describe("ggggxBuffer", () => {
+describe("Matrix", () => {
   test("will initialize", () => {
-    const buffer = new ggggxBuffer()
+    const buffer = new Matrix()
     expect( buffer ).toBeDefined()
-    expect( buffer ).toBeInstanceOf( ggggxBuffer )
+    expect( buffer ).toBeInstanceOf( Matrix )
     const { dim, data } = buffer
     expect( dim ).toEqual( [] )
     expect( data ).toEqual( [] )
@@ -27,7 +27,7 @@ describe("ggggxBuffer", () => {
 
   describe("resize", () => {
     test("simple", () => {
-      const buffer = new ggggxBuffer()
+      const buffer = new Matrix()
       buffer.resize( [4,3,2,1] )
       const { dim, data } = buffer
       expect( dim ).toEqual( [4,3,2] )
@@ -35,7 +35,7 @@ describe("ggggxBuffer", () => {
     })
 
     test("preserve data", () => {
-      const buffer = new ggggxBuffer( { 
+      const buffer = new Matrix( { 
         dim: [2],
         data: [0,1],
       })
@@ -47,7 +47,7 @@ describe("ggggxBuffer", () => {
 
     // test("emits event", () => {
 
-    //   const buffer = new ggggxBuffer( { dim: [1,1,2] } )
+    //   const buffer = new Matrix( { dim: [1,1,2] } )
     //   const onResize = jest.fn()
     //   buffer.on( ggggxEvents.Resize, onResize )
     //   buffer.resize( [1,2,2] )
@@ -57,14 +57,14 @@ describe("ggggxBuffer", () => {
   })
 
   test("write", () => {
-    const buffer = new ggggxBuffer()
+    const buffer = new Matrix()
     buffer.resize( [4,3,2,1] )
     buffer.write( [1,2,3,4] )
     expect( buffer.data[3] ).toEqual( 4 )
   })
 
   test("read", () => {
-    const buffer = new ggggxBuffer()
+    const buffer = new Matrix()
     buffer.resize( 4 )
     buffer.write( [1,2,3,4] )
     expect( buffer.read( 2, 0 ) ).toEqual( 3 )
@@ -78,11 +78,11 @@ describe("ggggxBuffer", () => {
     const dim = [ 2, 3 ]
     const data = [1,2,3,4,5,6] 
     const chunk = 3
-    const buffer = new ggggxBuffer( { dim, name, index } )
+    const buffer = new Matrix( { dim, name, index } )
     buffer.write( data )
 
     const lines = buffer.saveCode( { chunk }  )
-    const codes = lines.map( gggFormat )
+    const codes = lines.map( Format )
     const [ header, data0, data1 ] = codes
     const register = `${GGG.Register}${index}`
     expect( header ).toEqual( `${ggggxCodes.NumbersInit} ${register} ${GGG.Alias}"${name}" ${GGG.Size}${dim} ${GGG.Storage}"Array"` )
@@ -92,12 +92,12 @@ describe("ggggxBuffer", () => {
 
   describe("UNorm8", () => {
     test("initialize", () => {
-      const buffer = new ggggxBuffer( "UNorm8" )
+      const buffer = new Matrix( "UNorm8" )
       buffer.resize( [4,3,2,1] )
       expect( buffer.data ).toEqual( new Uint8Array(24) )
     })
     test("write", () => {
-      const buffer = new ggggxBuffer( "UNorm8" )
+      const buffer = new Matrix( "UNorm8" )
       buffer.resize( [3] )
       buffer.write( [1] )
       expect( buffer.data ).toEqual( Uint8Array.from( [255,0,0] ) )
@@ -108,7 +108,7 @@ describe("ggggxBuffer", () => {
   describe("events", () => {
     describe(ggggxEvents.RegionChange, () => {
       test("will emit", () => {
-        const buffer = new ggggxBuffer( {
+        const buffer = new Matrix( {
           dim: [2,2]
         })
 
@@ -134,7 +134,7 @@ describe("ggggxInterface", () => {
       D0
     `)
 
-    const str = gggFormat( lines )
+    const str = Format( lines )
     writeDocsFiles( str, "ggggx" )
   })
   
@@ -153,10 +153,10 @@ describe("ggggxInterface", () => {
     `)
 
     const context = ggggxContext( { machine } )
-    const { getRegister } = context
-    const buffer = getRegister( bufferIndex )
+    const { MatrixResolve } = context
+    const buffer = MatrixResolve( bufferIndex )
     expect( buffer ).toBeDefined()
-    expect( buffer ).toBeInstanceOf( ggggxBuffer )
+    expect( buffer ).toBeInstanceOf( Matrix )
     expect( buffer.dim ).toEqual( dim )
     expect( buffer.read( [offset], [0,0] ) ).toEqual( value )
 
@@ -175,7 +175,7 @@ const RunTestBuffer = `
 `
 
 
-describe(`command: ${ggggxCodes.DumpBuffer}`, () => {
+describe(`command: ${ggggxCodes.MatrixDump}`, () => {
   test("will dump", async () => {
     const machine = ggggxMachine()
     await machine.run( `
@@ -183,7 +183,7 @@ describe(`command: ${ggggxCodes.DumpBuffer}`, () => {
     `)
 
     const result = await machine.run( `
-      ${ggggxCodes.DumpBuffer} ${TestBufferIndexToken}
+      ${ggggxCodes.MatrixDump} ${TestBufferIndexToken}
     `)
 
     const secondMachine = ggggxMachine()
@@ -210,7 +210,7 @@ describe(ggggxCodes.WatchBuffers, () => {
   //     ${ggggxCodes.WatchBuffers} E8 ${TestBufferIndexToken}
   //   `)
 
-  //   expect( gggFormat( result ) ).toEqual( `G1 ${TestBufferIndexToken} O1 V0Hff\nOK\n` )
+  //   expect( Format( result ) ).toEqual( `G1 ${TestBufferIndexToken} O1 V0Hff\nOK\n` )
 
   // })
 })
@@ -238,10 +238,10 @@ describe("RegionsAdd", () => {
   })
 })
 
-describe("ggggxSample", () => {
+describe("Sample", () => {
   test("linear fence", async () => {
     const data = [ 0, 1, 2, 3 ]
-    const buffer = new ggggxBuffer( {
+    const buffer = new Matrix( {
       dim: [2,2]
     })
     buffer.write( data )
@@ -252,7 +252,7 @@ describe("ggggxSample", () => {
     }
 
     const pos = [ 0.25 ]
-    const result = ggggxSample( buffer, pos, options )
+    const result = Sample( buffer, pos, options )
     expect( result ).toEqual( [ 0.5, 1.5 ] )
   })
 
@@ -262,7 +262,7 @@ describe("ggggxSample", () => {
       0, 1, 0,
       0, 0, 1,
     ]
-    const buffer = new ggggxBuffer( {
+    const buffer = new Matrix( {
       dim: [3,3]
     })
     buffer.write( data )
@@ -273,13 +273,13 @@ describe("ggggxSample", () => {
       coord: "pixel",
     }
 
-    expect( ggggxSample( buffer, [ 0 ], options ) ).toEqual( [ 1, 0, 0 ] )
-    expect( ggggxSample( buffer, [ 0.5 ], options ) ).toEqual( [ 0.5, 0.5, 0 ] )
-    expect( ggggxSample( buffer, [ 1 ], options ) ).toEqual( [ 0, 1, 0 ] )
-    expect( ggggxSample( buffer, [ 2 ], options ) ).toEqual( [ 0, 0, 1 ] )
-    expect( ggggxSample( buffer, [ 2.5 ], options ) ).toEqual( [ 0.5, 0, 0.5 ] )
-    expect( ggggxSample( buffer, [ 3 ], options ) ).toEqual( [ 1, 0, 0 ] )
-    expect( ggggxSample( buffer, [ -1 ], options ) ).toEqual( [ 0, 0, 1 ] )
+    expect( Sample( buffer, [ 0 ], options ) ).toEqual( [ 1, 0, 0 ] )
+    expect( Sample( buffer, [ 0.5 ], options ) ).toEqual( [ 0.5, 0.5, 0 ] )
+    expect( Sample( buffer, [ 1 ], options ) ).toEqual( [ 0, 1, 0 ] )
+    expect( Sample( buffer, [ 2 ], options ) ).toEqual( [ 0, 0, 1 ] )
+    expect( Sample( buffer, [ 2.5 ], options ) ).toEqual( [ 0.5, 0, 0.5 ] )
+    expect( Sample( buffer, [ 3 ], options ) ).toEqual( [ 1, 0, 0 ] )
+    expect( Sample( buffer, [ -1 ], options ) ).toEqual( [ 0, 0, 1 ] )
     
   })
 })

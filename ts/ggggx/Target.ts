@@ -1,4 +1,4 @@
-import ggggxBuffer from "./ggggxBuffer"
+import Matrix from "./Matrix"
 import { GGG, } from "../ggg/gggLang"
 import { ggggxEvents } from "./ggggxLang"
 import { toInt, isString, isNumber } from "../common/util"
@@ -20,7 +20,7 @@ export function TargetHookCommand( arg, target ) {
 
   switch( code ) {
     case GGG.Register:
-      const buffer = machine.getRegisterNumbers( value ) as ggggxBuffer
+      const buffer = machine.getRegisterNumbers( value ) as Matrix
       if ( buffer ) {
         machine.emit( ggggxEvents.Display, { buffer } ) 
       }
@@ -85,13 +85,13 @@ export function TargetResolveNumbers( arg ) {
   let { dim, name, index, length, storage, create } = state
 
   let context = ggggxContext( { machine } )
-  let { getRegister, BufferInit } = context
+  let { MatrixResolve, MatrixInit } = context
 
   let lookup = index >= 0 ? index : name
-  let buffer:ggggxBuffer|null = lookup && getRegister( lookup )
+  let buffer:Matrix|null = lookup && MatrixResolve( lookup )
 
   if ( !buffer && create ) {
-    buffer = BufferInit( lookup, { index, name, dim, storage } )
+    buffer = MatrixInit( lookup, { index, name, dim, storage } )
   }
 
 
@@ -113,9 +113,9 @@ function TargetBuffer( arg ) {
     return buffer
   }
   let context = ggggxContext( { machine } )
-  let { getRegister, BufferInit } = context
+  let { MatrixResolve, MatrixInit } = context
 
-  buffer = getRegister( name ) || getRegister( index )
+  buffer = MatrixResolve( name ) || MatrixResolve( index )
 
   return buffer
 }

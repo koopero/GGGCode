@@ -34,7 +34,7 @@ export async function testCppMachine( program:string ) {
   let stderr = ""
   let result = ""
   return await new Promise( (resolve, reject) => {
-    console.log('spawn', `${command} ${args.join(" ")}`) 
+    // console.log('spawn', `${command} ${args.join(" ")}`) 
     const proc = spawn( command, args, options )
 
     proc.stdout?.on( "data", data => result += data.toString() )

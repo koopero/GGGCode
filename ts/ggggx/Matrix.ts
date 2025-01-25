@@ -17,7 +17,7 @@ function DataArgIterate( vec, callback ) {
 }
 
 
-export type ggggxBufferProps = string | number | {
+export type MatrixProps = string | number | {
   storage?: ggggxStorageProps,
   index?: number,
   name?: string,
@@ -58,7 +58,7 @@ export type clearOptions = ggggxVecArg | {
   dim?: ggggxDimArg,
 }
 
-export default class ggggxBuffer extends EventEmitter {
+export default class Matrix extends EventEmitter {
   name:string = ""
   index:number = -1
   size:number = 0 
@@ -66,7 +66,7 @@ export default class ggggxBuffer extends EventEmitter {
   data: any
   storage:ggggxStorageType
 
-  constructor( props : ggggxBufferProps = BufferDefaults ) {
+  constructor( props : MatrixProps = BufferDefaults ) {
     super()
 
     if ( !isObject( props ) ) {
@@ -111,7 +111,7 @@ export default class ggggxBuffer extends EventEmitter {
 
 
     if ( !storage ) {
-      throw new Error( `ggggxBuffer.resize: storage type not found: ${storageArg}` )
+      throw new Error( `Matrix.resize: storage type not found: ${storageArg}` )
     }
 
 
@@ -296,7 +296,7 @@ export default class ggggxBuffer extends EventEmitter {
     }
 
     if ( !data || !isObject( data ) ) {
-      throw new Error( `ggggxBuffer.writeImageData: invalid imageData` )
+      throw new Error( `Matrix.writeImageData: invalid imageData` )
     }
 
     for( let y = 0; y < height; y++ ) {
@@ -433,7 +433,7 @@ function fromNormDepth( val:number = 0, depth:number = 8 ) {
 
 
 
-export function describeBuffer( buffer:ggggxBuffer ) {
+export function describeBuffer( buffer:Matrix ) {
   const { storage, dim } = buffer
   const { name } = storage
   return `${name}(${dim.toString()})`

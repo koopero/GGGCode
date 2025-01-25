@@ -2,26 +2,26 @@ import { isString, toInt } from "../common/util"
 import { ggggxCodes, ggggxEvents, ggggxFails, ggggxEncodingOptions } from "./ggggxLang" 
 import { GGG, gggHooks } from "../ggg/gggLang"
 import { gggMachineHookArgs } from "../ggg/gggMachine"
-import ggggxBuffer, { describeBuffer} from "./ggggxBuffer"
+import Matrix, { describeBuffer} from "./Matrix"
 import { DimOffset } from "./Dim"
 import { toKeyDescription } from "../ggg/gggNamedList"
-import { RegionsAdd } from "./ggggxRegions"
+import { RegionsAdd } from "./Regions"
 import { TargetHookCode, TargetHookValue, TargetHookCommand, TargetResolveNumbers } from "./Target"
 import { ggggxStorageTypes } from "./Storage"
 import { min } from "../common/math"
 import ggggxContext from "./ggggxContext"
 
-export function InitBufferHookCommand( arg:gggMachineHookArgs ) {
+export function MatrixInitHookCommand( arg:gggMachineHookArgs ) {
   const { state } = arg
   TargetHookCommand( arg, { create: true } )
 }
 
-export function InitBufferHookCode( arg:gggMachineHookArgs ) {
+export function MatrixInitHookCode( arg:gggMachineHookArgs ) {
   const { code, state } = arg
   TargetHookCode( arg )
 }
 
-export function InitBufferHookValue( arg:gggMachineHookArgs ) {
+export function MatrixInitHookValue( arg:gggMachineHookArgs ) {
   TargetHookValue( arg )
 
   const { code, state, value, machine } = arg
@@ -36,14 +36,14 @@ export function InitBufferHookValue( arg:gggMachineHookArgs ) {
 }
 
 
-export function InitBufferHookEnd( arg:gggMachineHookArgs ) {
+export function MatrixInitHookEnd( arg:gggMachineHookArgs ) {
   const { machine, state } = arg
 
   const ggggx = ggggxContext( { machine } )
-  const { getRegister, BufferInit } = ggggx
+  const { MatrixInit } = ggggx
   const { index, name, dim, storage  } = state || {}
   const key = name || index
-  let buffer = BufferInit({ name, index }, { dim, storage } )
+  let buffer = MatrixInit({ name, index }, { dim, storage } )
   buffer.clear( { dim, storage})
 
   if ( !buffer ) {
@@ -53,11 +53,11 @@ export function InitBufferHookEnd( arg:gggMachineHookArgs ) {
   machine.output( { code: "G-11", comment: `${toKeyDescription(buffer)} ; ${describeBuffer( buffer)}` } )
 }
 
-export const InitBufferHooks = {
-  [gggHooks.Command]: InitBufferHookCommand,
-  [gggHooks.Code]: InitBufferHookCode,
-  [gggHooks.Value]: InitBufferHookValue,
-  [gggHooks.End]: InitBufferHookEnd,
+export const MatrixInitHooks = {
+  [gggHooks.Command]: MatrixInitHookCommand,
+  [gggHooks.Code]: MatrixInitHookCode,
+  [gggHooks.Value]: MatrixInitHookValue,
+  [gggHooks.End]: MatrixInitHookEnd,
 }
 
 export function ListBuffersHookEnd( arg:gggMachineHookArgs ) {
@@ -115,19 +115,19 @@ export const WriteBufferHooks = {
   [gggHooks.EndArg]: WriteBufferHookEndArg,
 } 
 
-function ReadBufferHookCommand( arg:gggMachineHookArgs ) {
+function MatrixReadHookCommand( arg:gggMachineHookArgs ) {
   const { state } = arg
   TargetHookCommand( arg, {} )
 }
 
-function ReadBufferHookValue( arg:gggMachineHookArgs ) {
+function MatrixReadHookValue( arg:gggMachineHookArgs ) {
   const { code, state, value, machine } = arg
   const limits = machine.state.ggggxLimits
   TargetHookValue( arg )
 
 }
 
-function ReadBufferHookEnd( arg:gggMachineHookArgs) {
+function MatrixReadHookEnd( arg:gggMachineHookArgs) {
   const { machine, state } = arg
   const { buffer, position, encoding, size } = TargetResolveNumbers( arg )
 
@@ -151,10 +151,10 @@ function ReadBufferHookEnd( arg:gggMachineHookArgs) {
   machine.output( { code: "G-1", tokens } )
 }
 
-export const ReadBufferHooks = {
-  [gggHooks.Command]: ReadBufferHookCommand,
-  [gggHooks.End]: ReadBufferHookEnd,
-  [gggHooks.Value]: ReadBufferHookValue,
+export const MatrixReadHooks = {
+  [gggHooks.Command]: MatrixReadHookCommand,
+  [gggHooks.End]: MatrixReadHookEnd,
+  [gggHooks.Value]: MatrixReadHookValue,
 }
 
 
@@ -165,9 +165,9 @@ function DisplayHookValue( arg:gggMachineHookArgs ) {
   switch( code ) {
     case GGG.Register:
       const context = ggggxContext( { machine } )
-      const { getRegister } = context
+      const { MatrixResolve } = context
 
-      const buffer = getRegister( value ) as ggggxBuffer
+      const buffer = MatrixResolve( value ) as Matrix
       if ( buffer ) {
         machine.emit( ggggxEvents.Display, { buffer } ) 
       }
@@ -184,7 +184,7 @@ export const DisplayHooks = {
   [gggHooks.End]: DisplayHookEnd,
 }
 
-async function DumpBufferHookValue( arg:gggMachineHookArgs ) {
+async function MatrixDumpHookValue( arg:gggMachineHookArgs ) {
   const { code, state, value, machine } = arg
   
   switch( code ) {
@@ -209,12 +209,12 @@ async function DumpBufferHookValue( arg:gggMachineHookArgs ) {
   }
 }
 
-export const DumpBufferHooks = {
-  [gggHooks.Value]: DumpBufferHookValue,
+export const MatrixDumpHooks = {
+  [gggHooks.Value]: MatrixDumpHookValue,
 }
 
 
-async function WatchBuffersHookValue( arg:gggMachineHookArgs ) {
+async function MatrixWatchHookValue( arg:gggMachineHookArgs ) {
   const { code, state, value, machine } = arg
   const bufferWatchers = state.bufferWatchers = state.bufferWatchers || {}
 
@@ -264,6 +264,6 @@ async function WatchBuffersHookValue( arg:gggMachineHookArgs ) {
 }
 
 
-export const WatchBuffersHooks = {
-  [gggHooks.Value]: WatchBuffersHookValue,
+export const MatrixWatchHooks = {
+  [gggHooks.Value]: MatrixWatchHookValue,
 }

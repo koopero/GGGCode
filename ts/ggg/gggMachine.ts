@@ -1,9 +1,9 @@
-import { GGG, gggHooks, gggToken, gggTokenArg, gggCommand, gggCommands, gggHookArgs, gggCasedString } from "./gggLang"
+import { GGG, gggHooks, gggToken, gggTokenArg, gggCommand, gggCommands, gggHookArgs, gggCasedString, gggPrimitive } from "./gggLang"
 import gggParseLines, { gggParseLinesArgs } from "./gggParseLines"
 import { EventEmitter } from "../common/events"
 import { isArray, isNumber, isString, isBoolean, isDefined } from "../common/util"
 import gggNamedList, { gggNamedListItem } from "./gggNamedList"
-import { gggSolver } from "./gggSolver"
+import { gggSolver as MachineSolver } from "../ggggx/Solve"
 import GGGGX from "../ggggx/ggggxLang"
 
 type QueueItem = {
@@ -53,12 +53,13 @@ function isBlankCommand( command:string ) {
   return !compare || compare.startsWith( GGG.Okay )
   }
 
-import ggggxBuffer from "../ggggx/ggggxBuffer"
-import { gggFormatOkayNumber } from "./gggFormat"
+import Matrix from "../ggggx/Matrix"
+import { FormatOkayNumber } from "./Format"
 const NumbersAspect = "numbers"
-const NumbersClass = ggggxBuffer
+const NumbersClass = Matrix
 
 
+type MachineSolver = ( arg:gggPrimitive|gggPrimitive[], options? ) => Generator<number|string>
 
 export default class gggMachine extends EventEmitter  {
   state:{ [key:string]:any } = {}
@@ -68,6 +69,8 @@ export default class gggMachine extends EventEmitter  {
   commands:gggCommands = {}
   commandState:{ [key:string]:any } = {}
   
+  solvers:MachineSolver[] = []
+
   stack:StackItem[] = []
   queue:QueueItem[] = []
   queuePointer:number = 0
@@ -110,7 +113,7 @@ export default class gggMachine extends EventEmitter  {
 
   outputOk( okay:number = 1, comment?:string ) {
     const code = GGG.Okay
-    this.output( { code: `${code}${gggFormatOkayNumber(okay)}`, comment } )
+    this.output( { code: `${code}${FormatOkayNumber(okay)}`, comment } )
   }
 
   tick() {
@@ -216,9 +219,20 @@ export default class gggMachine extends EventEmitter  {
 
   //   return numbers
   // }
-
-  *solve( value:any ) : Generator<number|string> {
-    yield *gggSolver( value, { getRegister: ( id ) => this.getRegister( GGGGX, id ) as ggggxBuffer } )
+  *solve( arg:gggPrimitive|gggPrimitive[], options? ) : Generator<number|string> {
+    if ( !this.solvers.length ) {
+      if ( isNumber( arg ) || isString( arg ) ) {
+        yield arg
+      } else if ( isArray( arg ) ) {
+        for ( const item of arg ) {
+          yield* this.solve( item )
+        }
+      }
+      return
+    }
+    for ( const solver of this.solvers ) {
+      yield* solver( arg, options )
+    }
   }
 
   async execLine( line:gggToken ) {

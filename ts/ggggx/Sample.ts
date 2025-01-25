@@ -4,7 +4,7 @@ type BufferIndexT = number
 
 import { floor, mod, max, min, fract, toVector } from "../common/math"
 import { isArray, isUndefined } from "../common/util"
-import ggggxBuffer from "./ggggxBuffer"
+import Matrix from "./Matrix"
 import { ggggxVecArg } from "./ggggxLang"
 import { Filter, Edge, Coord } from "./ggggxLang"
 
@@ -14,6 +14,59 @@ interface ResolvedAxis {
   index1: IntT
   fraction: FloatT
 }
+
+
+export interface SampleOptions {
+  dimension?: IntT
+  filter?: Filter | string
+  edge?: Edge | string
+  coord?: Coord | string
+}
+
+export default function Sample( buffer:Matrix, position:ggggxVecArg = 0, options:SampleOptions = {}, value?:ggggxVecArg  ):number[] | number {
+  const { dim } = buffer
+  const { dimension = 1 } = options
+  const pos = toVector( position )
+  
+  let channels = 1
+  for ( let d = 0; d < dimension; d++ ) {
+    channels *= dim[ d ]
+    pos.unshift( 0 )
+  }
+
+  if ( isUndefined( value ) ) {
+    value = new Array( channels )
+    value.fill( -1 )
+  }
+
+  const length = min( channels, isArray( value ) ? value.length : 1 )
+  
+  const { filter = Filter.Linear, edge = Edge.Repeat, coord = Coord.Normalized } = options
+
+  function computeAxis( index:number ) {
+    const position = pos[ index ] || 0
+    const dimIndex = index
+    const { fraction, index0, index1 } = resolveAxis( position, dim[ dimIndex ], filter, edge, coord )
+
+    pos[ index ] = index0
+    const sampA = index == dimension ? buffer.read( pos, new Array( length ) ) : computeAxis( index )
+    if ( fraction === 0 || index0 === index1 ) 
+      return sampA
+
+    pos[ index ] = index1
+    const sampB = index == dimension ? buffer.read( pos, new Array( length ) ) : computeAxis( index )
+
+    for ( let i = 0; i < length; i++ ) {
+      sampA[i] = sampA[i] * ( 1 - fraction ) + sampB[i] * fraction
+    }
+
+    return sampA
+  }
+
+  const result = computeAxis( pos.length - 1 )
+  return isArray( value ) ? result : result[0]
+}
+
 
 function resolveAxis(val: FloatT, size: BufferIndexT, filter: string = Filter.Linear, edge: string = Edge.Repeat, coord: string = Coord.Normalized ): ResolvedAxis {
   const axis: ResolvedAxis = { index0: 0, index1: 0, fraction: 0 }
@@ -78,55 +131,4 @@ function resolveAxis(val: FloatT, size: BufferIndexT, filter: string = Filter.Li
   }
 
   return axis
-}
-
-export interface ggggxSampleOptions {
-  dimension?: IntT
-  filter?: Filter | string
-  edge?: Edge | string
-  coord?: Coord | string
-}
-
-export default function ggggxSample( buffer:ggggxBuffer, position:ggggxVecArg = 0, options:ggggxSampleOptions = {}, value?:ggggxVecArg  ):number[] | number {
-  const { dim } = buffer
-  const { dimension = 1 } = options
-  const pos = toVector( position )
-  
-  let channels = 1
-  for ( let d = 0; d < dimension; d++ ) {
-    channels *= dim[ d ]
-    pos.unshift( 0 )
-  }
-
-  if ( isUndefined( value ) ) {
-    value = new Array( channels )
-    value.fill( -1 )
-  }
-
-  const length = min( channels, isArray( value ) ? value.length : 1 )
-  
-  const { filter = Filter.Linear, edge = Edge.Repeat, coord = Coord.Normalized } = options
-
-  function computeAxis( index:number ) {
-    const position = pos[ index ] || 0
-    const dimIndex = index
-    const { fraction, index0, index1 } = resolveAxis( position, dim[ dimIndex ], filter, edge, coord )
-
-    pos[ index ] = index0
-    const sampA = index == dimension ? buffer.read( pos, new Array( length ) ) : computeAxis( index )
-    if ( fraction === 0 || index0 === index1 ) 
-      return sampA
-
-    pos[ index ] = index1
-    const sampB = index == dimension ? buffer.read( pos, new Array( length ) ) : computeAxis( index )
-
-    for ( let i = 0; i < length; i++ ) {
-      sampA[i] = sampA[i] * ( 1 - fraction ) + sampB[i] * fraction
-    }
-
-    return sampA
-  }
-
-  const result = computeAxis( pos.length - 1 )
-  return isArray( value ) ? result : result[0]
 }

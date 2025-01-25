@@ -1,5 +1,5 @@
 import { isNumber, isObject } from "../common/util"
-import gggFormat from "../ggg/gggFormat"
+import Format from "../ggg/Format"
 import type { gggCommands } from "../ggg/gggLang"
 import gggMachine from "../ggg/gggMachine"
 import gggdxCommands from "../gggdx/gggdxCommands"
@@ -50,7 +50,7 @@ export default function gggWebSocketServer( options:gggWebSocketServerOptions ) 
 
 
     machine.on( "output", ( tokens ) => {
-      const str = gggFormat( tokens )
+      const str = Format( tokens )
       if ( onOutput ) {
         onOutput( str )
       }

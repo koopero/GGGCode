@@ -60,7 +60,7 @@ const ArgsEncoding = {
   options: ggggxEncodingOptions,
 } 
 
-import { WriteBufferHooks, ReadBufferHooks, ListBuffersHooks, InitBufferHooks, DisplayHooks, DumpBufferHooks, WatchBuffersHooks } from "./ggggxHooks"
+import { WriteBufferHooks, MatrixReadHooks, ListBuffersHooks, MatrixInitHooks, DisplayHooks, MatrixDumpHooks, MatrixWatchHooks } from "./ggggxHooks"
 
 const ggggxCommands = {
   [ggggxCodes.ListBuffers]: {
@@ -75,7 +75,7 @@ const ggggxCommands = {
       [GGG.Size]: ArgsDimension,
       [GGG.Alias]: ArgsName,
     },
-    ...InitBufferHooks,
+    ...MatrixInitHooks,
   },
   [ggggxCodes.WriteBuffer]: {
     description: "Write to buffer.",
@@ -98,7 +98,7 @@ const ggggxCommands = {
       [GGG.Size]: ArgsSize,
       [GGG.Encoding]: ArgsEncoding,
     },
-    ...ReadBufferHooks,
+    ...MatrixReadHooks,
   },
   [ggggxCodes.Display]: {
     description: "Export frame.",
@@ -109,13 +109,13 @@ const ggggxCommands = {
     },
     ...DisplayHooks
   },
-  [ggggxCodes.DumpBuffer]: {
+  [ggggxCodes.MatrixDump]: {
     description: "Dump buffer.",
     args: {
       [GGG.Register]: ArgsBufferRef,
       [GGG.Encoding]: ArgsEncoding,
     },
-    ...DumpBufferHooks
+    ...MatrixDumpHooks
   },
   [ggggxCodes.WatchBuffers]: {
     description: "Watch buffer.",
@@ -123,7 +123,7 @@ const ggggxCommands = {
       [GGG.Encoding]: ArgsEncoding,
       [GGG.Register]: ArgsBufferRef,
     },
-    ...WatchBuffersHooks
+    ...MatrixWatchHooks
   },
 }
 

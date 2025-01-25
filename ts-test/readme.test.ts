@@ -1,4 +1,4 @@
-import { gggHooks, gggMachine, gggFormat } from "../ts/index"
+import { gggHooks, gggMachine, Format } from "../ts/index"
 
 
 describe("README", () => {
@@ -29,7 +29,7 @@ describe("README", () => {
     
     machine.run( "P0 S0")
     .then( result => {
-      result = gggFormat( result )
+      result = Format( result )
       expect( result ).toBe( "; Hello\nOK\n" )
     })
   })
