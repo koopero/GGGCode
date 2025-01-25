@@ -54,4 +54,31 @@ describe("cpp", () => {
     })
   })
   
+  describe("Encoding", () => {
+    function testEncoding( name:string, str:string, expected:number[] ) {
+      test( name, async () => {
+        const result = await testCppMachine(`${PrintCommandName} ${GGG.Data}${str}\n`)
+        const lines = gggParseLines( result )
+        expect( lines.length ).toBe( 2 )
+        const printLine = lines[0]
+        expect( printLine ).toMatchObject( {
+          command: PrintResponseName,
+          args: [
+            {
+              code: GGG.Data,
+              data: expected,
+            }
+          ]
+        })
+      })
+    }
+
+    testEncoding("single", "1", [1])
+    testEncoding("double", "1,2", [1,2])
+    testEncoding("hex", "0x10,0x20", [16,32])
+    testEncoding("EncodedOne", GGG.EncodedOne, [1])
+    testEncoding("EncodedZero", GGG.EncodedZero, [0])
+    testEncoding("EncodedMinusOne", GGG.EncodedMinusOne, [-1])
+    testEncoding("HexList2", `0${GGG.HexList2}a0b0`, [160,176])
+  })
 })

@@ -26,10 +26,10 @@ export async function writeDocsFiles( code:string, name:string ) {
 
 import { spawn, StdioOptions } from "child_process"
 
-export async function testCppMachine( program:string ) {
+export async function testCppMachine( program:string ) : Promise<string> {
   const command = "cling"
   const options = { cwd: resolve( __dirname, ".." ), stdio: "pipe" as StdioOptions }
-  const args = [ "-std=c++17", "-x", "c++", "cpp/testMachine.C" ]
+  const args = [ "-std=c++17", "-x", "c++", "cpp/src/testMachine.C" ]
 
   let stderr = ""
   let result = ""

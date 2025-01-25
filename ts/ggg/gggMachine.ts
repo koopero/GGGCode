@@ -179,46 +179,6 @@ export default class gggMachine extends EventEmitter  {
     return registers.get( id )
   }
 
-
-  // getRegister( id:string | number ) : gggRegister|undefined {
-  //   return this.registers.get( id )
-  // }
-
-  // getRegisterAspect( id:string | number, aspect:string, defaults?:object ) : any {
-  //   const { registers } = this
-  //   let register = registers.get( id )
-  //   if ( !register ) {
-  //     register = registers.add( { aspects: {} }, id )
-  //   }
-
-  //   const { aspects } = register
-  //   if ( !aspects ) return
-
-  //   if ( !aspects[aspect] ) {
-  //     aspects[aspect] = defaults
-  //   }
-
-  //   const item = aspects[aspect]
-  //   return item
-  // }
-
-  // getRegisterNumbers( id:string | number, create:boolean = false ) : any {
-  //   const { registers } = this
-  //   let register = registers.get( id )
-  //   if ( !register && create ) {
-  //     register = registers.add( { aspects: {} }, id )
-  //   }
-
-  //   if ( !register ) return
-
-  //   let numbers = register.aspects.numbers
-  //   if ( !numbers && create ) {
-  //     numbers = new NumbersClass()
-  //     register.aspects.numbers = numbers
-  //   }
-
-  //   return numbers
-  // }
   *solve( arg:gggPrimitive|gggPrimitive[], options? ) : Generator<number|string> {
     if ( !this.solvers.length ) {
       if ( isNumber( arg ) || isString( arg ) ) {
