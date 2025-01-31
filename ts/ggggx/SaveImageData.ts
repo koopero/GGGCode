@@ -2,7 +2,7 @@ import Matrix from "./Matrix"
 import { StorageClass } from "./Storage"
 import { isNumber, isArray, isObject } from "../common/util"
 import { DimPad, DimOffset } from "./Dim"
-import { floor, min, trunc, abs } from "../common/math"
+import { floor, min, trunc, abs, saturate } from "../common/math"
 
 
 export type SaveImageDataOptions = number[] | {
@@ -135,7 +135,7 @@ function toNormDepth( val:number = 0, depth:number = 8 ) {
   if ( depth < 0 ) {
     depth = -depth - 1
   }
-  val = trunc( val * ( (2 ** depth) - 1 ) )
+  val = trunc( saturate( val ) * ( (2 ** depth) - 1 ) )
   return val
 }
 

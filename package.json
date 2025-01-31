@@ -2,7 +2,7 @@
   "name": "gggcode",
   "version": "0.1.0",
   "description": "G Code like general purpose meta-language.",
-  "main": "jsdist/index.js",
+  "main": "dist/node/index.js",
   "bin": {
     "ggg": "./bin/ggg.js"
   },

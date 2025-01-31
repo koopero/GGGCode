@@ -31,7 +31,6 @@ export default function Sample( buffer:Matrix, position:ggggxVecArg = 0, options
   let channels = 1
   for ( let d = 0; d < dimension; d++ ) {
     channels *= dim[ d ]
-    pos.unshift( 0 )
   }
 
   if ( isUndefined( value ) ) {
@@ -43,18 +42,17 @@ export default function Sample( buffer:Matrix, position:ggggxVecArg = 0, options
   
   const { filter = Filter.Linear, edge = Edge.Repeat, coord = Coord.Normalized } = options
 
-  function computeAxis( index:number ) {
-    const position = pos[ index ] || 0
-    const dimIndex = index
+  function computeAxis( dimIndex:number ) {
+    const position = pos[ dimIndex ] || 0
     const { fraction, index0, index1 } = resolveAxis( position, dim[ dimIndex ], filter, edge, coord )
 
-    pos[ index ] = index0
-    const sampA = index == dimension ? buffer.read( pos, new Array( length ) ) : computeAxis( index )
+    pos[ dimIndex ] = index0
+    const sampA = dimIndex > dimension ? computeAxis( dimIndex - 1 ) : buffer.read( pos, new Array( length ) )
     if ( fraction === 0 || index0 === index1 ) 
       return sampA
 
-    pos[ index ] = index1
-    const sampB = index == dimension ? buffer.read( pos, new Array( length ) ) : computeAxis( index )
+    pos[ dimIndex ] = index1
+    const sampB = dimIndex > dimension ? computeAxis( dimIndex - 1 ) : buffer.read( pos, new Array( length ) )
 
     for ( let i = 0; i < length; i++ ) {
       sampA[i] = sampA[i] * ( 1 - fraction ) + sampB[i] * fraction

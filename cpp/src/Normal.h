@@ -30,7 +30,10 @@ private:
 public:
 	// Constructors
 	constexpr NormalizedNumber() : value(0) {}
-	constexpr explicit NormalizedNumber(double normalizedValue) {
+	constexpr explicit NormalizedNumber( double normalizedValue ) {
+		setNormalized(normalizedValue);
+	}
+  constexpr NormalizedNumber( float normalizedValue ) {
 		setNormalized(normalizedValue);
 	}
 
@@ -182,6 +185,18 @@ public:
 	constexpr friend bool operator==(const NormalizedNumber& left, const NormalizedNumber& right) noexcept {
 		return left.value == right.value;
 	}
+
+  template <typename OtherStorageType, OtherStorageType OtherMaxValue>
+  constexpr friend bool operator==(const NormalizedNumber& left, const NormalizedNumber<OtherStorageType, OtherMaxValue>& right) noexcept {
+    WorkingType val = left.getRaw() * right.ScaleFromNormalized;
+    val /= OtherMaxValue;
+    return val == right.getRaw();
+  }
+
+  constexpr friend bool operator==(const NormalizedNumber& left, double right) noexcept {
+    WorkingType val = std::round(right * ScaleFromNormalized);
+    return left.getRaw() == val;
+  }
 
 	constexpr friend bool operator!=(const NormalizedNumber& left, const NormalizedNumber& right) noexcept {
 		return !(left == right);

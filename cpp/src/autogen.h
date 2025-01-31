@@ -46,6 +46,6 @@ typedef enum {
   NextAxis = '|'
 } GGG;// Strings
 #define PrintPrefix "P"
-#define PrintCommandName "P5"
+#define PrintNumbersName "P5"
 #define PrintResponseName "P-5"
-#define PrintCommentCommandName "P13"
+#define PrintStringName "P13"

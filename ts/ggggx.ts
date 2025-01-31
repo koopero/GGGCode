@@ -6,3 +6,6 @@ export { Sample }
 
 import ggggxContext from "./ggggx/ggggxContext"
 export { ggggxContext }
+
+import SavePNG from "./ggggx/SavePNG"
+export { SavePNG }

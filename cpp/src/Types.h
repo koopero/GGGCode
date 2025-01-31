@@ -7,9 +7,11 @@
 #include <iostream>
 #include <unordered_map>
 
-typedef char gggChar;
-typedef float gggNumber;
-typedef int gggIndex;
-typedef int gggInt;
-typedef std::string gggString;
-typedef std::vector<gggInt> gggDimensions;
+namespace ggg {
+  typedef char Char;
+  typedef float Number;
+  typedef int Index;
+  typedef int Int;
+  typedef std::string String;
+  typedef std::vector<Int> DimType;
+};
