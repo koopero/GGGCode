@@ -1,7 +1,7 @@
 import { isArray, isNumber, isObject, isUndefined, isString } from "../common/util"
 import { gggRangeAxis, gggRangeAxes, gggReference, gggValueWithEncoding } from "../ggg/gggLang"
 import { floor } from "../common/math"
-import gggParseData from "../ggg/gggParseData"
+import ParseData from "../ggg/ParseData"
 import { Matrix } from "../ggggx"
 
 const isUsable = ( v ) => isNumber( v ) && !isNaN( v )
@@ -27,7 +27,7 @@ export function* gggSolver( arg:SolveArgument, options:SolveOptions = {
       if ( !solveStrings ) {
         yield value
       } else {
-        const [ data ] = gggParseData( value )
+        const [ data ] = ParseData( value )
         if ( data ) {
           yield* solve( data )
         }

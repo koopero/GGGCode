@@ -1,7 +1,7 @@
 import { FormatPrimitive } from "./Format"
 import { GGG, gggToken } from "./gggLang"
 import { gggLimits } from "./gggLimits"
-import gggParseArgument from "./gggParseArgument"
+import ParseArg from "./ParseArg"
 
 function formatCommand( token:gggToken ) {
   const {
@@ -15,7 +15,7 @@ function formatCommand( token:gggToken ) {
   return `${code}${valueStr}`
 }
 
-export default function gggParseLine( str:string, keepEncoding:boolean = false ) : [ gggToken, string ] {
+export default function ParseLine( str:string, keepEncoding:boolean = false ) : [ gggToken, string ] {
   const args = []
   let command = ""
   let comment = ""
@@ -37,7 +37,7 @@ export default function gggParseLine( str:string, keepEncoding:boolean = false )
   let col = 1
 
   while ( str ) {
-    const [ token, tokenRemain ] = gggParseArgument( str, keepEncoding, col )
+    const [ token, tokenRemain ] = ParseArg( str, keepEncoding, col )
     if ( token ) {
       args.push( token )
       col += str.length - tokenRemain.length 

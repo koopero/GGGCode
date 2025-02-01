@@ -1,7 +1,7 @@
 import { isString, toInt } from "../common/util"
 import { ggggxCodes, ggggxEvents, ggggxFails, ggggxEncodingOptions } from "./ggggxLang" 
 import { GGG, gggHooks } from "../ggg/gggLang"
-import { gggMachineHookArgs } from "../ggg/gggMachine"
+import { MachineHookArgs } from "../ggg/Machine"
 import Matrix, { describeBuffer} from "./Matrix"
 import { DimOffset } from "./Dim"
 import { toKeyDescription } from "../ggg/gggNamedList"
@@ -11,17 +11,17 @@ import { ggggxStorageTypes } from "./Storage"
 import { min } from "../common/math"
 import ggggxContext from "./ggggxContext"
 
-export function MatrixInitHookCommand( arg:gggMachineHookArgs ) {
+export function MatrixInitHookCommand( arg:MachineHookArgs ) {
   const { state } = arg
   TargetHookCommand( arg, { create: true } )
 }
 
-export function MatrixInitHookCode( arg:gggMachineHookArgs ) {
+export function MatrixInitHookCode( arg:MachineHookArgs ) {
   const { code, state } = arg
   TargetHookCode( arg )
 }
 
-export function MatrixInitHookValue( arg:gggMachineHookArgs ) {
+export function MatrixInitHookValue( arg:MachineHookArgs ) {
   TargetHookValue( arg )
 
   const { code, state, value, machine } = arg
@@ -36,7 +36,7 @@ export function MatrixInitHookValue( arg:gggMachineHookArgs ) {
 }
 
 
-export function MatrixInitHookEnd( arg:gggMachineHookArgs ) {
+export function MatrixInitHookEnd( arg:MachineHookArgs ) {
   const { machine, state } = arg
 
   const ggggx = ggggxContext( { machine } )
@@ -60,7 +60,7 @@ export const MatrixInitHooks = {
   [gggHooks.End]: MatrixInitHookEnd,
 }
 
-export function ListBuffersHookEnd( arg:gggMachineHookArgs ) {
+export function ListBuffersHookEnd( arg:MachineHookArgs ) {
   const { machine, state } = arg
   const engine = machine.state.ggggx 
   const limits = machine.state.ggggxLimits
@@ -81,11 +81,11 @@ export const ListBuffersHooks = {
 
 
 
-export function WriteBufferHookCommand( arg:gggMachineHookArgs ) {
+export function WriteBufferHookCommand( arg:MachineHookArgs ) {
   TargetHookCommand( arg, { create: true } )
 }
 
-function WriteBufferHookValue( arg:gggMachineHookArgs ) {
+function WriteBufferHookValue( arg:MachineHookArgs ) {
   TargetHookValue( arg )
   const { code, state, value, machine } = arg
 
@@ -104,7 +104,7 @@ function WriteBufferHookValue( arg:gggMachineHookArgs ) {
   }
 }
 
-function WriteBufferHookEndArg( arg:gggMachineHookArgs ) {
+function WriteBufferHookEndArg( arg:MachineHookArgs ) {
 }
 
 
@@ -115,19 +115,19 @@ export const WriteBufferHooks = {
   [gggHooks.EndArg]: WriteBufferHookEndArg,
 } 
 
-function MatrixReadHookCommand( arg:gggMachineHookArgs ) {
+function MatrixReadHookCommand( arg:MachineHookArgs ) {
   const { state } = arg
   TargetHookCommand( arg, {} )
 }
 
-function MatrixReadHookValue( arg:gggMachineHookArgs ) {
+function MatrixReadHookValue( arg:MachineHookArgs ) {
   const { code, state, value, machine } = arg
   const limits = machine.state.ggggxLimits
   TargetHookValue( arg )
 
 }
 
-function MatrixReadHookEnd( arg:gggMachineHookArgs) {
+function MatrixReadHookEnd( arg:MachineHookArgs) {
   const { machine, state } = arg
   const { buffer, position, encoding, size } = TargetResolveNumbers( arg )
 
@@ -158,7 +158,7 @@ export const MatrixReadHooks = {
 }
 
 
-function DisplayHookValue( arg:gggMachineHookArgs ) {
+function DisplayHookValue( arg:MachineHookArgs ) {
   const { code, value, machine, state } = arg
   const { } = TargetResolveNumbers( arg )
   
@@ -175,7 +175,7 @@ function DisplayHookValue( arg:gggMachineHookArgs ) {
   }
 }
 
-function DisplayHookEnd( arg:gggMachineHookArgs ) {
+function DisplayHookEnd( arg:MachineHookArgs ) {
   const { machine, state } = arg
 }
 
@@ -184,7 +184,7 @@ export const DisplayHooks = {
   [gggHooks.End]: DisplayHookEnd,
 }
 
-async function MatrixDumpHookValue( arg:gggMachineHookArgs ) {
+async function MatrixDumpHookValue( arg:MachineHookArgs ) {
   const { code, state, value, machine } = arg
   
   switch( code ) {
@@ -214,7 +214,7 @@ export const MatrixDumpHooks = {
 }
 
 
-async function MatrixWatchHookValue( arg:gggMachineHookArgs ) {
+async function MatrixWatchHookValue( arg:MachineHookArgs ) {
   const { code, state, value, machine } = arg
   const bufferWatchers = state.bufferWatchers = state.bufferWatchers || {}
 

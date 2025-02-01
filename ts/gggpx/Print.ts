@@ -1,11 +1,11 @@
 import { isArray, isNumber, isObject, isString } from "../common/util"
 import Format, { FormatData } from "../ggg/Format"
-import { GGG, gggCommandConvention, gggNumeric, gggRangeAxes } from "../ggg/gggLang"
+import { GGG, CommandConvention, gggNumeric, gggRangeAxes } from "../ggg/gggLang"
 
 export const PrintPrefix = "P"
-export const PrintNumbersName = `${PrintPrefix}${gggCommandConvention.Read}`
-export const PrintResponseName = `${PrintPrefix}${gggCommandConvention.ReadResponse}`
-export const PrintStringName = `${PrintPrefix}${gggCommandConvention.Display}`
+export const PrintNumbersName = `${PrintPrefix}${CommandConvention.Read}`
+export const PrintResponseName = `${PrintPrefix}${CommandConvention.ReadResponse}`
+export const PrintStringName = `${PrintPrefix}${CommandConvention.Display}`
 
 export const PrintCPPStrings = {
   PrintPrefix,

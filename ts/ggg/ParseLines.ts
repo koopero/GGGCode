@@ -1,16 +1,16 @@
 import { isArray, isString } from "../common/util"
 import { gggToken, gggParseOptions } from "./gggLang"
 import { gggLimits } from "./gggLimits"
-import gggParseLine from "./gggParseLine"
+import ParseLine from "./ParseLine"
 
-export type gggParseLinesArg = undefined | string 
-export type gggParseLinesArgs = gggToken | gggToken[] | gggParseLinesArg | gggParseLinesArg[]
+export type ParseLinesArg = undefined | string 
+export type ParseLinesArgs = gggToken | gggToken[] | ParseLinesArg | ParseLinesArg[]
 
 
-export default function gggParseLines( arg:gggParseLinesArgs, keepEncoding:boolean = false ) : gggToken[] {
+export default function ParseLines( arg:ParseLinesArgs, keepEncoding:boolean = false ) : gggToken[] {
   const lines:gggToken[] = []
 
-  function parseChunk( chunk:gggParseLinesArgs ) {
+  function parseChunk( chunk:ParseLinesArgs ) {
     if ( !chunk ) return
 
     if ( isArray( chunk ) ) {
@@ -19,7 +19,7 @@ export default function gggParseLines( arg:gggParseLinesArgs, keepEncoding:boole
 
     if ( isString( chunk ) ) {
       while( chunk ) {
-        const [ line, remain ] = gggParseLine( chunk, keepEncoding )
+        const [ line, remain ] = ParseLine( chunk, keepEncoding )
         lines.push( line )
         chunk = remain
       }

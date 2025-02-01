@@ -1,2 +1,2 @@
-import gggMachine from "./ggg/gggMachine"
-export { gggMachine }
+import Machine from "./ggg/Machine"
+export { Machine }

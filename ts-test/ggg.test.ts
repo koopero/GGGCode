@@ -2,11 +2,11 @@ import { describe, test, expect } from "@jest/globals"
 
 import { gggHooks, GGG } from "../ts/ggg/gggLang"
 import gggdxCommands from "../ts/gggdx/gggdxCommands"
-import { gggParseLines, gggParseLine, gggParseArgument, gggMachine, Format } from "../ts/index"
+import { ParseLines, ParseLine, ParseArg, Machine, Format } from "../ts/index"
 
 describe("ggg", () => {
   test("smork", () => {
-    const lines = gggParseLines( ` G-1 X20 Y300,4000; Comment` )
+    const lines = ParseLines( ` G-1 X20 Y300,4000; Comment` )
 
     const line = lines[0]
 
@@ -29,9 +29,9 @@ describe("ggg", () => {
   })
 })
 
-describe("gggParseLine", () => {
+describe("ParseLine", () => {
   test("after string", () => {
-    const [ line, remain ] = gggParseLine( `G1 N"Hello \\"World!\\"" X20; Comment` )
+    const [ line, remain ] = ParseLine( `G1 N"Hello \\"World!\\"" X20; Comment` )
     expect( line ).toMatchObject( {
       command: "G1",
       comment: "; Comment",
@@ -49,7 +49,7 @@ describe("gggParseLine", () => {
   })
 
   test("after string list", () => {
-    const [ line, remain ] = gggParseLine( `G1 N"Hello","World" X20; Comment` )
+    const [ line, remain ] = ParseLine( `G1 N"Hello","World" X20; Comment` )
     expect( line ).toMatchObject( {
       command: "G1",
       comment: "; Comment",
@@ -72,7 +72,7 @@ describe("gggParseLine", () => {
 
 describe("gggdx", () => {
   test("will work", async () => {
-    const machine = new gggMachine()
+    const machine = new Machine()
     machine.addCommands( gggdxCommands )
     const result = await machine.run( "D1" )
   })

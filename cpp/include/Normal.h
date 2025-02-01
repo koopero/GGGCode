@@ -7,11 +7,7 @@
 #include <iostream>
 
 template <typename StorageType, StorageType MaxValue>
-class NormalizedNumber
-{
-	static_assert(std::is_integral_v<StorageType>, "IntegerType must be an integral type.");
-	static_assert(MaxValue > 0, "MaxValue must be greater than 0.");
-
+class NormalizedNumber {
 public:
 	using InternalType = StorageType;
 	using WorkingType = int32_t;
@@ -182,40 +178,143 @@ public:
 	}
 
 	// Comparison Operators
+	// operator==
 	constexpr friend bool operator==(const NormalizedNumber& left, const NormalizedNumber& right) noexcept {
-		return left.value == right.value;
+		return left.getRaw() == right.getRaw();
 	}
-
-  template <typename OtherStorageType, OtherStorageType OtherMaxValue>
-  constexpr friend bool operator==(const NormalizedNumber& left, const NormalizedNumber<OtherStorageType, OtherMaxValue>& right) noexcept {
-    WorkingType val = left.getRaw() * right.ScaleFromNormalized;
-    val /= OtherMaxValue;
-    return val == right.getRaw();
-  }
-
-  constexpr friend bool operator==(const NormalizedNumber& left, double right) noexcept {
+  constexpr friend bool operator==(const NormalizedNumber& left, const double& right) noexcept {
     WorkingType val = std::round(right * ScaleFromNormalized);
     return left.getRaw() == val;
   }
+  constexpr friend bool operator==(const NormalizedNumber& left, const float& right) noexcept {
+    WorkingType val = std::round(right * ScaleFromNormalized);
+    return left.getRaw() == val;
+  }
+  constexpr friend bool operator==(const double& left, const NormalizedNumber& right) noexcept {
+    WorkingType val = std::round(left * ScaleFromNormalized);
+    return right.getRaw() == val;
+  }
+	constexpr friend bool operator==(const float& left, const NormalizedNumber& right) noexcept {
+    WorkingType val = std::round(left * ScaleFromNormalized);
+    return right.getRaw() == val;
+  }
+  template <typename OtherStorageType, OtherStorageType OtherMaxValue>
+  constexpr friend bool operator==(const NormalizedNumber& left, const NormalizedNumber<OtherStorageType, OtherMaxValue>& right) noexcept {
+    WorkingType val = left.getRaw() * right.ScaleFromNormalized;
+    val /= MaxValue;
+    return val == right.getRaw();
+  }
 
+	// operator!=
 	constexpr friend bool operator!=(const NormalizedNumber& left, const NormalizedNumber& right) noexcept {
-		return !(left == right);
+		return left.getRaw() != right.getRaw();
 	}
+  constexpr friend bool operator!=(const NormalizedNumber& left, const double& right) noexcept {
+    WorkingType val = std::round(right * ScaleFromNormalized);
+    return left.getRaw() != val;
+  }
+  constexpr friend bool operator!=(const NormalizedNumber& left, const float& right) noexcept {
+    WorkingType val = std::round(right * ScaleFromNormalized);
+    return left.getRaw() != val;
+  }
+  constexpr friend bool operator!=(const double& left, const NormalizedNumber& right) noexcept {
+    WorkingType val = std::round(left * ScaleFromNormalized);
+    return right.getRaw() != val;
+  }
+	constexpr friend bool operator!=(const float& left, const NormalizedNumber& right) noexcept {
+    WorkingType val = std::round(left * ScaleFromNormalized);
+    return right.getRaw() != val;
+  }
+  template <typename OtherStorageType, OtherStorageType OtherMaxValue>
+  constexpr friend bool operator!=(const NormalizedNumber& left, const NormalizedNumber<OtherStorageType, OtherMaxValue>& right) noexcept {
+    WorkingType val = left.getRaw() * right.ScaleFromNormalized;
+    val /= MaxValue;
+    return val != right.getRaw();
+  }
 
+	// operator<
 	constexpr friend bool operator<(const NormalizedNumber& left, const NormalizedNumber& right) noexcept {
-		return left.value < right.value;
+		return left.getRaw() < right.getRaw();
+	}
+	constexpr friend bool operator<(const NormalizedNumber& left, const double& right) noexcept {
+		return left.getNormalized() < right;
+	}
+	constexpr friend bool operator<(const NormalizedNumber& left, const float& right) noexcept {
+		return left.getNormalized() < right;
+	}
+	constexpr friend bool operator<(const double& left, const NormalizedNumber& right) noexcept {
+		return left < right.getNormalized();
+	}
+	constexpr friend bool operator<(const float& left, const NormalizedNumber& right) noexcept {
+		return left < right.getNormalized();
+	}
+  template <typename OtherStorageType, OtherStorageType OtherMaxValue>
+	constexpr friend bool operator<(const NormalizedNumber& left, const NormalizedNumber<OtherStorageType, OtherMaxValue>& right) noexcept {
+		return left.getRaw() * OtherMaxValue < right.getRaw() * MaxValue;
 	}
 
+
+	// operator>
 	constexpr friend bool operator>(const NormalizedNumber& left, const NormalizedNumber& right) noexcept {
-		return left.value > right.value;
+		return left.getRaw() > right.getRaw();
+	}
+	constexpr friend bool operator>(const NormalizedNumber& left, const double& right) noexcept {
+		return left.getNormalized() > right;
+	}
+	constexpr friend bool operator>(const NormalizedNumber& left, const float& right) noexcept {
+		return left.getNormalized() > right;
+	}
+	constexpr friend bool operator>(const double& left, const NormalizedNumber& right) noexcept {
+		return left > right.getNormalized();
+	}
+	constexpr friend bool operator>(const float& left, const NormalizedNumber& right) noexcept {
+		return left > right.getNormalized();
+	}
+  template <typename OtherStorageType, OtherStorageType OtherMaxValue>
+	constexpr friend bool operator>(const NormalizedNumber& left, const NormalizedNumber<OtherStorageType, OtherMaxValue>& right) noexcept {
+		return left.getRaw() * OtherMaxValue > right.getRaw() * MaxValue;
 	}
 
-	constexpr friend bool operator<=(const NormalizedNumber& left, const NormalizedNumber& right) noexcept {
-		return left.value <= right.value;
-	}
-
+	// operator>=
 	constexpr friend bool operator>=(const NormalizedNumber& left, const NormalizedNumber& right) noexcept {
-		return left.value >= right.value;
+		return left.getRaw() >= right.getRaw();
+	}
+	constexpr friend bool operator>=(const NormalizedNumber& left, const double& right) noexcept {
+		return left.getNormalized() >= right;
+	}
+	constexpr friend bool operator>=(const NormalizedNumber& left, const float& right) noexcept {
+		return left.getNormalized() >= right;
+	}
+	constexpr friend bool operator>=(const double& left, const NormalizedNumber& right) noexcept {
+		return left >= right.getNormalized();
+	}
+	constexpr friend bool operator>=(const float& left, const NormalizedNumber& right) noexcept {
+		return left >= right.getNormalized();
+	}
+  template <typename OtherStorageType, OtherStorageType OtherMaxValue>
+	constexpr friend bool operator>=(const NormalizedNumber& left, const NormalizedNumber<OtherStorageType, OtherMaxValue>& right) noexcept {
+		return left.getRaw() * OtherMaxValue >= right.getRaw() * MaxValue;
+	}
+
+	// operator<=
+	constexpr friend bool operator<=(const NormalizedNumber& left, const NormalizedNumber& right) noexcept {
+		return left.getRaw() <= right.getRaw();
+	}
+	constexpr friend bool operator<=(const NormalizedNumber& left, const double& right) noexcept {
+		return left.getNormalized() <= right;
+	}
+	constexpr friend bool operator<=(const NormalizedNumber& left, const float& right) noexcept {
+		return left.getNormalized() <= right;
+	}
+	constexpr friend bool operator<=(const double& left, const NormalizedNumber& right) noexcept {
+		return left <= right.getNormalized();
+	}
+	constexpr friend bool operator<=(const float& left, const NormalizedNumber& right) noexcept {
+		return left <= right.getNormalized();
+	}
+  template <typename OtherStorageType, OtherStorageType OtherMaxValue>
+	constexpr friend bool operator<=(const NormalizedNumber& left, const NormalizedNumber<OtherStorageType, OtherMaxValue>& right) noexcept {
+		return left.getRaw() * OtherMaxValue <= right.getRaw() * MaxValue;
 	}
 
 	// Constants

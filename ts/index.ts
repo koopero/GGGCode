@@ -1,17 +1,17 @@
-import gggParseArgument from "./ggg/gggParseArgument"
-export { gggParseArgument }
+import ParseArg from "./ggg/ParseArg"
+export { ParseArg }
 
-import gggParseLines from "./ggg/gggParseLines"
-export { gggParseLines }
+import ParseLines from "./ggg/ParseLines"
+export { ParseLines }
 
-import gggParseLine from "./ggg/gggParseLine"
-export { gggParseLine }
+import ParseLine from "./ggg/ParseLine"
+export { ParseLine }
 
 import Format from "./ggg/Format"
 export { Format }
 
-import gggMachine from "./ggg/gggMachine"
-export { gggMachine }
+import Machine from "./ggg/Machine"
+export { Machine }
 
 import { GGG, gggHooks } from "./ggg/gggLang"
 export { GGG, gggHooks }

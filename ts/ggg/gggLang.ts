@@ -131,17 +131,17 @@ export type gggHookArgs = {
 
 type gggHookCallback = ( arg:gggHookArgs ) => Promise<any> | void
 export type gggCommands = { [key:string]:gggCommand }
-export enum gggCommandConvention {
+export enum CommandConvention {
   List = 0,
   Init = 11,
   Write = 1,
   Read = 5,
-  ReadResponse = -gggCommandConvention.Read,
-  ListResponse = -gggCommandConvention.List,
+  ReadResponse = -CommandConvention.Read,
+  ListResponse = -CommandConvention.List,
   Output = 15,
   Watch = 20,
   Display = 13,
-  DisplayResponse = -gggCommandConvention.Display,
+  DisplayResponse = -CommandConvention.Display,
 }
 
 

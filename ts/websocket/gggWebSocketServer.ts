@@ -1,12 +1,12 @@
 import { isNumber, isObject } from "../common/util"
 import Format from "../ggg/Format"
 import type { gggCommands } from "../ggg/gggLang"
-import gggMachine from "../ggg/gggMachine"
+import Machine from "../ggg/Machine"
 import gggdxCommands from "../gggdx/gggdxCommands"
 
 type gggWebSocketServerOptions = {
   url?:string
-  machineGenerator:() => gggMachine
+  machineGenerator:() => Machine
   onOutput?:( text:string ) => void
   onMessage?:( text:string ) => void
   onInput?:( text:string ) => void

@@ -1,10 +1,10 @@
-import { gggCommandConvention, gggHooks } from "../ggg/gggLang"
+import { CommandConvention, gggHooks } from "../ggg/gggLang"
 const description = "List available commands."
 const prefix = "D"
 
 export enum gggdxCodes {
-  CommandsList = `${prefix}${gggCommandConvention.List}`,
-  ListCommandsResponse = `${prefix}${gggCommandConvention.ListResponse}`,
+  CommandsList = `${prefix}${CommandConvention.List}`,
+  ListCommandsResponse = `${prefix}${CommandConvention.ListResponse}`,
 }
 
 function hookD1End( arg ) {

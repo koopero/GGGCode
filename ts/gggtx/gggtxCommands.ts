@@ -1,7 +1,7 @@
 
 import { isString } from "../common/util"
 import { FormatData } from "../ggg/Format"
-import { GGG, gggCommandConvention, gggHooks } from "../ggg/gggLang"
+import { GGG, CommandConvention, gggHooks } from "../ggg/gggLang"
 const gggtxRegisterPrefix = "R"
 
 const gggtxFlowPrefix = "T"
@@ -10,10 +10,10 @@ export enum gggtxCodes {
   RegisterIndex = gggtxRegisterPrefix,
   Value = GGG.Data,
 
-  ListRegisters = `${gggtxRegisterPrefix}${gggCommandConvention.List}`,
-  ListRegistersResponse = `${gggtxRegisterPrefix}${gggCommandConvention.ListResponse}`,
-  OutputRegisters = `${gggtxRegisterPrefix}${gggCommandConvention.Output}`,
-  WriteRegisters = `${gggtxRegisterPrefix}${gggCommandConvention.Write}`,
+  ListRegisters = `${gggtxRegisterPrefix}${CommandConvention.List}`,
+  ListRegistersResponse = `${gggtxRegisterPrefix}${CommandConvention.ListResponse}`,
+  OutputRegisters = `${gggtxRegisterPrefix}${CommandConvention.Output}`,
+  WriteRegisters = `${gggtxRegisterPrefix}${CommandConvention.Write}`,
 
   BlockEnd = `${gggtxFlowPrefix}1`,
   LoopWhile = `${gggtxFlowPrefix}30`,

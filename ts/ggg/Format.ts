@@ -3,6 +3,11 @@ import { floor } from "../common/math"
 import { GGG, gggPrimitive, gggCasedString, gggToken, gggRangeAxis, gggRangeAxes, gggReference } from "./gggLang"
 import { HexModifiers } from "./hexlist"
 
+
+
+type EncodingArg = string
+const EncodingDefault = ""
+
 function formatHexListItem( num, digits:number = 2, div:number = 1 ) {
   if ( !isNumber( num ) ) {
     throw new Error(`Cannot format non-number as hex list: ${num}`)
@@ -17,12 +22,18 @@ function formatHexNumber( num:number ) {
   return `0${GGG.HexNumber}${num.toString(16)}`
 }
 
-export function FormatNumber( data:number, encoding? ) {
-  return data.toString()
+export function FormatNumber( data:number, encoding?:EncodingArg ) : string {
+  switch ( encoding ) {
+    case GGG.HexNumber:
+      return formatHexNumber( data )
+
+    default:
+      return data.toString()
+  }
 }
 
-export function FormatRangeAxes( data:gggRangeAxes ) : string {
-  return data.axes.map( a => FormatRangeAxis( a ) ).join(GGG.NextAxis)
+export function FormatRangeAxes( data:gggRangeAxes, encoding?:EncodingArg ) : string {
+  return data.axes.map( a => FormatRangeAxis( a, encoding ) ).join(GGG.NextAxis)
 }
 
 export function FormatReference( data:gggReference ) : string {
@@ -31,7 +42,7 @@ export function FormatReference( data:gggReference ) : string {
   return `${GGG.Reference}${register}[${FormatData(subscript)}]`
 }
 
-export function FormatRangeAxis( data:gggRangeAxis ) : string {
+export function FormatRangeAxis( data:gggRangeAxis, encoding?:EncodingArg ) : string {
   const { 
     start,
     end,
@@ -42,7 +53,7 @@ export function FormatRangeAxis( data:gggRangeAxis ) : string {
   } = data
   let result = ""
 
-  result += FormatNumber( start )
+  result += FormatNumber( start, encoding )
 
   if ( inclusive ) {
     result += GGG.Range
@@ -50,25 +61,25 @@ export function FormatRangeAxis( data:gggRangeAxis ) : string {
     result += GGG.Uninclusive
   }
 
-  result += FormatNumber( end )
+  result += FormatNumber( end, encoding )
 
   if ( step ) {
     result += GGG.Range
-    result += FormatNumber( step )
+    result += FormatNumber( step, encoding )
   } else if ( count ) {
     result += GGG.Count
-    result += FormatNumber( count )
+    result += FormatNumber( count, encoding )
   }
 
   if ( isDefined( multiplier ) ) {
     result += GGG.Multiplier
-    result += FormatNumber( multiplier )
+    result += FormatNumber( multiplier, encoding )
   }
 
   return result
 }
 
-export function FormatPrimitive( data:gggPrimitive ) : string {
+export function FormatPrimitive( data:gggPrimitive, encoding:EncodingArg = EncodingDefault ) : string {
   if ( isString( data ) ) {
     return JSON.stringify( data )
   }
@@ -97,7 +108,11 @@ export function FormatPrimitive( data:gggPrimitive ) : string {
 }
 
 
-export function FormatData( data:string|number|boolean|gggPrimitive|gggPrimitive[], encoding:string = "" ) : string {
+export function FormatData( data:undefined|string|number|boolean|gggPrimitive|gggPrimitive[], encoding:EncodingArg = EncodingDefault ) : string {
+  if ( !isDefined( data ) ) {
+    return ""
+  }
+
   if ( isString( data ) ) {
     return FormatPrimitive( data )
   }
@@ -110,32 +125,35 @@ export function FormatData( data:string|number|boolean|gggPrimitive|gggPrimitive
     data = [ data ]
   }
 
-  encoding = gggCasedString( encoding )
-
-  switch ( encoding ) {
-    case GGG.HexNumber:
-      return data.map( d => isNumber(d) ? formatHexNumber( d ) : FormatPrimitive( d ) ).join(GGG.Comma)
-
-    case GGG.HexList1:
-    case GGG.HexList2:
-    case GGG.HexNorm1:
-    case GGG.HexNorm2: {
-      const { digits, div } = HexModifiers[ encoding ]
-      return `0${encoding}`+data.map( d => isNumber( d ) ? formatHexListItem( d, digits, div ) : "" ).join("")
-    }
-
-    case GGG.EncodedMinusOne:
-    case GGG.EncodedZero:
-    case GGG.EncodedOne:
-      return data.map( d => !isNumber( d ) ? "" : d > 0 ? GGG.EncodedOne : d < 0 ? GGG.EncodedMinusOne : GGG.EncodedZero ).join("")
-
-
-    case "":
-    case GGG.Value:
-      return data.map( d => FormatPrimitive(d) ).join(GGG.Comma)
+  if ( !data || !data.length ) {
+    return ""
   }
 
-  throw new Error(`Invalid encoding: ${encoding}`)
+  encoding = gggCasedString( encoding )
+
+  if ( isArray( data ) ) {
+    switch ( encoding ) {
+      case GGG.HexList1:
+      case GGG.HexList2:
+      case GGG.HexNorm1:
+      case GGG.HexNorm2: {
+        const { digits, div } = HexModifiers[ encoding ]
+        return `0${encoding}`+data.map( d => isNumber( d ) ? formatHexListItem( d, digits, div ) : "" ).join("")
+      }
+
+      case GGG.EncodedMinusOne:
+      case GGG.EncodedZero:
+      case GGG.EncodedOne:
+        return data.map( d => !isNumber( d ) ? "" : d > 0 ? GGG.EncodedOne : d < 0 ? GGG.EncodedMinusOne : GGG.EncodedZero ).join("")
+
+
+      case "":
+      case GGG.Value:
+        return data.map( d => FormatPrimitive(d, encoding ) ).join(GGG.Comma)
+    }
+
+    throw new Error(`Invalid encoding: ${encoding}`)
+  }
 }
 
 // type FormatToken = string | {

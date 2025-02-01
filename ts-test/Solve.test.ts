@@ -1,6 +1,6 @@
 import { describe, test, expect } from "@jest/globals"
 import { gggReference } from "../ts/ggg/gggLang"
-import gggParseData from "../ts/ggg/gggParseData"
+import ParseData from "../ts/ggg/ParseData"
 import { floor } from "../ts/common/math"
 import { ggggxContext } from "../ts/ggggx"
 

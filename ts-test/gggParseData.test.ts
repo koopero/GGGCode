@@ -1,12 +1,12 @@
 import { describe, test, expect } from "@jest/globals"
-import gggParseData from "../ts/ggg/gggParseData"
+import ParseData from "../ts/ggg/ParseData"
 import { GGG } from "../ts/ggg/gggLang"
 
-describe("gggParseData",() => {
+describe("ParseData",() => {
   describe("basic", () => {
     test("will parse some data", () => {
       const str = "100"
-      const result = gggParseData( str )
+      const result = ParseData( str )
       const [ data, remain ] = result
 
       expect( data ).toEqual( [ 100 ] )
@@ -15,7 +15,7 @@ describe("gggParseData",() => {
 
     test("will pass remaining string", () => {
       const str = "123,456 other"
-      const result = gggParseData( str )
+      const result = ParseData( str )
       const [ data, remain ] = result
 
       expect( data ).toEqual( [ 123, 456 ] )
@@ -26,7 +26,7 @@ describe("gggParseData",() => {
   describe("encoding", () => {
     test(`StringToEOL (${GGG.StringToEOL})`, () => {
       const str = `${GGG.StringToEOL}foo bar foo\nbaz`
-      const [ data, remain ] = gggParseData( str )
+      const [ data, remain ] = ParseData( str )
       expect( data ).toEqual( [ "foo bar foo" ])
       expect( remain ).toBe("\nbaz")
     })
@@ -35,7 +35,7 @@ describe("gggParseData",() => {
   describe("references", () => {
     test("simple reference", () => {
       const str = "$test[1,2,3]"
-      const [ data, remain ] = gggParseData( str )
+      const [ data, remain ] = ParseData( str )
       expect( data ).toMatchObject( [ {
         register: "test",
         subscript: [ 1, 2, 3 ]
@@ -46,7 +46,7 @@ describe("gggParseData",() => {
   describe("ranges", () => {
     test("default range", () => {
       const str = "10:30:4:3"
-      const [ data, remain ] = gggParseData( str )
+      const [ data, remain ] = ParseData( str )
       expect( data ).toMatchObject( [ {
         start: 10,
         end: 30,
@@ -58,7 +58,7 @@ describe("gggParseData",() => {
 
     test("multi axis", () => {
       const str = "Z>10|0x14:30|40:50"
-      const [ data, remain ] = gggParseData( str )
+      const [ data, remain ] = ParseData( str )
       expect( data ).toMatchObject( [ {
         axes: [
           { start: 0, end: 10, inclusive: false },

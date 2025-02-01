@@ -2,14 +2,14 @@ import { describe, test, expect } from "@jest/globals"
 
 import { gggHooks, GGG } from "../ts/ggg/gggLang"
 import gggdxCommands from "../ts/gggdx/gggdxCommands"
-import { gggParseLines, gggParseLine, gggParseArgument, gggMachine, Format } from "../ts/index"
-import { gggMessage } from "../ts/ggg/gggMachine"
+import { ParseLines, ParseLine, ParseArg, Machine, Format } from "../ts/index"
+import { gggMessage } from "../ts/ggg/Machine"
 
 
-describe("gggMachine", () => {
+describe("Machine", () => {
 
   test("calls hooks", async () => {
-    const machine = new gggMachine()
+    const machine = new Machine()
 
     const onCommand = jest.fn()
     const onCode = jest.fn()
@@ -40,7 +40,7 @@ describe("gggMachine", () => {
   })
 
   test(".output", () => {
-    const machine = new gggMachine()
+    const machine = new Machine()
     const output = []
     machine.on( "output", line => output.push( line ) )
     machine.emit( "output", { args: [] } )
@@ -48,13 +48,13 @@ describe("gggMachine", () => {
   })
 
   test("FailCommandNotFound", async () => {
-    const machine = new gggMachine()
+    const machine = new Machine()
     const result = await machine.run( "Q1 V2,3,4\n" )
     expect( result[0].comment ).toContain( gggMessage.CommandNotFound )
   })
 
   test("silent OK", async () => {
-    const machine = new gggMachine()
+    const machine = new Machine()
 
     const result = await machine.run( `OK
       ok

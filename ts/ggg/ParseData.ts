@@ -39,7 +39,6 @@ function parseHexList( str:string, hexConfig:HexModifier, pushNumber:( num:numbe
   })
 }
 
-
 function parseExpression( numbers, symbols, encodings, keepEncoding ) {
   if ( numbers.length == 1 && symbols.length < 2 ) {
     // Just a plain old number
@@ -117,7 +116,7 @@ function parseExpression( numbers, symbols, encodings, keepEncoding ) {
 }
 
 
-export default function gggParseData( str:string, keepEncoding:boolean = false ) : [ any, string ] {
+export default function ParseData( str:string, keepEncoding:boolean = false ) : [ any, string ] {
   let numbers:number[] = []
   let encodings:string[] = []
   let symbols:string[] = []

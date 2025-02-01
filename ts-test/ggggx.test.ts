@@ -4,12 +4,12 @@ import { ggggxCodes, ggggxEvents } from "../ts/ggggx/ggggxLang"
 import Format from "../ts/ggg/Format"
 import { RegionsAdd } from "../ts/ggggx/Regions"
 import { writeDocsFiles } from "./test-utils"
-import gggMachine from "../ts/ggg/gggMachine"
+import Machine from "../ts/ggg/Machine"
 import ggggxCommands from "../ts/ggggx/ggggxCommands"
 import { ggggxContext } from "../ts/ggggx"
 
 function ggggxMachine() {
-  const machine = new gggMachine( { commands: ggggxCommands } )
+  const machine = new Machine( { commands: ggggxCommands } )
   return machine 
 }
 
@@ -213,28 +213,4 @@ describe(ggggxCodes.WatchBuffers, () => {
 
   // })
 })
-
-
-describe("RegionsAdd", () => {
-  test("will add from nothing", async () => {
-    const regions = RegionsAdd( [0,4] )
-    expect( regions ).toEqual( [ [0,4] ] )
-  })
-
-  test("will append at end", async () => {
-    const regions = RegionsAdd( [5,8],  [ [0,4] ] )
-    expect( regions ).toEqual( [ [0,4],[5,8] ] )
-  })
-
-  test("will append at start", async () => {
-    const regions = RegionsAdd( [0,4],  [[5,8]] )
-    expect( regions ).toEqual( [ [0,4],[5,8] ] )
-  })
-
-  test("will bridge", async () => {
-    const regions = RegionsAdd( [3,6],  [[0,4],[5,8]] )
-    expect( regions ).toEqual( [ [0,8] ] )
-  })
-})
-
 

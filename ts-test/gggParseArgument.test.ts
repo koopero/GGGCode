@@ -1,12 +1,12 @@
 import { describe, test, expect } from "@jest/globals"
 import { GGG } from "../ts/ggg/gggLang"
-import { gggParseArgument } from "../ts/index"
+import { ParseArg } from "../ts/index"
 
 
-describe("gggParseArgument", () => {
+describe("ParseArg", () => {
   describe("keepEncoding = false", () => {
     test("Quoted string", () => {
-      const [ token, remain ] = gggParseArgument( `G"Hello \\"World!\\""`)
+      const [ token, remain ] = ParseArg( `G"Hello \\"World!\\""`)
       expect( token ).toEqual( {
         col: 1,
         code: "G",
@@ -16,7 +16,7 @@ describe("gggParseArgument", () => {
     })
 
     test(`encoding: HexNorm2 (0${GGG.HexNorm2})`, () => {
-      const [ token, remain ] = gggParseArgument( `G0${GGG.HexNorm2}FFF0`)
+      const [ token, remain ] = ParseArg( `G0${GGG.HexNorm2}FFF0`)
       expect( token ).toEqual( {
         col: 1,
         code: "G",
@@ -26,7 +26,7 @@ describe("gggParseArgument", () => {
     })
 
     test(`encoding: HexList2 (0${GGG.HexList2})`, () => {
-      const [ token, remain ] = gggParseArgument( `G0${GGG.HexList2}FFF0`)
+      const [ token, remain ] = ParseArg( `G0${GGG.HexList2}FFF0`)
       expect( token ).toEqual( {
         col: 1,
         code: "G",
@@ -37,7 +37,7 @@ describe("gggParseArgument", () => {
 
 
     test(`encoding: HexNorm1 (0${GGG.HexNorm1})`, () => {
-      const [ token, remain ] = gggParseArgument( `G0${GGG.HexNorm1}FE`)
+      const [ token, remain ] = ParseArg( `G0${GGG.HexNorm1}FE`)
       expect( token ).toEqual( {
         col: 1,
         code: "G",
@@ -47,7 +47,7 @@ describe("gggParseArgument", () => {
     })
 
     test(`encoding: HexList1 (0${GGG.HexList1})`, () => {
-      const [ token, remain ] = gggParseArgument( `G0${GGG.HexList1}AB` )
+      const [ token, remain ] = ParseArg( `G0${GGG.HexList1}AB` )
       expect( token ).toEqual( {
         col: 1,
         code: "G",
@@ -57,7 +57,7 @@ describe("gggParseArgument", () => {
     })
 
     test("encoding: One (K)", () => {
-      const [ token, remain ] = gggParseArgument( `ok` )
+      const [ token, remain ] = ParseArg( `ok` )
       expect( token ).toEqual( {
         col: 1,
         code: "O",
@@ -69,7 +69,7 @@ describe("gggParseArgument", () => {
 
   describe("keepEncoding = true", () => {
     test("Quoted string", () => {
-      const [ token, remain ] = gggParseArgument( `G"Hello \\"World!\\""`, true )
+      const [ token, remain ] = ParseArg( `G"Hello \\"World!\\""`, true )
       expect( token ).toEqual( {
         col: 1,
         code: "G",
@@ -79,7 +79,7 @@ describe("gggParseArgument", () => {
     })
 
     test(`encoding: HexList2 (0${GGG.HexList2})`, () => {
-      const [ token, remain ] = gggParseArgument( `G0${GGG.HexList2}FFF0`, true )
+      const [ token, remain ] = ParseArg( `G0${GGG.HexList2}FFF0`, true )
       expect( token ).toEqual( {
         col: 1,
         code: "G",

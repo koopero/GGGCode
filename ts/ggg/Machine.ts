@@ -1,5 +1,5 @@
 import { GGG, gggHooks, gggToken, gggTokenArg, gggCommand, gggCommands, gggHookArgs, gggCasedString, gggPrimitive } from "./gggLang"
-import gggParseLines, { gggParseLinesArgs } from "./gggParseLines"
+import ParseLines, { ParseLinesArgs } from "./ParseLines"
 import { EventEmitter } from "../common/events"
 import { isArray, isNumber, isString, isBoolean, isDefined } from "../common/util"
 import gggNamedList, { gggNamedListItem } from "./gggNamedList"
@@ -21,18 +21,18 @@ type StackItem = {
 
 type gggRegister = gggNamedListItem
 
-type gggMachineRegisterList = gggNamedList<gggRegister>
+type MachineRegisterList = gggNamedList<gggRegister>
 
 
 
-type gggMachineProps = {
+type MachineProps = {
   commands?: gggCommands
   state?:{ [key:string]:any }
-  limits?:gggMachineLimits
+  limits?:MachineLimits
 }
 
 
-enum gggMachineEvents {
+enum MachineEvents {
   Output = "output",
   Fail = "fail",
 }
@@ -41,7 +41,7 @@ export enum gggMessage {
   CommandNotFound = "Command not found",
 }
 
-type gggMachineLimits = {
+type MachineLimits = {
   maxRegisters?:number
   maxRegisterSize?:number
   maxQueue?:number
@@ -61,10 +61,10 @@ const NumbersClass = Matrix
 
 type MachineSolver = ( arg:gggPrimitive|gggPrimitive[], options? ) => Generator<number|string>
 
-export default class gggMachine extends EventEmitter  {
+export default class Machine extends EventEmitter  {
   state:{ [key:string]:any } = {}
 
-  limits:gggMachineLimits = {}
+  limits:MachineLimits = {}
   
   commands:gggCommands = {}
   commandState:{ [key:string]:any } = {}
@@ -80,7 +80,7 @@ export default class gggMachine extends EventEmitter  {
   timeout:ReturnType<typeof setTimeout>|null = null
   skip:boolean = false
 
-  constructor( props:gggMachineProps = {} ) {
+  constructor( props:MachineProps = {} ) {
     super()
     if ( props.commands ) {
       this.addCommands( props.commands )
@@ -104,10 +104,10 @@ export default class gggMachine extends EventEmitter  {
   output( tokens: string | string[] | gggToken | gggToken[] ) {
     if ( isArray( tokens ) ) {
       for ( const token of tokens ) {
-        this.emit( gggMachineEvents.Output, token )
+        this.emit( MachineEvents.Output, token )
       }
     } else {
-      this.emit( gggMachineEvents.Output, tokens )
+      this.emit( MachineEvents.Output, tokens )
     }
   }
 
@@ -239,22 +239,22 @@ export default class gggMachine extends EventEmitter  {
     await func( arg )
   }
 
-  async run( code:gggParseLinesArgs ) : Promise<gggToken[]> {
+  async run( code:ParseLinesArgs ) : Promise<gggToken[]> {
     const { queue } = this
-    const lines = gggParseLines( code )
+    const lines = ParseLines( code )
     const result = new Promise<gggToken[]>( resolve => {
       const output : gggToken[] = []
 
       const onOutput = ( line:gggToken ) => output.push( line )
 
       queue.push( { callback: () => {
-        this.on( gggMachineEvents.Output, onOutput )
+        this.on( MachineEvents.Output, onOutput )
       }})
       for ( const line of lines ) {
         queue.push( { line } )
       }
       queue.push( { callback: () => {
-        this.off( gggMachineEvents.Output, onOutput )
+        this.off( MachineEvents.Output, onOutput )
         resolve( output )
       }})
     })
@@ -264,6 +264,6 @@ export default class gggMachine extends EventEmitter  {
   }
 }
 
-export type gggMachineHookArgs = gggHookArgs & {
-  machine:gggMachine,
+export type MachineHookArgs = gggHookArgs & {
+  machine:Machine,
 }

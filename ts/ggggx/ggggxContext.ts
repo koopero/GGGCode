@@ -1,13 +1,13 @@
 import Matrix, { clearOptions } from "./Matrix"
 import GGGGX from "./ggggxLang"
-import gggMachine from "../ggg/gggMachine"
+import Machine from "../ggg/Machine"
 import { gggSolver } from "./Solve"
 import { clear } from "console"
 import { isDefined, isObject } from "../common/util"
 
 type ggggxContextOptions = {
   registers?: { [key: string]: number[] },
-  machine?: gggMachine,
+  machine?: Machine,
 }
 
 type BufferLocalArg = number | string | { name?:string, index?:number } | Matrix
@@ -18,7 +18,7 @@ export default function ggggxContext( options?: ggggxContextOptions ) {
   let { registers, machine } = options || {}
 
   if ( !machine ) {
-    machine = new gggMachine()
+    machine = new Machine()
   }
 
   if ( registers ) {

@@ -5,6 +5,7 @@
     "strict": false,
     "skipLibCheck": true,
     "declaration": true,
+    "sourceMap": true,
     "outDir": "jsdist/",
     "rootDir": "ts/"
   },

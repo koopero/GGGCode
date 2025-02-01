@@ -5,7 +5,7 @@ import Format from "../ts/ggg/Format"
 import { RegionsAdd } from "../ts/ggggx/Regions"
 import Sample from "../ts/ggggx/Sample"
 import { writeDocsFiles } from "./test-utils"
-import gggMachine from "../ts/ggg/gggMachine"
+import Machine from "../ts/ggg/Machine"
 import ggggxCommands from "../ts/ggggx/ggggxCommands"
 import { DimSize } from "../ts/ggggx/Dim"
 

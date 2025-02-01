@@ -1,4 +1,4 @@
-import { GGG, gggCommandConvention } from "../ggg/gggLang"
+import { GGG, CommandConvention } from "../ggg/gggLang"
 import gggNamedList, { gggNamedListItem } from "../ggg/gggNamedList"
 
 
@@ -10,14 +10,14 @@ export type ggggxVecArg = number | number[]
 export const ggggxPrefix = "G"
 
 export enum ggggxCodes {
-  ListBuffers = `${ggggxPrefix}${gggCommandConvention.List}`,
-  NumbersInit = `${ggggxPrefix}${gggCommandConvention.Init}`,
-  WriteBuffer = `${ggggxPrefix}${gggCommandConvention.Write}`,
-  ReadBuffer = `${ggggxPrefix}${gggCommandConvention.Read}`,
-  ReadBufferResponse = `${ggggxPrefix}${gggCommandConvention.ReadResponse}`,
-  MatrixDump = `${ggggxPrefix}${gggCommandConvention.Output}`,
-  WatchBuffers = `${ggggxPrefix}${gggCommandConvention.Watch}`,
-  Display = `${ggggxPrefix}${gggCommandConvention.Display}`,
+  ListBuffers = `${ggggxPrefix}${CommandConvention.List}`,
+  NumbersInit = `${ggggxPrefix}${CommandConvention.Init}`,
+  WriteBuffer = `${ggggxPrefix}${CommandConvention.Write}`,
+  ReadBuffer = `${ggggxPrefix}${CommandConvention.Read}`,
+  ReadBufferResponse = `${ggggxPrefix}${CommandConvention.ReadResponse}`,
+  MatrixDump = `${ggggxPrefix}${CommandConvention.Output}`,
+  WatchBuffers = `${ggggxPrefix}${CommandConvention.Watch}`,
+  Display = `${ggggxPrefix}${CommandConvention.Display}`,
 }
 
 
@@ -49,7 +49,7 @@ export enum ggggxEvents {
 
 
 type ggggxLimitBuffer = boolean | number | string | number[] | string[]
-type ggggxLimits = {
+type MatrixLimits = {
   canCreate?: ggggxLimitBuffer,
   canResize?: ggggxLimitBuffer,
   canRead?: ggggxLimitBuffer,

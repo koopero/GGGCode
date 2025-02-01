@@ -2,7 +2,7 @@
 
 import * as optimist from "optimist"
 import { isArray } from "./common/util"
-import gggMachine from "./ggg/gggMachine"
+import Machine from "./ggg/Machine"
 import * as readline from "readline"
 import { createReadStream, ReadStream  } from "fs"
 import { Readable, pipeline } from 'stream'
@@ -137,7 +137,7 @@ export function runCLI() {
   const state = {}
 
   function machineGenerator() {
-    const machine = new gggMachine( { commands, state } )
+    const machine = new Machine( { commands, state } )
     return machine
   }
 

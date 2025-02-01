@@ -1,4 +1,4 @@
-import { gggHooks, gggMachine, Format } from "../ts/index"
+import { gggHooks, Machine, Format } from "../ts/index"
 
 
 describe("README", () => {
@@ -25,7 +25,7 @@ describe("README", () => {
       }
     }
     
-    const machine = new gggMachine( { commands } )
+    const machine = new Machine( { commands } )
     
     machine.run( "P0 S0")
     .then( result => {

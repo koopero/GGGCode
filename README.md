@@ -38,7 +38,7 @@ const commands = {
   }
 }
 
-const machine = new gggMachine( { commands } )
+const machine = new Machine( { commands } )
 
 machine.run( "P0 S0,1")
 .then( result => {
