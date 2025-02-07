@@ -9,7 +9,7 @@
 
 namespace ggg {
   typedef char Char;
-  typedef float Number;
+  typedef float NumberType;
   typedef int Index;
   typedef int Int;
   typedef std::string String;

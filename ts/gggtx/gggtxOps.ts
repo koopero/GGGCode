@@ -116,9 +116,7 @@ const gggOperators = new gggNamedList<OperatorItem>({
 
   [Ops.add]: { args: 2, fn: (a, b) => a + b, description: "Add" },
   [Ops.mul]: { args: 2, fn: (a, b) => a * b, description: "Multiply" },
-
   [Ops.atan2]: { args: 2, fn: (a,b) => Math.atan2(a,b), description: "Arctangent 2" },
-  
 
   [Ops.mid]: { args: 2, fn: (a, b) => (a + b)/2, description: "Midpoint" },
   [Ops.min]: { args: 2, fn: (a, b) => Math.min(a,b), description: "Minimum" },

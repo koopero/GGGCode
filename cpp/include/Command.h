@@ -10,11 +10,11 @@ namespace ggg {
     Machine *machine;
     Char code;
     String string;
-    Number number;
+    NumberType number;
     Int okay;
   };
 
-  class Command : virtual public CommandState {
+  class CommandType : virtual public CommandState {
   public:
     virtual void hookBefore() { }
     virtual void hookCommand() { }

@@ -1,24 +1,29 @@
 import Matrix, { clearOptions } from "./Matrix"
-import GGGGX from "./ggggxLang"
+import GGGGX, { MatrixLimits} from "./ggggxLang"
 import Machine from "../ggg/Machine"
 import { gggSolver } from "./Solve"
 import { clear } from "console"
 import { isDefined, isObject } from "../common/util"
+import { gggCommands } from "../ggg/gggLang"
 
-type ggggxContextOptions = {
+
+
+type ContextOptions = {
   registers?: { [key: string]: number[] },
   machine?: Machine,
+  commands?: gggCommands,
+  limits?: MatrixLimits
 }
 
-type BufferLocalArg = number | string | { name?:string, index?:number } | Matrix
+type MatrixLookupArg = number | string | { name?:string, index?:number } | Matrix
 type MatrixInitOptions = { name?:string, index?:number, dim?:number[], storage?:number }
 
-export default function ggggxContext( options?: ggggxContextOptions ) {
+export default function ggggxContext( options?: ContextOptions ) {
 
-  let { registers, machine } = options || {}
+  let { registers, machine, commands, limits } = options || {}
 
   if ( !machine ) {
-    machine = new Machine()
+    machine = new Machine( { commands, limits } )
   }
 
   if ( registers ) {
@@ -42,7 +47,7 @@ export default function ggggxContext( options?: ggggxContextOptions ) {
     yield *gggSolver( arg, { MatrixResolve, ...options } )
   }
 
-  function MatrixInit( lookup:BufferLocalArg, clear?:MatrixInitOptions ) {
+  function MatrixInit( lookup:MatrixLookupArg, clear?:MatrixInitOptions ) {
     if ( lookup instanceof Matrix ) {
       return lookup
     } 

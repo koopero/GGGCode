@@ -4,7 +4,7 @@
 #include "./List.h"
 #include "./Command.h"
 #include "./Compound.h"
-#include "./Limits.h"
+#include "./ggg/Limits.h"
 
 namespace ggg {
   struct MachineState {
@@ -26,13 +26,13 @@ namespace ggg {
     Index row = 0;
 
     Char code;
-    Number value;
+    NumberType value;
     String string;
     String line;
     String comment;
     String argBuffer;
 
-    std::vector<Number> numbers;
+    std::vector<NumberType> numbers;
     std::vector<Char> symbols;
 
     Index compoundIndex = 0;
@@ -47,11 +47,11 @@ namespace ggg {
 
   class Machine {
   public:
-    Limits limits;
+    MachineLimits limits;
     MachineState state;
-    Command *command = nullptr;
+    CommandType *command = nullptr;
     // List<MachineRegister> *registers = new List<MachineRegister>();
-    List<Command> *commands = new List<Command>();
+    List<CommandType> *commands = new List<CommandType>();
 
     Machine() {
       resetLine();
@@ -292,7 +292,7 @@ namespace ggg {
           state.hexDigit++;
         }
         if ( state.hexDigitCount > 0 && state.hexDigit == state.hexDigitCount ) {
-          Number value = state.hexAccum;
+          NumberType value = state.hexAccum;
           if ( state.hexNormalize ) {
             value /= float( (1 << ( state.hexDigit * 4 )) - 1 );
           }
@@ -306,14 +306,14 @@ namespace ggg {
 
     void finishNumber() {
       if ( state.dataMode == GGG::HexNumber && state.hexDigit > 0 && state.hexDigitCount == 0 ) {
-        Number value = float(state.hexAccum);
+        NumberType value = float(state.hexAccum);
         if ( state.hexNormalize ) {
           value /= float( (1 << ( state.hexDigit * 4 )) - 1 );
         }
         state.numbers.push_back( value );
       } else if ( !state.argBuffer.empty() && state.dataMode == GGG::Number ) {
         std::stringstream ss(state.argBuffer);
-        Number value;
+        NumberType value;
         if (ss >> value) {
           state.numbers.push_back( value );
         }
@@ -332,7 +332,7 @@ namespace ggg {
     void finishCompound() {
       finishNumber();
       if ( state.numbers.size() > 0 ) {
-        for ( Number value : state.numbers ) {
+        for ( NumberType value : state.numbers ) {
           dataAppend( value );
         }
         state.numbers.clear();
@@ -426,7 +426,7 @@ namespace ggg {
       state.dataMode = GGG::End;
     }
 
-    void dataAppend( Number value ) {
+    void dataAppend( NumberType value ) {
       if ( state.skipData ) {
         return;
       }
@@ -461,14 +461,14 @@ namespace ggg {
     }
 
 
-    void loadCommand( Number number ) {
+    void loadCommand( NumberType number ) {
       if ( state.code ) {
         int commandNumber = number;
 
         std::ostringstream oss;
         oss << state.code  << commandNumber;
         String commandName = oss.str();
-        Command *commandNext = commands->getByName( commandName );
+        CommandType *commandNext = commands->getByName( commandName );
 
         if ( commandNext ) {
           command = commandNext;
@@ -491,7 +491,7 @@ namespace ggg {
       }
     }
 
-    void addCommand( Command * command ) {
+    void addCommand( CommandType * command ) {
       command->machine = this;
       commands->append( command );
     }

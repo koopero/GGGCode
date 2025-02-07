@@ -3,7 +3,7 @@
 #include "./Format.h"
 
 namespace ggg {
-  class PrintNumbers : virtual public Command {
+  class PrintNumbers : virtual public CommandType {
   public:
     bool sentCommand = false;
     Char sentCode = 0;
@@ -85,7 +85,7 @@ namespace ggg {
 
   };
 
-  class PrintString : virtual public Command {
+  class PrintString : virtual public CommandType {
   protected:
     bool didStartLine = false;
 

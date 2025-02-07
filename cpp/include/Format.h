@@ -19,7 +19,7 @@ namespace ggg {
     return result;
   }
 
-  String FormatNumber( const Number &number ) {
+  String FormatNumber( const NumberType &number ) {
     std::ostringstream oss;
     oss << number;
     return oss.str();

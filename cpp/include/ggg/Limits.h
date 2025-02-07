@@ -1,8 +1,8 @@
 #pragma once
-#include "./Types.h"
+#include "../Types.h"
 
 namespace ggg {
-  struct Limits {
+  struct MachineLimits {
     Index maxAxes = 4;
     Index maxBuffer = 1024;
     Index maxOperations = 1024;

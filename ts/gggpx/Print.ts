@@ -1,3 +1,4 @@
+import { floor } from "../common/math"
 import { isArray, isNumber, isObject, isString } from "../common/util"
 import Format, { FormatData } from "../ggg/Format"
 import { GGG, CommandConvention, gggNumeric, gggRangeAxes } from "../ggg/gggLang"
@@ -24,8 +25,8 @@ type PrintNumbersArg = {
   data?: PrintNumbersArg | PrintNumbersArg[],
 } | number | string | PrintNumbersArg[]
 
-export function PrintNumbers( value: PrintNumbersArg, stream?:WritableStream ) {
-
+export function PrintNumbers( value: PrintNumbersArg ) {
+  let result = ""
   let _encoding = ""
   let _code = ''
   let _needComma = false
@@ -33,9 +34,7 @@ export function PrintNumbers( value: PrintNumbersArg, stream?:WritableStream ) {
   printValue( value )
 
   function printString( str:string ) {
-    if ( stream ) {
-    //   stream.push( str )
-    }
+    result += str
   }
 
   function printCode( code?:string ) {
@@ -60,6 +59,12 @@ export function PrintNumbers( value: PrintNumbersArg, stream?:WritableStream ) {
     printString( FormatData( value, _encoding ) )
   }
 
+  function printStringAsData( str:string ) {
+    let chars = [ ...str ]
+    for ( const char of chars ) {
+      printNumber( char.charCodeAt(0) )
+    }
+  }
 
   function printValue( value: PrintNumbersArg ) {
     if ( isArray( value ) ) {
@@ -86,5 +91,40 @@ export function PrintNumbers( value: PrintNumbersArg, stream?:WritableStream ) {
 }
 
 function unicodeToNumbers( str:string ) {
-  return str.split('').map( c => c.charCodeAt(0) )
+  return [ ...str ].map( char => char.codePointAt(0) )
+}
+
+export function PrintString( value:PrintNumbersArg ) {
+  let result = "; "
+  printValue( value )
+  return result
+
+  function printString( str:string ) {
+    result += str
+  }
+
+  function printCode( code?:number ) {
+    code = floor( code || 0 )
+    if ( code > 0 ) {
+      const char = String.fromCodePoint( code )
+      printString( char )
+    }
+  }
+
+  function printValue( value: PrintNumbersArg ) {
+    if ( isArray( value ) ) {
+      for ( const val of value ) {
+        printValue( val )
+      }
+    } else if ( isNumber( value ) ) {
+      printCode( value )
+    } else if ( isString( value ) ) {
+      printString( value )
+    } else if ( isObject( value ) ) {
+      const { data } = value
+      if ( data ) {
+        printValue( data )
+      }
+    }
+  }
 }

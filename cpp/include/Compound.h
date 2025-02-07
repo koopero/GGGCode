@@ -13,10 +13,10 @@ namespace ggg {
     } stage = Start;
 
     Index count;
-    Number multiplier;
-    Number start;
-    Number end;
-    Number step;
+    NumberType multiplier;
+    NumberType start;
+    NumberType end;
+    NumberType step;
     bool inclusive;
     bool divide;
 
@@ -30,7 +30,7 @@ namespace ggg {
       inclusive = true;
     }
 
-    void ingest( Number value, Char code ) {
+    void ingest( NumberType value, Char code ) {
       if ( code == Multiplier ) {
         multiplier = value;
       } else if ( stage == Start ) {

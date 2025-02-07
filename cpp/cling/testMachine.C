@@ -1,6 +1,6 @@
 // cling_script.C
-#include "../src/ggg.h"
-#include "../src/Print.h"
+#include "../include/ggg.h"
+#include "../include/Print.h"
 
 class TestMachine : public ggg::Machine {
 public:

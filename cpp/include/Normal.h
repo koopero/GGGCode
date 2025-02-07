@@ -6,22 +6,22 @@
 #include <algorithm>
 #include <iostream>
 
-template <typename StorageType, StorageType MaxValue>
+template <typename StorageType, StorageType OneValue, typename WorkingType>
 class NormalizedNumber {
 public:
 	using InternalType = StorageType;
-	using WorkingType = int32_t;
+	using WorkType = WorkingType;
 
-	static constexpr double ScaleToNormalized = 1.0 / MaxValue;
-	static constexpr WorkingType ScaleFromNormalized = MaxValue;
+	static constexpr double ScaleToNormalized = 1.0 / OneValue;
+	static constexpr WorkType ScaleFromNormalized = OneValue;
 
 private:
 	friend class NormalizedNumber;
 
 	InternalType value;
 
-	static constexpr WorkingType NormalMin = std::numeric_limits<InternalType>::min() > -std::numeric_limits<InternalType>::max() ? std::numeric_limits<InternalType>::min() : -std::numeric_limits<InternalType>::max();
-	static constexpr WorkingType NormalMax = std::numeric_limits<InternalType>::max();
+	static constexpr WorkType NormalMin = std::numeric_limits<InternalType>::min() > -std::numeric_limits<InternalType>::max() ? std::numeric_limits<InternalType>::min() : -std::numeric_limits<InternalType>::max();
+	static constexpr WorkType NormalMax = std::numeric_limits<InternalType>::max();
 
 public:
 	// Constructors
@@ -33,14 +33,15 @@ public:
 		setNormalized(normalizedValue);
 	}
 
-	constexpr explicit NormalizedNumber(WorkingType rawValue) {
+	constexpr explicit NormalizedNumber(WorkType rawValue) {
 		setNormalized(rawValue);
 	}
 
-	template <typename OtherStorageType, OtherStorageType OtherMaxValue>
-	constexpr NormalizedNumber(const NormalizedNumber<OtherStorageType, OtherMaxValue>& other) {
-		WorkingType val = other.getRaw() * ScaleFromNormalized;
-		val /= OtherMaxValue;
+	template <typename OtherStorageType, OtherStorageType OtherOneValue, typename OtherWorkType>
+	constexpr NormalizedNumber(const NormalizedNumber<OtherStorageType, OtherOneValue, OtherWorkType>& other) {
+		using CommonType = std::common_type_t<WorkType, OtherWorkType>;
+		CommonType val = other.getRaw() * ScaleFromNormalized;
+		val /= OtherOneValue;
 		setRaw(val);
 	}
 
@@ -55,7 +56,7 @@ public:
 
 	// Mutators
 	constexpr void setNormalized(double normalizedValue) noexcept {
-		WorkingType val = std::round(normalizedValue * ScaleFromNormalized);
+		WorkType val = std::round(normalizedValue * ScaleFromNormalized);
 		setRaw(val);
 	}
 
@@ -63,7 +64,7 @@ public:
 		value = rawValue;
 	}
 
-	constexpr void setRaw(WorkingType rawValue) noexcept {
+	constexpr void setRaw(WorkType rawValue) noexcept {
 		rawValue = rawValue > NormalMax ? NormalMax : rawValue;
 		rawValue = rawValue < NormalMin ? NormalMin : rawValue;
 		value = static_cast<InternalType>(rawValue);
@@ -79,51 +80,54 @@ public:
 		return *this;
 	}
 
-	template <typename OtherStorageType, OtherStorageType OtherMaxValue>
-	constexpr NormalizedNumber& operator=( const NormalizedNumber<OtherStorageType, OtherMaxValue> & num ) noexcept {
-		WorkingType val = num.getRaw() * ScaleFromNormalized;
-		val /= OtherMaxValue;
+	template <typename OtherStorageType, OtherStorageType OtherOneValue, typename OtherWorkType>
+	constexpr NormalizedNumber& operator=( const NormalizedNumber<OtherStorageType, OtherOneValue, OtherWorkType> & num ) noexcept {
+		using CommonType = std::common_type_t<WorkType, OtherWorkType>;
+		CommonType val = num.getRaw() * ScaleFromNormalized;
+		val /= OtherOneValue;
 		setRaw(val);
 		return *this;
 	}
 
 	// Arithmetic Operators
 	constexpr NormalizedNumber& operator+=(const NormalizedNumber& other) noexcept {
-		value = (value + other.value > MaxValue) ? MaxValue : value + other.value;
+		value = (value + other.value > OneValue) ? OneValue : value + other.value;
 		return *this;
 	}
 
-	template <typename OtherStorageType, OtherStorageType OtherMaxValue>
-	constexpr NormalizedNumber& operator+=(const NormalizedNumber<OtherStorageType, OtherMaxValue>& other) noexcept {
-		WorkingType val = getRaw() * other.ScaleFromNormalized + other.getRaw() * ScaleFromNormalized;
+	template <typename OtherStorageType, OtherStorageType OtherOneValue, typename OtherWorkType>
+	constexpr NormalizedNumber& operator+=(const NormalizedNumber<OtherStorageType, OtherOneValue, OtherWorkType>& other) noexcept {
+		using CommonType = std::common_type_t<WorkType, OtherWorkType>;
+		CommonType val = getRaw() * other.ScaleFromNormalized + other.getRaw() * ScaleFromNormalized;
 		val /= other.ScaleFromNormalized;
 		setRaw(val);
 		return *this;
 	}
 
 	constexpr NormalizedNumber& operator+=(double scalar) noexcept {
-		WorkingType val = getRaw() + scalar * ScaleFromNormalized;
+		WorkType val = getRaw() + scalar * ScaleFromNormalized;
 		setRaw(val);
 		return *this;
 	}
 
 
 	constexpr NormalizedNumber& operator-=(const NormalizedNumber& other) noexcept {
-    WorkingType val = value - other.value;
+    WorkType val = value - other.value;
     setRaw(val);
 		return *this;
 	}
 
-	template <typename OtherStorageType, OtherStorageType OtherMaxValue>
-	constexpr NormalizedNumber& operator-=(const NormalizedNumber<OtherStorageType, OtherMaxValue>& other) noexcept {
-		WorkingType val = getRaw() * other.ScaleFromNormalized - other.getRaw() * ScaleFromNormalized;
+	template <typename OtherStorageType, OtherStorageType OtherOneValue, typename OtherWorkType>
+	constexpr NormalizedNumber& operator-=(const NormalizedNumber<OtherStorageType, OtherOneValue, OtherWorkType>& other) noexcept {
+		using CommonType = std::common_type_t<WorkType, OtherWorkType>;
+		CommonType val = getRaw() * other.ScaleFromNormalized - other.getRaw() * ScaleFromNormalized;
 		val /= other.ScaleFromNormalized;
 		setRaw(val);
 		return *this;
 	}
 
 	constexpr NormalizedNumber& operator-=(double scalar) noexcept {
-		WorkingType val = getRaw() - scalar * ScaleFromNormalized;
+		WorkType val = getRaw() - scalar * ScaleFromNormalized;
 		setRaw(val);
 		return *this;
 	}
@@ -153,9 +157,9 @@ public:
 		return left;
 	}
 
-	template <typename RightStorageType, RightStorageType RightMaxValue>
-	constexpr friend NormalizedNumber operator+(NormalizedNumber left, const NormalizedNumber<RightStorageType,RightMaxValue>& right) noexcept {
-		WorkingType val = (left.getRaw() * right.ScaleFromNormalized ) + right.getRaw() * left.ScaleFromNormalized;
+	template <typename RightStorageType, RightStorageType RightOneValue, typename RightWorkType>
+	constexpr friend NormalizedNumber operator+(NormalizedNumber left, const NormalizedNumber<RightStorageType,RightOneValue,RightWorkType>& right) noexcept {
+		WorkType val = (left.getRaw() * right.ScaleFromNormalized ) + right.getRaw() * left.ScaleFromNormalized;
 		val /= right.ScaleFromNormalized;
 		left.setRaw(val);
 		return left;
@@ -183,25 +187,25 @@ public:
 		return left.getRaw() == right.getRaw();
 	}
   constexpr friend bool operator==(const NormalizedNumber& left, const double& right) noexcept {
-    WorkingType val = std::round(right * ScaleFromNormalized);
+    WorkType val = std::round(right * ScaleFromNormalized);
     return left.getRaw() == val;
   }
   constexpr friend bool operator==(const NormalizedNumber& left, const float& right) noexcept {
-    WorkingType val = std::round(right * ScaleFromNormalized);
+    WorkType val = std::round(right * ScaleFromNormalized);
     return left.getRaw() == val;
   }
   constexpr friend bool operator==(const double& left, const NormalizedNumber& right) noexcept {
-    WorkingType val = std::round(left * ScaleFromNormalized);
+    WorkType val = std::round(left * ScaleFromNormalized);
     return right.getRaw() == val;
   }
 	constexpr friend bool operator==(const float& left, const NormalizedNumber& right) noexcept {
-    WorkingType val = std::round(left * ScaleFromNormalized);
+    WorkType val = std::round(left * ScaleFromNormalized);
     return right.getRaw() == val;
   }
-  template <typename OtherStorageType, OtherStorageType OtherMaxValue>
-  constexpr friend bool operator==(const NormalizedNumber& left, const NormalizedNumber<OtherStorageType, OtherMaxValue>& right) noexcept {
-    WorkingType val = left.getRaw() * right.ScaleFromNormalized;
-    val /= MaxValue;
+  template <typename OtherStorageType, OtherStorageType OtherOneValue, typename OtherWorkType>
+  constexpr friend bool operator==(const NormalizedNumber& left, const NormalizedNumber<OtherStorageType, OtherOneValue, OtherWorkType>& right) noexcept {
+    WorkType val = left.getRaw() * right.ScaleFromNormalized;
+    val /= OneValue;
     return val == right.getRaw();
   }
 
@@ -210,25 +214,25 @@ public:
 		return left.getRaw() != right.getRaw();
 	}
   constexpr friend bool operator!=(const NormalizedNumber& left, const double& right) noexcept {
-    WorkingType val = std::round(right * ScaleFromNormalized);
+    WorkType val = std::round(right * ScaleFromNormalized);
     return left.getRaw() != val;
   }
   constexpr friend bool operator!=(const NormalizedNumber& left, const float& right) noexcept {
-    WorkingType val = std::round(right * ScaleFromNormalized);
+    WorkType val = std::round(right * ScaleFromNormalized);
     return left.getRaw() != val;
   }
   constexpr friend bool operator!=(const double& left, const NormalizedNumber& right) noexcept {
-    WorkingType val = std::round(left * ScaleFromNormalized);
+    WorkType val = std::round(left * ScaleFromNormalized);
     return right.getRaw() != val;
   }
 	constexpr friend bool operator!=(const float& left, const NormalizedNumber& right) noexcept {
-    WorkingType val = std::round(left * ScaleFromNormalized);
+    WorkType val = std::round(left * ScaleFromNormalized);
     return right.getRaw() != val;
   }
-  template <typename OtherStorageType, OtherStorageType OtherMaxValue>
-  constexpr friend bool operator!=(const NormalizedNumber& left, const NormalizedNumber<OtherStorageType, OtherMaxValue>& right) noexcept {
-    WorkingType val = left.getRaw() * right.ScaleFromNormalized;
-    val /= MaxValue;
+  template <typename OtherStorageType, OtherStorageType OtherOneValue, typename OtherWorkType>
+  constexpr friend bool operator!=(const NormalizedNumber& left, const NormalizedNumber<OtherStorageType, OtherOneValue, OtherWorkType>& right) noexcept {
+    WorkType val = left.getRaw() * right.ScaleFromNormalized;
+    val /= OneValue;
     return val != right.getRaw();
   }
 
@@ -248,9 +252,9 @@ public:
 	constexpr friend bool operator<(const float& left, const NormalizedNumber& right) noexcept {
 		return left < right.getNormalized();
 	}
-  template <typename OtherStorageType, OtherStorageType OtherMaxValue>
-	constexpr friend bool operator<(const NormalizedNumber& left, const NormalizedNumber<OtherStorageType, OtherMaxValue>& right) noexcept {
-		return left.getRaw() * OtherMaxValue < right.getRaw() * MaxValue;
+  template <typename OtherStorageType, OtherStorageType OtherOneValue, typename OtherWorkType>
+	constexpr friend bool operator<(const NormalizedNumber& left, const NormalizedNumber<OtherStorageType, OtherOneValue, OtherWorkType>& right) noexcept {
+		return left.getRaw() * OtherOneValue < right.getRaw() * OneValue;
 	}
 
 
@@ -270,9 +274,9 @@ public:
 	constexpr friend bool operator>(const float& left, const NormalizedNumber& right) noexcept {
 		return left > right.getNormalized();
 	}
-  template <typename OtherStorageType, OtherStorageType OtherMaxValue>
-	constexpr friend bool operator>(const NormalizedNumber& left, const NormalizedNumber<OtherStorageType, OtherMaxValue>& right) noexcept {
-		return left.getRaw() * OtherMaxValue > right.getRaw() * MaxValue;
+  template <typename OtherStorageType, OtherStorageType OtherOneValue, typename OtherWorkType>
+	constexpr friend bool operator>(const NormalizedNumber& left, const NormalizedNumber<OtherStorageType, OtherOneValue, OtherWorkType>& right) noexcept {
+		return left.getRaw() * OtherOneValue > right.getRaw() * OneValue;
 	}
 
 	// operator>=
@@ -291,9 +295,9 @@ public:
 	constexpr friend bool operator>=(const float& left, const NormalizedNumber& right) noexcept {
 		return left >= right.getNormalized();
 	}
-  template <typename OtherStorageType, OtherStorageType OtherMaxValue>
-	constexpr friend bool operator>=(const NormalizedNumber& left, const NormalizedNumber<OtherStorageType, OtherMaxValue>& right) noexcept {
-		return left.getRaw() * OtherMaxValue >= right.getRaw() * MaxValue;
+  template <typename OtherStorageType, OtherStorageType OtherOneValue, typename OtherWorkType>
+	constexpr friend bool operator>=(const NormalizedNumber& left, const NormalizedNumber<OtherStorageType, OtherOneValue, OtherWorkType>& right) noexcept {
+		return left.getRaw() * OtherOneValue >= right.getRaw() * OneValue;
 	}
 
 	// operator<=
@@ -312,12 +316,12 @@ public:
 	constexpr friend bool operator<=(const float& left, const NormalizedNumber& right) noexcept {
 		return left <= right.getNormalized();
 	}
-  template <typename OtherStorageType, OtherStorageType OtherMaxValue>
-	constexpr friend bool operator<=(const NormalizedNumber& left, const NormalizedNumber<OtherStorageType, OtherMaxValue>& right) noexcept {
-		return left.getRaw() * OtherMaxValue <= right.getRaw() * MaxValue;
+  template <typename OtherStorageType, OtherStorageType OtherOneValue, typename OtherWorkType>
+	constexpr friend bool operator<=(const NormalizedNumber& left, const NormalizedNumber<OtherStorageType, OtherOneValue, OtherWorkType>& right) noexcept {
+		return left.getRaw() * OtherOneValue <= right.getRaw() * OneValue;
 	}
 
 	// Constants
 	static constexpr NormalizedNumber Min() noexcept { return NormalizedNumber(0); }
-	static constexpr NormalizedNumber Max() noexcept { return NormalizedNumber(MaxValue); }
+	static constexpr NormalizedNumber Max() noexcept { return NormalizedNumber(OneValue); }
 };

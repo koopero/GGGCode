@@ -41,7 +41,7 @@ export enum gggMessage {
   CommandNotFound = "Command not found",
 }
 
-type MachineLimits = {
+export type MachineLimits = {
   maxRegisters?:number
   maxRegisterSize?:number
   maxQueue?:number
@@ -216,13 +216,19 @@ export default class Machine extends EventEmitter  {
         this.runningCommand = impl
         const state = this.commandState[command] = this.commandState[command] || {}
         await this.execCommandHook( gggHooks.Command, { machine, command, state } )
-        for ( const arg of line.args ) {
-          const { code, data } = arg
-          await this.execCommandHook( gggHooks.Code, { machine, command, state, code } )
-          for ( const value of this.solve( data ) ) {
-            await this.execCommandHook( gggHooks.Value, { machine, command, state, code, value } )
+
+        const { args } = line
+        if ( args ) {
+          for ( const arg of args ) {
+            const { code, data } = arg
+            await this.execCommandHook( gggHooks.Code, { machine, command, state, code } )
+
+            if ( data || data === 0 )
+              for ( const value of this.solve( data ) ) {
+                await this.execCommandHook( gggHooks.Value, { machine, command, state, code, value } )
+              }
+            await this.execCommandHook( gggHooks.EndArg, { machine, command, state, code } )
           }
-          await this.execCommandHook( gggHooks.EndArg, { machine, command, state, code } )
         }
         await this.execCommandHook( gggHooks.End, { machine, state, command } )
       } else if ( !isBlankCommand( command ) ) {

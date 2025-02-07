@@ -1,9 +1,10 @@
 #pragma once
 
-#include "./types.h"
+#include "./Types.h"
 
 namespace ggg {
   typedef std::vector<Index> DimType;
+  
   constexpr Index DimIndex( const DimType &dim, const DimType &index ) {
     Index i = 0;
     Index j = 1;
@@ -13,6 +14,17 @@ namespace ggg {
     }
     return i;
   };
+
+  constexpr Index DimIndex( const DimType &dim, const std::initializer_list<int> &coord ) {
+    Index i = 0;
+    Index j = 1;
+    for ( int d : coord ) {
+      i += j * d;
+      j *= dim[d];
+    }
+    return i;
+  };
+
 
   constexpr Index DimIndex( const DimType &dim, const Index &index ) {
     return index;

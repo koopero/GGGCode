@@ -29,7 +29,7 @@ import { spawn, StdioOptions } from "child_process"
 export async function testCppMachine( program:string ) : Promise<string> {
   const command = "cling"
   const options = { cwd: resolve( __dirname, ".." ), stdio: "pipe" as StdioOptions }
-  const args = [ "-std=c++17", "-x", "c++", "cpp/test/testMachine.C" ]
+  const args = [ "-std=c++17", "-x", "c++", "cpp/cling/testMachine.C" ]
 
   let stderr = ""
   let result = ""

@@ -165,7 +165,14 @@ export default function ParseData( str:string, keepEncoding:boolean = false ) : 
   while( str ) {
     let match:RegExpMatchArray|null = null
 
-    if ( str[0] == GGG.StringToEOL ) {
+    let unicode = (str.match( /^./u ) || [""])[0].codePointAt(0) || 0
+
+    if ( unicode >= 0x80 ) {
+      let uniChar = String.fromCodePoint( unicode )
+      pushNumber( unicode, uniChar, false )
+      // finishExpression()
+      match = [ uniChar ]
+    } else if ( str[0] == GGG.StringToEOL ) {
       // String to end of line
       let endIndex = str.indexOf( GGG.End )
       if ( endIndex == -1 ) {
