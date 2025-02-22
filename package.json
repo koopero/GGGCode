@@ -46,8 +46,8 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "npm run build:ts && npm run build:pio",
-    "build:pio": "npm run build:cpp_defs && bun run ts/cpp/buildPlatformio.script.ts",
-    "build:cpp_defs": "bun run ts/cpp/buildCppDefs.script.ts",
+    "build:pio": "npm run build:cxx_defs && bun run ts/cxx/buildPlatformio.script.ts",
+    "build:cxx_defs": "bun run ts/cxx/buildCxxDefs.script.ts",
     "build:ts": "npm run build:ts:browser && npm run build:ts:node",
     "build:ts:browser": "tsc -p tsconfig.browser.json",
     "build:ts:node": "tsc -p tsconfig.node.json",

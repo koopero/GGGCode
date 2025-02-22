@@ -70,7 +70,7 @@ function loadCommandsFromBuiltinExtension( name:string ) {
   switch( name ) {
     case "d":
     case "gggdx":
-      return require("./gggdx/gggdxCommands").default
+      return require("./gggdx/DocCommands").default
 
     case "g":
     case "ggggx":

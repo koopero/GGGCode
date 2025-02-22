@@ -69,7 +69,7 @@ describe("ParseArg", () => {
 
   describe("keepEncoding = true", () => {
     test("Quoted string", () => {
-      const [ token, remain ] = ParseArg( `G"Hello \\"World!\\""`, true )
+      const [ token, remain ] = ParseArg( `G"Hello \\"World!\\""`, { keepEncoding: true } )
       expect( token ).toEqual( {
         col: 1,
         code: "G",
@@ -79,7 +79,7 @@ describe("ParseArg", () => {
     })
 
     test(`encoding: HexList2 (0${GGG.HexList2})`, () => {
-      const [ token, remain ] = ParseArg( `G0${GGG.HexList2}FFF0`, true )
+      const [ token, remain ] = ParseArg( `G0${GGG.HexList2}FFF0`, { keepEncoding: true } )
       expect( token ).toEqual( {
         col: 1,
         code: "G",

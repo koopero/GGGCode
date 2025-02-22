@@ -3,7 +3,7 @@ import ParseLines, { ParseLinesArgs } from "./ParseLines"
 import { EventEmitter } from "../common/events"
 import { isArray, isNumber, isString, isBoolean, isDefined } from "../common/util"
 import gggNamedList, { gggNamedListItem } from "./gggNamedList"
-import { gggSolver as MachineSolver } from "../ggggx/Solve"
+import { Solver as MachineSolver } from "../ggggx/Solve"
 import GGGGX from "../ggggx/ggggxLang"
 
 type QueueItem = {

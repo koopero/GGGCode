@@ -132,14 +132,14 @@ export type gggHookArgs = {
 type gggHookCallback = ( arg:gggHookArgs ) => Promise<any> | void
 export type gggCommands = { [key:string]:gggCommand }
 export enum CommandConvention {
-  List = 0,
-  Init = 11,
-  Write = 1,
-  Read = 5,
+  List = 1,
+  Init = 30,
+  Write = 20,
+  Read = 10,
   ReadResponse = -CommandConvention.Read,
   ListResponse = -CommandConvention.List,
   Output = 15,
-  Watch = 20,
+  Watch = 25,
   Display = 13,
   DisplayResponse = -CommandConvention.Display,
 }
@@ -149,3 +149,7 @@ export function gggCasedString( str:string ) {
   return str.toUpperCase()
 }
 
+export type ParseOptions = {
+  keepEncoding?:boolean
+  keepComments?:boolean
+}

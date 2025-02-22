@@ -1,8 +1,8 @@
 import { describe, test, expect } from "@jest/globals"
-import { testCppMachine } from "./test-utils"
+import { testCxxMachine } from "./test-utils"
 import ParseLines from "../ts/ggg/ParseLines"
 import Format from "../ts/ggg/Format"
-import { PrintNumbersName, PrintPrefix, PrintResponseName } from "../ts/gggpx/Print"
+import { PrintNumbersName, PrintPrefix, PrintResponseName } from "../ts/gggpx/PrintDefs"
 import { GGG } from "../ts/ggg/gggLang"
 
 describe("cpp", () => {
@@ -12,7 +12,7 @@ describe("cpp", () => {
     const data = [ 10, 20, 30 ]
     const dataEncoded = data.map( x => "0x"+x.toString(16) ).join(",")
     const argCode = "A"
-    const result = await testCppMachine(`${command} ${argCode}${dataEncoded}\n`)
+    const result = await testCxxMachine(`${command} ${argCode}${dataEncoded}\n`)
     const lines = ParseLines( result )
     expect( lines.length ).toBe( 2 )
     const printLine = lines[0]
@@ -39,7 +39,7 @@ describe("cpp", () => {
   //     const data = [ 10, 20, 30 ]
   //     const responseIndex = 11
   //     const responseCommand = `${PrintPrefix}${responseIndex}`
-  //     const result = await testCppMachine(`${PrintNumbersName} ${GGG.Command}${responseIndex} ${GGG.Data}${data}\n`)
+  //     const result = await testCxxMachine(`${PrintNumbersName} ${GGG.Command}${responseIndex} ${GGG.Data}${data}\n`)
   //     const lines = ParseLines( result )
   //     expect( lines.length ).toBe( 2 )
   //     const printLine = lines[0]
@@ -58,7 +58,7 @@ describe("cpp", () => {
   // describe("Encoding", () => {
   //   function testEncoding( name:string, str:string, expected:number[] ) {
   //     test( name, async () => {
-  //       const result = await testCppMachine(`${PrintNumbersName} ${GGG.Data}${str}\n`)
+  //       const result = await testCxxMachine(`${PrintNumbersName} ${GGG.Data}${str}\n`)
   //       const lines = ParseLines( result )
   //       expect( lines.length ).toBe( 2 )
   //       const printLine = lines[0]

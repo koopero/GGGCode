@@ -1,4 +1,4 @@
-import { GGG, gggCasedString, gggPrimitive, gggReference } from "./gggLang"
+import { GGG, gggCasedString, gggPrimitive, gggRangeAxis, gggReference, ParseOptions } from "./gggLang"
 import { HexModifiers, HexModifier } from "./hexlist"
 
 
@@ -39,6 +39,15 @@ function parseHexList( str:string, hexConfig:HexModifier, pushNumber:( num:numbe
   })
 }
 
+
+enum AxisSymbol {
+  Start = 'start',
+  End = 'end',
+  Step = 'step',
+  Multiplier = 'multiplier',
+}
+const { Start, End, Step, Multiplier } = AxisSymbol
+
 function parseExpression( numbers, symbols, encodings, keepEncoding ) {
   if ( numbers.length == 1 && symbols.length < 2 ) {
     // Just a plain old number
@@ -51,7 +60,7 @@ function parseExpression( numbers, symbols, encodings, keepEncoding ) {
 
   let axis
   let axisIndex
-  const axes = []
+  const axes: gggRangeAxis[] = []
   let lastSymbol
 
   function resetAxis() {
@@ -72,9 +81,30 @@ function parseExpression( numbers, symbols, encodings, keepEncoding ) {
     const number = numbers[i]
     const symbolBefore = symbols[i]
 
-    if ( symbolBefore == "|" ) {
-      axes.push( axis )
-      resetAxis()
+    // if ( !symbolBefore ) {
+    //   // No symbol, just a number
+    //   if ( axisIndex ) {
+    //     axis[ axisIndex ] = number
+    //   }
+    // } else if ( symbolBefore == GGG.NextAxis ) {
+    //   axes.push( axis )
+    //   resetAxis()
+    // } else if ( symbolBefore == ">" || symbolBefore == "<" ) {
+    //   // Inclusive or exclusive
+    //   if ( axisIndex == Start ) {
+    //     axis.inclusive = symbolBefore == ">"
+    //   } else {
+    //     axisIndex = Step
+    //     axis.step = number
+    //   }
+
+    // }
+
+    if ( symbolBefore == GGG.NextAxis ) {
+      if ( axis ) {
+        axes.push( axis )
+        resetAxis()
+      }
     }
 
     switch ( axisIndex++ ) {
@@ -116,7 +146,8 @@ function parseExpression( numbers, symbols, encodings, keepEncoding ) {
 }
 
 
-export default function ParseData( str:string, keepEncoding:boolean = false ) : [ any, string ] {
+export default function ParseData( str:string, options:ParseOptions = {} ) : [ any, string ] {
+  const { keepEncoding = false } = options
   let numbers:number[] = []
   let encodings:string[] = []
   let symbols:string[] = []
@@ -139,7 +170,6 @@ export default function ParseData( str:string, keepEncoding:boolean = false ) : 
   }
 
   function finishExpression() {
-
     if ( numbers.length || symbols.length ) {
       const item = parseExpression( numbers, symbols, encodings, keepEncoding )
       currentList.push( item )
@@ -168,9 +198,9 @@ export default function ParseData( str:string, keepEncoding:boolean = false ) : 
     let unicode = (str.match( /^./u ) || [""])[0].codePointAt(0) || 0
 
     if ( unicode >= 0x80 ) {
+      // Unicode character as number
       let uniChar = String.fromCodePoint( unicode )
       pushNumber( unicode, uniChar, false )
-      // finishExpression()
       match = [ uniChar ]
     } else if ( str[0] == GGG.StringToEOL ) {
       // String to end of line

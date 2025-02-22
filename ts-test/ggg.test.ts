@@ -1,7 +1,7 @@
 import { describe, test, expect } from "@jest/globals"
 
 import { gggHooks, GGG } from "../ts/ggg/gggLang"
-import gggdxCommands from "../ts/gggdx/gggdxCommands"
+import DocCommands from "../ts/gggdx/DocCommands"
 import { ParseLines, ParseLine, ParseArg, Machine, Format } from "../ts/index"
 
 describe("ggg", () => {
@@ -73,7 +73,7 @@ describe("ParseLine", () => {
 describe("gggdx", () => {
   test("will work", async () => {
     const machine = new Machine()
-    machine.addCommands( gggdxCommands )
+    machine.addCommands( DocCommands )
     const result = await machine.run( "D1" )
   })
 })

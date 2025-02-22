@@ -4,7 +4,7 @@ import { dirname, resolve } from 'path'
 
 
 async function copyPlatformioSource(src, dest) {
-  src = resolve(__dirname, "../../cpp", src )
+  src = resolve(__dirname, "../../cxx", src )
   dest = resolve(__dirname, "../../dist/pio", dest )
   const destDir = dirname(dest)
   existsSync

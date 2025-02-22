@@ -14,7 +14,7 @@ type SolveOptions = {
 
 type SolveArgument = boolean | number | string | gggRangeAxis | gggRangeAxes | gggReference | gggValueWithEncoding
 
-export function* gggSolver( arg:SolveArgument, options:SolveOptions = {
+export function* Solver( arg:SolveArgument, options:SolveOptions = {
   solveStrings: true
 } ):Generator<number|string> {
   const { MatrixResolve, solveStrings = true } = options
@@ -71,13 +71,18 @@ export function* gggSolver( arg:SolveArgument, options:SolveOptions = {
     let { start, end, count, step, multiplier, inclusive } = value
 
     start = start || 0
+    
 
     if ( isBlank( multiplier ) ) {
       multiplier = stride
     }
 
     if ( isBlank( end ) ) {
-      end = dimension
+      if ( inclusive ) {
+        end = start
+      } else {
+        end = dimension
+      }
     }
 
     if ( !step ) {

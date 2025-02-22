@@ -32,6 +32,34 @@ export function FormatNumber( data:number, encoding?:EncodingArg ) : string {
   }
 }
 
+export function FormatNumberFirst( data:number, encoding?:EncodingArg ) : string {
+  switch ( encoding ) {
+    case GGG.HexList1:
+    case GGG.HexList2:
+    case GGG.HexNorm1:
+    case GGG.HexNorm2:
+      const { digits, div } = HexModifiers[ encoding ]
+      return `0${encoding}` + formatHexListItem( data, digits, div )
+
+    default:
+      return FormatNumber( data, encoding )
+  }
+}
+
+export function FormatNumberSubsequent( data:number, encoding?:EncodingArg ) : string {
+  switch ( encoding ) {
+    case GGG.HexList1:
+    case GGG.HexList2:
+    case GGG.HexNorm1:
+    case GGG.HexNorm2:
+      const { digits, div } = HexModifiers[ encoding ]
+      return formatHexListItem( data, digits, div )
+
+    default:
+      return GGG.Comma + FormatNumber( data, encoding )
+  }
+}
+
 export function FormatRangeAxes( data:gggRangeAxes, encoding?:EncodingArg ) : string {
   return data.axes.map( a => FormatRangeAxis( a, encoding ) ).join(GGG.NextAxis)
 }

@@ -1,7 +1,7 @@
 import Matrix, { clearOptions } from "./Matrix"
 import GGGGX, { MatrixLimits} from "./ggggxLang"
 import Machine from "../ggg/Machine"
-import { gggSolver } from "./Solve"
+import { Solver } from "./Solve"
 import { clear } from "console"
 import { isDefined, isObject } from "../common/util"
 import { gggCommands } from "../ggg/gggLang"
@@ -44,7 +44,7 @@ export default function ggggxContext( options?: ContextOptions ) {
   // }
 
   function *Solve( arg, options = {}) {
-    yield *gggSolver( arg, { MatrixResolve, ...options } )
+    yield *Solver( arg, { MatrixResolve, ...options } )
   }
 
   function MatrixInit( lookup:MatrixLookupArg, clear?:MatrixInitOptions ) {

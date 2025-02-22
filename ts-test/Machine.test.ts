@@ -1,7 +1,7 @@
 import { describe, test, expect } from "@jest/globals"
 
 import { gggHooks, GGG } from "../ts/ggg/gggLang"
-import gggdxCommands from "../ts/gggdx/gggdxCommands"
+import DocCommands from "../ts/gggdx/DocCommands"
 import { ParseLines, ParseLine, ParseArg, Machine, Format } from "../ts/index"
 import { gggMessage } from "../ts/ggg/Machine"
 

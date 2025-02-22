@@ -1,4 +1,4 @@
-import { PrintCPPStrings } from "../gggpx/Print"
+import { PrintCPPStrings } from "../gggpx/PrintDefs"
 
 const strings = {
   ...PrintCPPStrings

@@ -1,5 +1,5 @@
 import { FormatPrimitive } from "./Format"
-import { GGG, gggToken } from "./gggLang"
+import { GGG, gggToken, ParseOptions } from "./gggLang"
 import { gggLimits } from "./gggLimits"
 import ParseArg from "./ParseArg"
 
@@ -15,8 +15,9 @@ function formatCommand( token:gggToken ) {
   return `${code}${valueStr}`
 }
 
-export default function ParseLine( str:string, keepEncoding:boolean = false ) : [ gggToken, string ] {
-  const args = []
+export default function ParseLine( str:string, options:ParseOptions = {} ) : [ gggToken, string ] {
+  const { keepComments = true } = options
+  const args:gggToken[] = []
   let command = ""
   let comment = ""
   let remain = ""
@@ -30,14 +31,16 @@ export default function ParseLine( str:string, keepEncoding:boolean = false ) : 
 
   const commentIndex = str.indexOf( GGG.Comment )
   if ( commentIndex != -1 ) {
-    comment = str.substring(commentIndex)
+    if ( keepComments ) {
+      comment = str.substring(commentIndex)
+    }
     str = str.substring(0,commentIndex)
   }
 
   let col = 1
 
   while ( str ) {
-    const [ token, tokenRemain ] = ParseArg( str, keepEncoding, col )
+    const [ token, tokenRemain ] = ParseArg( str, options, col )
     if ( token ) {
       args.push( token )
       col += str.length - tokenRemain.length 

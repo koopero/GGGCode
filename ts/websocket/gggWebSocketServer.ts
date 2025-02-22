@@ -2,7 +2,7 @@ import { isNumber, isObject } from "../common/util"
 import Format from "../ggg/Format"
 import type { gggCommands } from "../ggg/gggLang"
 import Machine from "../ggg/Machine"
-import gggdxCommands from "../gggdx/gggdxCommands"
+import DocCommands from "../gggdx/DocCommands"
 
 type gggWebSocketServerOptions = {
   url?:string
