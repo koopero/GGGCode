@@ -3,7 +3,7 @@ const description = "List available commands."
 const prefix = "D"
 
 export enum gggdxCodes {
-  ListCommands = `${prefix}${gggCommandConvention.List}`,
+  CommandsList = `${prefix}${gggCommandConvention.List}`,
   ListCommandsResponse = `${prefix}${gggCommandConvention.ListResponse}`,
 }
 
@@ -41,7 +41,7 @@ function hookD1End( arg ) {
 }
 
 const gggdxCommands = {
-  [ gggdxCodes.ListCommands ]: {
+  [ gggdxCodes.CommandsList ]: {
     description,
     [gggHooks.End]: hookD1End,
   }

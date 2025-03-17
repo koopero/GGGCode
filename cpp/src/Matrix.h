@@ -1,8 +1,8 @@
 #pragma once
 #include <vector>
 #include "./Types.h"
+#include "./Dim.h"
 
-typedef std::vector<gggIndex> DimType;
 
 template <typename Storage,bool Watch>
 class MatrixStatic {
@@ -10,6 +10,7 @@ public :
   DimType dim;
   gggIndex size;
   Storage * data = nullptr;
+
   MatrixStatic( DimType _dim, Storage * _data = nullptr ) : dim(_dim) {
     size = 1;
     for ( gggIndex d = 0; d < dim.size(); d++ ) {
@@ -37,26 +38,20 @@ public :
   }
 
   constexpr gggIndex index( const DimType &_dim ) {
-    gggIndex i = 0;
-    gggIndex j = 1;
-    for ( gggIndex d = 0; d < dim.size(); d++ ) {
-      i += j * _dim[d];
-      j *= dim[d];
-    }
-    return i;
+    return DimIndex( dim, _dim );
   }
 
-  Storage& operator[]( DimType _dim ) {
-    return data[index(_dim)];
+  template <typename Lookup>
+  constexpr gggNumber readNumber( const Lookup &coord, gggNumber defaultValue = 0. ) {
+    return readNumber( index(coord), defaultValue );
   }
 
-  gggNumber readNumber( const gggIndex & index, gggNumber defaultValue = 0. ) {
+  constexpr gggNumber readNumber( const gggIndex & index, gggNumber defaultValue = 0. ) {
     if ( index < 0 || index >= size ) return defaultValue;
     return data[index];
   }
 
-  template <typename Lookup>
-  gggNumber readNumber( const Lookup &coord, gggNumber defaultValue = 0. ) {
+  constexpr gggNumber readNumber( const DimType & coord, gggNumber defaultValue = 0. ) {
     return readNumber( index(coord), defaultValue );
   }
 
@@ -81,7 +76,7 @@ public :
     gggIndex last = index + count;
     gggIndex result = 0;
 
-    if ( !WATCH ) {
+    if ( !Watch ) {
       for ( gggIndex i = index; i < last && i < size; i++ ) {
         data[index + i] = source[i];
         result++;

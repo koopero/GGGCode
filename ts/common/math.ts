@@ -1,7 +1,7 @@
 import { isArray } from "./util"
 
-const { floor, ceil, min, max, pow, abs } = Math
-export { floor, ceil, min, max, pow, abs }
+const { floor, ceil, min, max, pow, abs, sqrt, cos, sin, log } = Math
+export { floor, ceil, min, max, pow, abs, sqrt, cos, sin, log }
 
 export function trunc( value:number ) : number {
   return value < 0 ? ceil( value ) : floor( value )

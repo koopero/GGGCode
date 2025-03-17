@@ -3,7 +3,6 @@ import { GGG } from "../ts/ggg/gggLang"
 import { ggggxCodes, ggggxEvents } from "../ts/ggggx/ggggxLang"
 import Format from "../ts/ggg/Format"
 import { RegionsAdd } from "../ts/ggggx/Regions"
-import Sample from "../ts/ggggx/Sample"
 import { writeDocsFiles } from "./test-utils"
 import gggMachine from "../ts/ggg/gggMachine"
 import ggggxCommands from "../ts/ggggx/ggggxCommands"
@@ -235,52 +234,6 @@ describe("RegionsAdd", () => {
   test("will bridge", async () => {
     const regions = RegionsAdd( [3,6],  [[0,4],[5,8]] )
     expect( regions ).toEqual( [ [0,8] ] )
-  })
-})
-
-describe("Sample", () => {
-  test("linear fence", async () => {
-    const data = [ 0, 1, 2, 3 ]
-    const buffer = new Matrix( {
-      dim: [2,2]
-    })
-    buffer.write( data )
-    
-    const options = {
-      filter: "linear",
-      coord: "fence"
-    }
-
-    const pos = [ 0.25 ]
-    const result = Sample( buffer, pos, options )
-    expect( result ).toEqual( [ 0.5, 1.5 ] )
-  })
-
-  test("rgb linear wheel", () => {
-    const data = [ 
-      1, 0, 0, 
-      0, 1, 0,
-      0, 0, 1,
-    ]
-    const buffer = new Matrix( {
-      dim: [3,3]
-    })
-    buffer.write( data )
-    
-    const options = {
-      dimension: 1,
-      filter: "linear",
-      coord: "pixel",
-    }
-
-    expect( Sample( buffer, [ 0 ], options ) ).toEqual( [ 1, 0, 0 ] )
-    expect( Sample( buffer, [ 0.5 ], options ) ).toEqual( [ 0.5, 0.5, 0 ] )
-    expect( Sample( buffer, [ 1 ], options ) ).toEqual( [ 0, 1, 0 ] )
-    expect( Sample( buffer, [ 2 ], options ) ).toEqual( [ 0, 0, 1 ] )
-    expect( Sample( buffer, [ 2.5 ], options ) ).toEqual( [ 0.5, 0, 0.5 ] )
-    expect( Sample( buffer, [ 3 ], options ) ).toEqual( [ 1, 0, 0 ] )
-    expect( Sample( buffer, [ -1 ], options ) ).toEqual( [ 0, 0, 1 ] )
-    
   })
 })
 

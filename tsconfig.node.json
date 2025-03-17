@@ -4,7 +4,7 @@
     "outDir": "./dist/node",
     "target": "ES2019",
     "module": "NodeNext",
-    "moduleResolution": "NodeNext"
+    "moduleResolution": "nodenext"
   },
   "include": [
     "ts/index.ts",

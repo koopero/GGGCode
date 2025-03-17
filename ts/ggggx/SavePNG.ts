@@ -1,9 +1,6 @@
 import Matrix from "./Matrix"
-
 import SaveImageData, { SaveImageDataOptions } from "./SaveImageData"
 import { encode, ImageData as LibImageData } from "fast-png"
-
-
 
 export default function SavePNG( buffer:Matrix, options?:SaveImageDataOptions ) {
   const imageData = SaveImageData( buffer, {}, options )

@@ -33,6 +33,7 @@ export type ggggxStorageType = {
   norm1: number,
   range: null | [number,number],
   encoding: string,
+  cppStorage: string,
 }
 
 export const StorageDefault : ggggxStorageType = { 
@@ -41,13 +42,26 @@ export const StorageDefault : ggggxStorageType = {
   dataClass: Array, 
   encoding: GGG.Value, 
   norm1: 1, 
-  range: null
+  range: null,
+  cppStorage: "float",
 }
+
+type RangeType = [number,number]
+const RangeU8:RangeType = [0,255]
+const RangeI8:RangeType = [-128,127]
+const RangeU16:RangeType = [0,65535]
+const RangeI16:RangeType = [-32768,32767]
+const RangeU32:RangeType = [0,4294967295]
+const RangeI32:RangeType = [-2147483648,2147483647]
 
 export const ggggxStorageTypes = new gggNamedList<ggggxStorageType>( [
   StorageDefault,
-  { index: 8, name: ggggxStorageTypeNames.UNorm8, dataClass: Uint8Array, encoding: GGG.HexNorm2, norm1: 255, range: [0,255] },
-  { index: 255, name: ggggxStorageTypeNames.UInt8, dataClass: Uint8Array, encoding: GGG.HexNorm2, norm1: 1, range: [0,255] },
+  { index: 8, name: ggggxStorageTypeNames.UNorm8, dataClass: Uint8Array, encoding: GGG.HexNorm2, norm1: 255, range: RangeU8, cppStorage: "uint8_t" },
+  { index: 255, name: ggggxStorageTypeNames.UInt8, dataClass: Uint8Array, encoding: GGG.HexNorm2, norm1: 1, range: RangeU8, cppStorage: "uint8_t" },
+  { index: 9, name: ggggxStorageTypeNames.Norm8, dataClass: Int8Array, encoding: GGG.HexNorm2, norm1: 127, range: RangeI8, cppStorage: "uint8_t" },
+  { index: 10, name: ggggxStorageTypeNames.Int8, dataClass: Int8Array, encoding: GGG.HexNorm2, norm1: 1, range: RangeI8, cppStorage: "int8_t" },
+  { index: 11, name: ggggxStorageTypeNames.UNorm4, dataClass: Uint8Array, encoding: GGG.HexNorm2, norm1: 16, range: RangeU8, cppStorage: "uint8_t" },
+  { index: 12, name: ggggxStorageTypeNames.Norm4, dataClass: Int8Array, encoding: GGG.HexNorm2, norm1: 8, range: RangeI8, cppStorage: "int8_t" },
 ] )
 
 
