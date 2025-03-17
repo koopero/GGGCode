@@ -1,9 +1,9 @@
 import { describe, test, expect } from "@jest/globals"
 
-import { gggHooks, GGG } from "../ts/ggg/gggLang"
-import gggdxCommands from "../ts/gggdx/gggdxCommands"
-import { gggParseLines, gggParseLine, gggParseArgument, gggMachine, Format } from "../ts/index"
-import { gggMessage } from "../ts/ggg/gggMachine"
+import { gggHooks, GGG } from "../src/ggg/gggLang"
+import gggdxCommands from "../src/gggdx/gggdxCommands"
+import { gggParseLines, gggParseLine, gggParseArgument, gggMachine, Format } from "../src/index"
+import { gggMessage } from "../src/ggg/gggMachine"
 
 
 describe("gggMachine", () => {

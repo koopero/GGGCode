@@ -1,4 +1,4 @@
-import { vecAdd } from "../ts/common/math"
+import { vecAdd } from "../src/common/math"
 
 describe("math", () => {
   describe("vecAdd", () => {

@@ -1,6 +1,6 @@
 import { describe, test, expect } from "@jest/globals"
-import { GGG } from "../ts/ggg/gggLang"
-import { gggParseArgument } from "../ts/index"
+import { GGG } from "../src/ggg/gggLang"
+import { gggParseArgument } from "../src/index"
 
 
 describe("gggParseArgument", () => {

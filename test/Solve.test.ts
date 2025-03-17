@@ -1,8 +1,8 @@
 import { describe, test, expect } from "@jest/globals"
-import { gggReference } from "../ts/ggg/gggLang"
-import gggParseData from "../ts/ggg/gggParseData"
-import { floor } from "../ts/common/math"
-import { ggggxContext } from "../ts/ggggx"
+import { gggReference } from "../src/ggg/gggLang"
+import gggParseData from "../src/ggg/gggParseData"
+import { floor } from "../src/common/math"
+import { ggggxContext } from "../src/ggggx"
 
 function testContext() {
   const context = ggggxContext( { registers: { test: [10,11,12,13,14,15,16,17,18,19] } }  )

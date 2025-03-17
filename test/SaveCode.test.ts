@@ -1,7 +1,7 @@
-import Matrix from "../ts/ggggx/Matrix"
-import { GGG } from "../ts/ggg/gggLang"
-import { ggggxCodes } from "../ts/ggggx/ggggxLang"
-import Format from "../ts/ggg/Format"
+import Matrix from "../src/ggggx/Matrix"
+import { GGG } from "../src/ggg/gggLang"
+import { ggggxCodes } from "../src/ggggx/ggggxLang"
+import Format from "../src/ggg/Format"
 
 describe("Matrix", () => {
   test("saveCode", () => {

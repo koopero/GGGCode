@@ -89,7 +89,9 @@ function loadCommandsFromBuiltinExtension( name:string ) {
 
 export function runCLI() {
   let parser = optimist
+  // @ts-ignore
   parser = parser.usage(`Usage: $0 [options] [files]`)
+  // @ts-ignore
   parser = addStandardOptions( parser )
   const options = parser.argv
 

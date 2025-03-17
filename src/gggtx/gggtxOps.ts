@@ -146,8 +146,5 @@ const gggOperators = new gggNamedList<OperatorItem>({
   [gggOps.rmod]: { args: 2, fn: (a,b) => b % a, description: "Reverse Modulus" },
 })
 
-gggOperators.code = GGG.Operator
-gggOperators.name = "gggOperators"
-gggOperators.description = "Operators"
 
 export default gggOperators

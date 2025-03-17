@@ -1,6 +1,6 @@
-import Matrix from "../ts/ggggx/Matrix"
-import SavePNG from "../ts/ggggx/SavePNG"
-import LoadPNG from "../ts/ggggx/LoadPNG"
+import Matrix from "../src/ggggx/Matrix"
+import SavePNG from "../src/ggggx/SavePNG"
+import LoadPNG from "../src/ggggx/LoadPNG"
 import { writeToTestOutput } from "./test-utils"
 import { decode, encode } from "fast-png"
 

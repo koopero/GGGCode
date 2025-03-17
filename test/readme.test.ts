@@ -1,4 +1,4 @@
-import { gggHooks, gggMachine, Format } from "../ts/index"
+import { gggHooks, gggMachine, Format } from "../src/index"
 
 
 describe("README", () => {

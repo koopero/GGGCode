@@ -49,25 +49,28 @@
     }
   },
   "scripts": {
-    "clean": "rm -rf dist",
-    "build": "npm run ts:build:browser && npm run ts:build:node",
-    "test": "npm run ts-test",
-    "cpp-defs": "bun run ts/cpp/makeCppDefs.ts",
-    "ts:build:browser": "tsc -p tsconfig.browser.json",
-    "ts:build:node": "tsc -p tsconfig.node.json",
-    "ts-test": "jest",
-    "test-watch": "jest --watchAll --bail",
-    "ts-lint": "eslint ts/**/*.ts",
-    "ts-lint-fix": "eslint --fix ts/**/*.ts"
+    "clean": "rimraf -rf dist",
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build": "npm run clean && npm run build:esm && npm run build:cjs",
+    "test": "jest",
+    "test:watch": "jest --watchAll --bail",
+    "lint": "eslint ts/**/*.ts",
+    "lint:fix": "eslint --fix ts/**/*.ts"
   },
   "author": "Samm Zuest Cooper <koopero@gmail.com>",
   "license": "ISC",
-  "devDependencies": {
-
-  },
   "dependencies": {
     "fast-png": "^6.3.0",
     "optimist": "^0.6.1",
     "ws": "^8.18.1"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/optimist": "^0.0.33",
+    "jest": "^29.7.0",
+    "rimraf": "^6.0.1",
+    "ts-jest": "^29.2.6",
+    "typescript": "^5.8.2"
   }
 }

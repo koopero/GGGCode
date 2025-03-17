@@ -1,5 +1,5 @@
-import { GGG, gggRangeAxis } from "../ts/ggg/gggLang"
-import Format, { FormatData } from "../ts/ggg/Format"
+import { GGG, gggRangeAxis } from "../src/ggg/gggLang"
+import Format, { FormatData } from "../src/ggg/Format"
 
 
 describe("Format", () => {

@@ -1,12 +1,12 @@
-import Matrix from "../ts/ggggx/Matrix"
-import { GGG } from "../ts/ggg/gggLang"
-import { ggggxCodes, ggggxEvents } from "../ts/ggggx/ggggxLang"
-import Format from "../ts/ggg/Format"
-import { RegionsAdd } from "../ts/ggggx/Regions"
+import Matrix from "../src/ggggx/Matrix"
+import { GGG } from "../src/ggg/gggLang"
+import { ggggxCodes, ggggxEvents } from "../src/ggggx/ggggxLang"
+import Format from "../src/ggg/Format"
+import { RegionsAdd } from "../src/ggggx/Regions"
 import { writeDocsFiles } from "./test-utils"
-import gggMachine from "../ts/ggg/gggMachine"
-import ggggxCommands from "../ts/ggggx/ggggxCommands"
-import { ggggxContext } from "../ts/ggggx"
+import gggMachine from "../src/ggg/gggMachine"
+import ggggxCommands from "../src/ggggx/ggggxCommands"
+import { ggggxContext } from "../src/ggggx"
 
 function ggggxMachine() {
   const machine = new gggMachine( { commands: ggggxCommands } )

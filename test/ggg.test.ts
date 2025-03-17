@@ -1,8 +1,8 @@
 import { describe, test, expect } from "@jest/globals"
 
-import { gggHooks, GGG } from "../ts/ggg/gggLang"
-import gggdxCommands from "../ts/gggdx/gggdxCommands"
-import { gggParseLines, gggParseLine, gggParseArgument, gggMachine, Format } from "../ts/index"
+import { gggHooks, GGG } from "../src/ggg/gggLang"
+import gggdxCommands from "../src/gggdx/gggdxCommands"
+import { gggParseLines, gggParseLine, gggParseArgument, gggMachine, Format } from "../src/index"
 
 describe("ggg", () => {
   test("smork", () => {

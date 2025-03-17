@@ -1,13 +1,13 @@
-import Matrix from "../ts/ggggx/Matrix"
-import { GGG } from "../ts/ggg/gggLang"
-import { ggggxCodes, ggggxEvents } from "../ts/ggggx/ggggxLang"
-import Format from "../ts/ggg/Format"
-import { RegionsAdd } from "../ts/ggggx/Regions"
-import Sample from "../ts/ggggx/Sample"
+import Matrix from "../src/ggggx/Matrix"
+import { GGG } from "../src/ggg/gggLang"
+import { ggggxCodes, ggggxEvents } from "../src/ggggx/ggggxLang"
+import Format from "../src/ggg/Format"
+import { RegionsAdd } from "../src/ggggx/Regions"
+import Sample from "../src/ggggx/Sample"
 import { writeDocsFiles } from "./test-utils"
-import gggMachine from "../ts/ggg/gggMachine"
-import ggggxCommands from "../ts/ggggx/ggggxCommands"
-import { DimSize } from "../ts/ggggx/Dim"
+import gggMachine from "../src/ggg/gggMachine"
+import ggggxCommands from "../src/ggggx/ggggxCommands"
+import { DimSize } from "../src/ggggx/Dim"
 
 
 describe("Matrix", () => {

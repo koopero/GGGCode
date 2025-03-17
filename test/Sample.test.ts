@@ -1,5 +1,5 @@
-import Sample from "../ts/ggggx/Sample"
-import Matrix from "../ts/ggggx/Matrix"
+import Sample from "../src/ggggx/Sample"
+import Matrix from "../src/ggggx/Matrix"
 
 describe("Sample", () => {
   test("linear fence", async () => {

@@ -2,6 +2,8 @@
 import { isString } from "../common/util"
 import { FormatData } from "../ggg/Format"
 import { GGG, gggCommandConvention, gggHooks } from "../ggg/gggLang"
+import type { gggCommands } from "../ggg/gggLang"
+
 const gggtxRegisterPrefix = "R"
 
 const gggtxFlowPrefix = "T"
@@ -29,7 +31,7 @@ const RegisterIndexArg = {
 
 const ListRegistersDescription = "List registers"
 
-const gggtxRegisterCommands : gggCommands = {
+const gggtxRegisterCommands = {
   [gggtxCodes.ListRegisters]: {
     description: ListRegistersDescription,
     [gggHooks.Command]: ( args ) => {
@@ -124,7 +126,7 @@ const BooleanCommandHookValue = ( args ) => {
 }
 
 
-const gggtxFlowCommands : gggCommands = {
+const gggtxFlowCommands = {
   [gggtxCodes.BlockEnd]: {
     description: "End of block",
   },
