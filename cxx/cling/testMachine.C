@@ -10,7 +10,6 @@ public:
   }
 };
 
-
 void testMachine() {
   TestMachine machine;
   machine.setup();

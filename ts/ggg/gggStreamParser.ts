@@ -133,8 +133,9 @@ export default function gggParser( props:ParserArgs = {}) {
     const { queue, onIndex } = state
 
     if ( queue ) {
-      const char = queue.substring( 0, 1 )
-      state.queue = queue.substring( 1 )
+      const cp = queue.codePointAt(0) || 0
+      const char = String.fromCodePoint(cp)
+      state.queue = queue.substring( char.length )
       await parse( char )
       if ( onIndex[ state.index ] ) {
         for ( const func of onIndex[ state.index ] ) {
@@ -222,6 +223,16 @@ export default function gggParser( props:ParserArgs = {}) {
     }
 
     if ( lineMode == gggParserMode.Command || lineMode == gggParserMode.Argument ) {
+      // Unicode codepoint outside quoted strings
+      const codePoint = _char.codePointAt(0) || 0
+      if ( codePoint >= 0x80 &&
+           state.dataMode !== gggParserMode.Quoted &&
+           state.dataMode !== gggParserMode.Escaped ) {
+        await finishCompound()
+        await dataAppend( codePoint )
+        return
+      }
+
       // Actual expression
       switch( state.expressionMode ) {
         case gggParserMode.Code:

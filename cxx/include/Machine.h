@@ -42,6 +42,9 @@ namespace ggg {
     Index hexDigit;
     Index hexDigitCount;
     bool hexNormalize;
+
+    uint32_t utf8Accum = 0;
+    int utf8Remaining = 0;
   };
 
 
@@ -64,6 +67,8 @@ namespace ggg {
       state.row++;
       state.code = '\0';
       state.hexAccum = 0;
+      state.utf8Accum = 0;
+      state.utf8Remaining = 0;
       command = nullptr;
       state.lineMode = GGG::Command;
       state.expressionMode = GGG::Code;
@@ -118,6 +123,41 @@ namespace ggg {
 
 
       if ( state.lineMode == GGG::Command || state.lineMode == GGG::Argument ) {
+        // UTF-8 decoding outside quoted strings
+        uint8_t byte = (uint8_t)_char;
+        bool inQuotedContext = ( state.dataMode == GGG::Quote || state.dataMode == GGG::Escape );
+        if ( !inQuotedContext && byte >= 0x80 ) {
+          if ( state.utf8Remaining > 0 ) {
+            if ( (byte & 0xC0) == 0x80 ) {
+              state.utf8Accum = ( state.utf8Accum << 6 ) | ( byte & 0x3F );
+              state.utf8Remaining--;
+              if ( state.utf8Remaining == 0 ) {
+                finishCompound();
+                state.expressionMode = GGG::Encoding;
+                dataAppend( (NumberType)state.utf8Accum );
+              }
+            } else {
+              state.utf8Remaining = 0;
+            }
+          } else if ( byte >= 0xC0 ) {
+            if ( state.dataMode == GGG::Number ) {
+              finishNumber();
+              state.expressionMode = GGG::Encoding;
+            }
+            if ( byte >= 0xF0 ) {
+              state.utf8Accum = byte & 0x07;
+              state.utf8Remaining = 3;
+            } else if ( byte >= 0xE0 ) {
+              state.utf8Accum = byte & 0x0F;
+              state.utf8Remaining = 2;
+            } else {
+              state.utf8Accum = byte & 0x1F;
+              state.utf8Remaining = 1;
+            }
+          }
+          return;
+        }
+
         // Actual expression
         switch( state.expressionMode ) {
           case GGG::Code:
