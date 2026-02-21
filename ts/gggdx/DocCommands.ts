@@ -1,4 +1,4 @@
-import gggNamedList, { gggNamedListItem } from "../ggg/gggNamedList"
+import gggNamedList, { gggNamedListItem } from "../ggg/NamedList"
 
 enum DocType {
   Any = "any",

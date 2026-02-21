@@ -1,4 +1,4 @@
-import Matrix from "../ts/ggggx/Matrix"
+import Matrix from "../ts/ggg/Matrix"
 import { GGG } from "../ts/ggg/gggLang"
 import { ggggxCodes } from "../ts/ggggx/ggggxLang"
 import Format from "../ts/ggg/Format"

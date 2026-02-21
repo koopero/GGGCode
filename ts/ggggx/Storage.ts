@@ -1,10 +1,10 @@
-import gggNamedList, { gggNamedListItem } from "../ggg/gggNamedList"
+import gggNamedList, { gggNamedListItem } from "../ggg/NamedList"
 import { GGG } from "../ggg/gggLang"
 import { isDefined, isNumber, isObject, isString } from "../common/util"
 import { floor, max, min } from "../common/math"
 
 export type StorageClass = number[] | Uint8Array | Int8Array | Uint16Array | Int16Array | Uint32Array | Int32Array | Float32Array | Float64Array
-export enum ggggxStorageTypeNames {
+export enum StorageTypeNames {
   Default = "Array",
   UNorm2 = "UNorm2", Norm2 = "Norm2",
   UNorm4 = "UNorm4", Norm4 = "Norm4",
@@ -17,7 +17,7 @@ export enum ggggxStorageTypeNames {
 }
 
 
-export type ggggxStorageProps = string | number | gggNamedListItem & {
+export type StorageProps = string | number | gggNamedListItem & {
   dim?: number[],
   dataClass?: any,
   norm1?: number,
@@ -26,7 +26,7 @@ export type ggggxStorageProps = string | number | gggNamedListItem & {
   range?: null | [number,number],
 }
 
-export type ggggxStorageType = {
+export type StorageType = {
   index: number,
   name: string,
   dataClass: new ( length:number ) => any,
@@ -36,9 +36,9 @@ export type ggggxStorageType = {
   cxxStorage: string,
 }
 
-export const StorageDefault : ggggxStorageType = { 
+export const StorageDefault : StorageType = { 
   index: 0, 
-  name: ggggxStorageTypeNames.Default, 
+  name: StorageTypeNames.Default, 
   dataClass: Array, 
   encoding: GGG.Value, 
   norm1: 1, 
@@ -54,40 +54,40 @@ const RangeI16:RangeType = [-32768,32767]
 const RangeU32:RangeType = [0,4294967295]
 const RangeI32:RangeType = [-2147483648,2147483647]
 
-export const ggggxStorageTypes = new gggNamedList<ggggxStorageType>( [
+export const StorageTypes = new gggNamedList<StorageType>( [
   StorageDefault,
-  { index: 8, name: ggggxStorageTypeNames.UNorm8, dataClass: Uint8Array, encoding: GGG.HexNorm2, norm1: 255, range: RangeU8, cxxStorage: "uint8_t" },
-  { index: 255, name: ggggxStorageTypeNames.UInt8, dataClass: Uint8Array, encoding: GGG.HexNorm2, norm1: 1, range: RangeU8, cxxStorage: "uint8_t" },
-  { index: 9, name: ggggxStorageTypeNames.Norm8, dataClass: Int8Array, encoding: GGG.HexNorm2, norm1: 127, range: RangeI8, cxxStorage: "uint8_t" },
-  { index: 10, name: ggggxStorageTypeNames.Int8, dataClass: Int8Array, encoding: GGG.HexNorm2, norm1: 1, range: RangeI8, cxxStorage: "int8_t" },
-  { index: 11, name: ggggxStorageTypeNames.UNorm4, dataClass: Uint8Array, encoding: GGG.HexNorm2, norm1: 16, range: RangeU8, cxxStorage: "uint8_t" },
-  { index: 12, name: ggggxStorageTypeNames.Norm4, dataClass: Int8Array, encoding: GGG.HexNorm2, norm1: 8, range: RangeI8, cxxStorage: "int8_t" },
+  { index: 8, name: StorageTypeNames.UNorm8, dataClass: Uint8Array, encoding: GGG.HexNorm2, norm1: 255, range: RangeU8, cxxStorage: "uint8_t" },
+  { index: 255, name: StorageTypeNames.UInt8, dataClass: Uint8Array, encoding: GGG.HexNorm2, norm1: 1, range: RangeU8, cxxStorage: "uint8_t" },
+  { index: 9, name: StorageTypeNames.Norm8, dataClass: Int8Array, encoding: GGG.HexNorm2, norm1: 127, range: RangeI8, cxxStorage: "uint8_t" },
+  { index: 10, name: StorageTypeNames.Int8, dataClass: Int8Array, encoding: GGG.HexNorm2, norm1: 1, range: RangeI8, cxxStorage: "int8_t" },
+  { index: 11, name: StorageTypeNames.UNorm4, dataClass: Uint8Array, encoding: GGG.HexNorm2, norm1: 16, range: RangeU8, cxxStorage: "uint8_t" },
+  { index: 12, name: StorageTypeNames.Norm4, dataClass: Int8Array, encoding: GGG.HexNorm2, norm1: 8, range: RangeI8, cxxStorage: "int8_t" },
 ] )
 
 
 export function StorageFromDepth( depth:number ) {
   switch( depth ) {
-    case 8: return ggggxStorageTypeNames.Norm8
+    case 8: return StorageTypeNames.Norm8
   }
 
-  return ggggxStorageTypeNames.Default
+  return StorageTypeNames.Default
 }
 
-export function Storage( storage:ggggxStorageProps ) : ggggxStorageType {
-  if ( storage as ggggxStorageType ) {
-    return storage as ggggxStorageType
+export function Storage( storage:StorageProps ) : StorageType {
+  if ( storage as StorageType ) {
+    return storage as StorageType
   }
 
   if ( isString( storage ) || isNumber( storage ) ) {
-    storage = ggggxStorageTypes.get( storage )
+    storage = StorageTypes.get( storage )
   }
 
   storage = storage || StorageDefault
 
-  return storage as ggggxStorageType
+  return storage as StorageType
 }
 
-export function StorageValueNorm( storage:ggggxStorageProps, value:number ) {
+export function StorageValueNorm( storage:StorageProps, value:number ) {
   storage = Storage( storage )
   const { norm1 = 1, range = null } = storage
   let norm = value * norm1
@@ -97,7 +97,7 @@ export function StorageValueNorm( storage:ggggxStorageProps, value:number ) {
   return norm
 }
 
-export function StorageNormValue( storage:ggggxStorageProps, norm:number ) {
+export function StorageNormValue( storage:StorageProps, norm:number ) {
   storage = Storage( storage )
   const { norm1 = 1 } = storage
   let value = norm / norm1

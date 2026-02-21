@@ -1,14 +1,15 @@
 import { isArray, isDefined, isNumber, isObject, isRealNumber } from "../common/util"
 import { min, max, floor, ceil, toNorm8, toVector } from "../common/math"
 import { EventEmitter } from "../common/events"
-import { ggggxDimension, ggggxVecArg, ggggxDimArg, ggggxCodes, ggggxEvents } from "./ggggxLang"
-import { gggToken, GGG } from "../ggg/gggLang"
-import SaveImageData, { ImageData, SaveImageDataOptions, ImageDataArg } from "./SaveImageData"
+import { ggggxCodes, ggggxEvents } from "../ggggx/ggggxLang"
+import { ggggxDimension, ggggxVecArg, ggggxDimArg } from "./gggLang"
+import { gggToken, GGG } from "./gggLang"
+import SaveImageData, { ImageData, SaveImageDataOptions, ImageDataArg } from "../ggggx/SaveImageData"
 
 import { DimFrom, DimIterate, DimOffset, DimPad, DimSize } from "./Dim"
-import { StorageFromDepth, StorageNormValue, StorageValueNorm } from "./Storage"
+import { StorageFromDepth, StorageNormValue, StorageValueNorm } from "../ggggx/Storage"
 
-import { ggggxStorageProps, ggggxStorageType, ggggxStorageTypes } from "./Storage"
+import { StorageProps, StorageType, StorageTypes } from "../ggggx/Storage"
 
 function DataArgIterate( vec, callback ) {
   for ( let i = 0; i < vec.length; i++ ) {
@@ -18,7 +19,7 @@ function DataArgIterate( vec, callback ) {
 
 
 export type MatrixProps = string | number | {
-  storage?: ggggxStorageProps,
+  storage?: StorageProps,
   index?: number,
   name?: string,
   dim?: ggggxDimArg,
@@ -46,7 +47,7 @@ type saveCodeOptions = {
 
 type resizeProps = {
   dim?: ggggxDimArg,
-  storage?: ggggxStorageProps,
+  storage?: StorageProps,
   resample?: boolean,
   data?:number[], 
   dimension?: number,
@@ -54,7 +55,7 @@ type resizeProps = {
 
 export type clearOptions = ggggxVecArg | {
   data?: ggggxVecArg,
-  storage?: ggggxStorageProps,
+  storage?: StorageProps,
   dim?: ggggxDimArg,
 }
 
@@ -64,7 +65,7 @@ export default class Matrix extends EventEmitter {
   size:number = 0 
   dim: ggggxDimension
   data: any
-  storage:ggggxStorageType
+  storage:StorageType
 
   constructor( props : MatrixProps = BufferDefaults ) {
     super()
@@ -107,7 +108,7 @@ export default class Matrix extends EventEmitter {
     let { dim:dimArg, storage:storageArg } = props as resizeProps
     const dim = ( dimArg && DimFrom( dimArg )  ) || [ ...this.dim ]
     storageArg = storageArg || ( this.storage && this.storage.index ) || 0
-    const storage:ggggxStorageType = ggggxStorageTypes.get( storageArg as string | number )
+    const storage:StorageType = StorageTypes.get( storageArg as string | number )
 
 
     if ( !storage ) {
@@ -135,8 +136,6 @@ export default class Matrix extends EventEmitter {
     ) {
       return false
     } 
-
-
 
     const { dataClass } = storage
     const size = DimSize( dim )

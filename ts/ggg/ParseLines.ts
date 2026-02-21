@@ -9,17 +9,20 @@ export type ParseLinesArgs = gggToken | gggToken[] | ParseLinesArg | ParseLinesA
 
 export default function ParseLines( arg:ParseLinesArgs, options:ParseOptions = {} ) : gggToken[] {
   const lines:gggToken[] = []
+  let row = 1
 
   function parseChunk( chunk:ParseLinesArgs ) {
     if ( !chunk ) return
 
     if ( isArray( chunk ) ) {
-      return chunk.map( parseChunk )
+      chunk.map( parseChunk )
+      return 
     }
 
     if ( isString( chunk ) ) {
       while( chunk ) {
         const [ line, remain ] = ParseLine( chunk, options )
+        line.row = row++
         lines.push( line )
         chunk = remain
       }
@@ -30,7 +33,7 @@ export default function ParseLines( arg:ParseLinesArgs, options:ParseOptions = {
       const { command, args } = chunk
 
       if ( command && args ) {
-        lines.push( { command, args } )
+        lines.push( { command, args, row: row++ } )
       }
       return
     }

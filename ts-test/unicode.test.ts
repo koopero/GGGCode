@@ -1,5 +1,5 @@
 import ParseData from "../ts/ggg/ParseData"
-import { Solver } from "../ts/ggggx/Solve"
+import { Solve } from "../ts/ggg/Solve"
 
 
 const funUnicodeChars: string[] =  [...`⚡🚀🐉🎩🦄🀄🎶🔱🔮` ]
@@ -33,14 +33,14 @@ describe("ts:unicode", () => {
     })
   })
   
-  // describe("Solver", () => {
+  // describe("Solve", () => {
   //   test("unicode math?!", () => {
   //     const char1 = getRandomUnicodeChar()
   //     const char2 = getRandomUnicodeChar()
   //     const point1 = char1.codePointAt(0) || 0
   //     const point2 = char2.codePointAt(0) || 0
   //     const str = `${char1}|${char2}`
-  //     const result = [ ...Solver(str, { solveStrings: true }) ]
+  //     const result = [ ...Solve(str, { solveStrings: true }) ]
   //     expect(result).toEqual([point1 + point2])
   //   })
   // })

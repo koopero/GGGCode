@@ -1,4 +1,4 @@
-import Matrix from "../ts/ggggx/Matrix"
+import Matrix from "../ts/ggg/Matrix"
 import { GGG } from "../ts/ggg/gggLang"
 import { ggggxCodes, ggggxEvents } from "../ts/ggggx/ggggxLang"
 import Format from "../ts/ggg/Format"
@@ -7,7 +7,7 @@ import Sample from "../ts/ggggx/Sample"
 import { writeDocsFiles } from "./test-utils"
 import Machine from "../ts/ggg/Machine"
 import ggggxCommands from "../ts/ggggx/ggggxCommands"
-import { DimSize } from "../ts/ggggx/Dim"
+import { DimSize } from "../ts/ggg/Dim"
 
 
 describe("Matrix", () => {

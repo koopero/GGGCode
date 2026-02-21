@@ -1,20 +1,20 @@
 import { isArray, isNumber, isObject, isUndefined, isString } from "../common/util"
-import { gggRangeAxis, gggRangeAxes, gggReference, gggValueWithEncoding } from "../ggg/gggLang"
+import { gggRangeAxis, gggRangeAxes, gggReference, gggValueWithEncoding, gggPrimitive } from "./gggLang"
 import { floor } from "../common/math"
-import ParseData from "../ggg/ParseData"
+import ParseData from "./ParseData"
 import { Matrix } from "../ggggx"
 
 const isUsable = ( v ) => isNumber( v ) && !isNaN( v )
 const isBlank = ( v ) => isUndefined( v ) || v === null || isNaN( v )
 
-type SolveOptions = {
+export type SolveOptions = {
   MatrixResolve?: ( name:string ) => Matrix
   solveStrings?: boolean
 }
 
-type SolveArgument = boolean | number | string | gggRangeAxis | gggRangeAxes | gggReference | gggValueWithEncoding
+type SolveArgument = gggPrimitive | gggPrimitive[]
 
-export function* Solver( arg:SolveArgument, options:SolveOptions = {
+export function* Solve( arg:SolveArgument, options:SolveOptions = {
   solveStrings: true
 } ):Generator<number|string> {
   const { MatrixResolve, solveStrings = true } = options

@@ -1,4 +1,4 @@
-import Matrix from "./ggggx/Matrix"
+import Matrix from "./ggg/Matrix"
 export { Matrix }
 
 import Sample from "./ggggx/Sample"

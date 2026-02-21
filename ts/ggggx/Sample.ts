@@ -4,8 +4,8 @@ type BufferIndexT = number
 
 import { floor, mod, max, min, fract, toVector } from "../common/math"
 import { isArray, isUndefined } from "../common/util"
-import Matrix from "./Matrix"
-import { ggggxVecArg } from "./ggggxLang"
+import Matrix from "../ggg/Matrix"
+import { ggggxVecArg } from "../ggg/gggLang"
 import { Filter, Edge, Coord } from "./ggggxLang"
 
 

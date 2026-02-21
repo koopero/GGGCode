@@ -1,11 +1,9 @@
 import { GGG, CommandConvention } from "../ggg/gggLang"
 import { MachineLimits } from "../ggg/Machine"
-import gggNamedList, { gggNamedListItem } from "../ggg/gggNamedList"
+import gggNamedList, { gggNamedListItem } from "../ggg/NamedList"
+import { ggggxDimension } from "../ggg/gggLang"
 
 
-export type ggggxDimension = number[]
-export type ggggxDimArg = number | number[]
-export type ggggxVecArg = number | number[]
 
 type ggggxEncodingMeta =  {
   index: number,

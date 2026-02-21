@@ -92,7 +92,7 @@ export type gggValueWithEncoding = {
   encoding: gggEncodingName,
 }
 
-export type gggPrimitive = string | gggNumeric | gggValueWithEncoding | gggReference
+export type gggPrimitive = boolean | string | gggNumeric | gggValueWithEncoding | gggReference
 
 
 
@@ -153,3 +153,8 @@ export type ParseOptions = {
   keepEncoding?:boolean
   keepComments?:boolean
 }
+
+
+export type ggggxDimension = number[]
+export type ggggxDimArg = number | number[]
+export type ggggxVecArg = number | number[]

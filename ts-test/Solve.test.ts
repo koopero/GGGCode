@@ -3,7 +3,7 @@ import { gggReference } from "../ts/ggg/gggLang"
 import ParseData from "../ts/ggg/ParseData"
 import { floor } from "../ts/common/math"
 import { ggggxContext } from "../ts/ggggx"
-import { Solver } from "../ts/ggggx/Solve"
+import { Solve } from "../ts/ggg/Solve"
 
 function testContext() {
   const context = ggggxContext( { registers: { test: [10,11,12,13,14,15,16,17,18,19] } }  )
@@ -64,7 +64,7 @@ describe( "solveNumbers", () => {
 
   // test( "addition with axis splitter", () => {
   //   const src = "1|2|3"
-  //   const result = [...Solver( src )]
+  //   const result = [...Solve( src )]
   //   expect( result ).toEqual([ 6 ])
   // })
 

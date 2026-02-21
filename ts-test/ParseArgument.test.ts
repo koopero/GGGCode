@@ -90,5 +90,95 @@ describe("ParseArg", () => {
         ],
       })
     })
+
+    test("encoding: One (K)", () => {
+      const [ token, remain ] = ParseArg( `ok`, { keepEncoding: true } )
+      expect( token ).toEqual( {
+        col: 1,
+        code: "O",
+        len: 2,
+        data: [ { value: 1, encoding: "K" } ],
+      })
+    })
+  })
+
+  describe("formulas", () => {
+    test("multi-axis reference", () => {
+      const [ token, remain ] = ParseArg( `R$foo[0:10|100:200]` )
+      expect( token ).toMatchObject( {
+        code: "R",
+        data: [ { 
+          register: "foo", 
+          subscript: [ { 
+            axes: [ { start: 0, end: 10 }, { start: 100, end: 200 } ] 
+          } ]
+        } ],
+      })
+    })
+
+    test("multi-axis reference, multiple", () => {
+      const [ token, remain ] = ParseArg( `R$foo[0:10|100:200,20:30|300:400]` )
+      expect( token ).toMatchObject( {
+        code: "R",
+        data: [ { 
+          register: "foo", 
+          subscript: [ 
+            { 
+              axes: [ { start: 0, end: 10 }, { start: 100, end: 200 } ] 
+            },
+            {
+              axes: [ { start: 20, end: 30 }, { start: 300, end: 400 } ]
+            }
+          ]
+        } ],
+      })
+    })
+    
+    test("open range", () => {
+      const [ token, remain ] = ParseArg( `R-1:` )
+      expect( token ).toMatchObject( {
+        code: "R",
+        data: [ { start: -1, end: NaN, inclusive: true } ],
+      })
+    })
+
+    test("open range with count", () => {
+      const [ token, remain ] = ParseArg( `R0:/3` )
+      expect( token ).toMatchObject( {
+        code: "R",
+        data: [ { start: 0, end: NaN, count: 3, inclusive: true } ],
+      })
+    })
+
+
+  })
+
+  describe("ranges", () => {
+    test("simple range", () => {
+      const [ token, remain ] = ParseArg( `R0:10` )
+      expect( token ).toMatchObject( {
+        col: 1,
+        code: "R",
+        len: 5,
+        data: [ { start: 0, end: 10 } ],
+      })
+    })
+
+    test("hex range", () => {
+      const [ token, remain ] = ParseArg( `R0x0:0xFF` )
+      expect( token ).toMatchObject( {
+        col: 1,
+        code: "R",
+        data: [ { start: 0, end: 255 } ],
+      })
+    } )
+
+    test("unitary range", () => {
+      const [ token, remain ] = ParseArg( `RN:K/3` )
+      expect( token ).toMatchObject( {
+        code: "R",
+        data: [ { start: -1, end: 1, count: 3, inclusive: true } ],
+      })
+    })
   })
 } )

@@ -1,4 +1,4 @@
-import Matrix from "../ts/ggggx/Matrix"
+import Matrix from "../ts/ggg/Matrix"
 import SavePNG from "../ts/ggggx/SavePNG"
 import LoadPNG from "../ts/ggggx/LoadPNG"
 import { writeToTestOutput } from "./test-utils"

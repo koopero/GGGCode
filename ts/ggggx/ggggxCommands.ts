@@ -6,7 +6,7 @@ export enum gggType {
 
 import { GGG } from "../ggg/gggLang"
 import { ggggxCodes, ggggxEncodingOptions } from "./ggggxLang"
-import { ggggxStorageTypes } from "./Storage"
+import { StorageTypes } from "./Storage"
 
 const ArgsBuffer = {
   description: "Buffer index.",
@@ -34,7 +34,7 @@ const ArgsName = {
 const ArgsBufferStorage = {
   description: "storage type",
   type: gggType.String,
-  options: ggggxStorageTypes,
+  options: StorageTypes,
 }
 
 const ArgsPosition = {

@@ -1,7 +1,7 @@
-import Matrix, { clearOptions } from "./Matrix"
+import Matrix, { clearOptions } from "../ggg/Matrix"
 import GGGGX, { MatrixLimits} from "./ggggxLang"
 import Machine from "../ggg/Machine"
-import { Solver } from "./Solve"
+import { Solve } from "../ggg/Solve"
 import { clear } from "console"
 import { isDefined, isObject } from "../common/util"
 import { gggCommands } from "../ggg/gggLang"
@@ -43,8 +43,8 @@ export default function ggggxContext( options?: ContextOptions ) {
   //   register.clear( data )
   // }
 
-  function *Solve( arg, options = {}) {
-    yield *Solver( arg, { MatrixResolve, ...options } )
+  function *SolveLocal( arg, options = {}) {
+    yield *Solve( arg, { MatrixResolve, ...options } )
   }
 
   function MatrixInit( lookup:MatrixLookupArg, clear?:MatrixInitOptions ) {
@@ -81,6 +81,6 @@ export default function ggggxContext( options?: ContextOptions ) {
     machine,
     MatrixResolve,
     MatrixInit,
-    Solve,
+    Solve: SolveLocal,
   }
 }

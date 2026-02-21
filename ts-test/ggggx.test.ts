@@ -1,4 +1,4 @@
-import Matrix from "../ts/ggggx/Matrix"
+import Matrix from "../ts/ggg/Matrix"
 import { GGG } from "../ts/ggg/gggLang"
 import { ggggxCodes, ggggxEvents } from "../ts/ggggx/ggggxLang"
 import Format from "../ts/ggg/Format"
@@ -125,45 +125,7 @@ describe("Matrix", () => {
 })
 
 
-describe("ggggxInterface", () => {
-  test("autodoc", async () => {
-    const machine = ggggxMachine()
 
-    const lines = await machine.run( `
-      D0
-    `)
-
-    const str = Format( lines )
-    writeDocsFiles( str, "ggggx" )
-  })
-  
-  test("will initialize", async () => {
-    const machine = ggggxMachine()
-    const bufferIndex = 0
-    const dim = [2,2,2,2]
-    const position = [0,1,1]
-    const offset = 6
-    const value = [0.25,0.5]
-    const register = `${GGG.Register}${bufferIndex}`
-
-    await machine.run( `
-      ${ggggxCodes.NumbersInit} ${register} ${GGG.Size}${dim} ${GGG.Alias}"Test" 
-      ${ggggxCodes.WriteBuffer} ${register} ${GGG.Offset}${position} ${GGG.Data}${value}
-    `)
-
-    const context = ggggxContext( { machine } )
-    const { MatrixResolve } = context
-    const buffer = MatrixResolve( bufferIndex )
-    expect( buffer ).toBeDefined()
-    expect( buffer ).toBeInstanceOf( Matrix )
-    expect( buffer.dim ).toEqual( dim )
-    expect( buffer.read( [offset], [0,0] ) ).toEqual( value )
-
-    await machine.run( `
-      G1 ${register} P${position} L16
-    `)
-  })
-})
 
 const TestBufferIndexToken = `${GGG.Register}1`
 

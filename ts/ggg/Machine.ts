@@ -2,8 +2,8 @@ import { GGG, gggHooks, gggToken, gggTokenArg, gggCommand, gggCommands, gggHookA
 import ParseLines, { ParseLinesArgs } from "./ParseLines"
 import { EventEmitter } from "../common/events"
 import { isArray, isNumber, isString, isBoolean, isDefined } from "../common/util"
-import gggNamedList, { gggNamedListItem } from "./gggNamedList"
-import { Solver as MachineSolver } from "../ggggx/Solve"
+import gggNamedList, { gggNamedListItem } from "./NamedList"
+import { SolveOptions, Solve } from "./Solve"
 import GGGGX from "../ggggx/ggggxLang"
 
 type QueueItem = {
@@ -53,13 +53,11 @@ function isBlankCommand( command:string ) {
   return !compare || compare.startsWith( GGG.Okay )
   }
 
-import Matrix from "../ggggx/Matrix"
+import Matrix from "./Matrix"
 import { FormatOkayNumber } from "./Format"
-const NumbersAspect = "numbers"
-const NumbersClass = Matrix
 
 
-type MachineSolver = ( arg:gggPrimitive|gggPrimitive[], options? ) => Generator<number|string>
+type MachineSolve = ( arg:gggPrimitive|gggPrimitive[], options? ) => Generator<number|string>
 
 export default class Machine extends EventEmitter  {
   state:{ [key:string]:any } = {}
@@ -68,9 +66,6 @@ export default class Machine extends EventEmitter  {
   
   commands:gggCommands = {}
   commandState:{ [key:string]:any } = {}
-  
-  solvers:MachineSolver[] = []
-
   stack:StackItem[] = []
   queue:QueueItem[] = []
   queuePointer:number = 0
@@ -179,20 +174,17 @@ export default class Machine extends EventEmitter  {
     return registers.get( id )
   }
 
-  *solve( arg:gggPrimitive|gggPrimitive[], options? ) : Generator<number|string> {
-    if ( !this.solvers.length ) {
-      if ( isNumber( arg ) || isString( arg ) ) {
-        yield arg
-      } else if ( isArray( arg ) ) {
-        for ( const item of arg ) {
-          yield* this.solve( item )
-        }
-      }
-      return
+  getMatrix( id:string|number ) : Matrix|undefined {
+    const register = this.getRegister( Matrix, id )
+    if ( register ) {
+      return register as Matrix
     }
-    for ( const solver of this.solvers ) {
-      yield* solver( arg, options )
-    }
+  }
+
+  *solve( arg:gggPrimitive|gggPrimitive[], options?:SolveOptions ) : Generator<number|string> {
+    const MatrixResolveDefault = ( name:string ) => this.getMatrix( name )
+    const { MatrixResolve = MatrixResolveDefault } = options || {}
+    yield* Solve( arg, { MatrixResolve, ...options } )
   }
 
   async execLine( line:gggToken ) {
@@ -223,10 +215,11 @@ export default class Machine extends EventEmitter  {
             const { code, data } = arg
             await this.execCommandHook( gggHooks.Code, { machine, command, state, code } )
 
-            if ( data || data === 0 )
+            if ( data || data === 0 ) {
               for ( const value of this.solve( data ) ) {
                 await this.execCommandHook( gggHooks.Value, { machine, command, state, code, value } )
               }
+            }
             await this.execCommandHook( gggHooks.EndArg, { machine, command, state, code } )
           }
         }

@@ -1,8 +1,6 @@
 import { isArray, isDefined, isNumber, isObject, isRealNumber } from "../common/util"
 import { min, max, floor, ceil, toNorm8, toVector } from "../common/math"
-import { EventEmitter } from "../common/events"
-import { ggggxDimension, ggggxVecArg, ggggxDimArg } from "./ggggxLang"
-import { gggToken, GGG } from "../ggg/gggLang"
+import { ggggxDimension, ggggxVecArg, ggggxDimArg } from "./gggLang"
 
 
 

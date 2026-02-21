@@ -53,6 +53,7 @@ function PrintNumbersHookValue( arg: gggHookArgs ): void {
   }
 
   const { wroteCode, needSeperator, firstValue, encoding } = state
+
   if ( !wroteCode ) {
     if ( needSeperator ) {
       machine.output( GGG.EndArgument )
@@ -62,6 +63,7 @@ function PrintNumbersHookValue( arg: gggHookArgs ): void {
     state.firstArg = false
     state.needSeperator = true
   }
+
 
   for ( const number of valueToNumber( value ) ) {
     if ( state.firstValue ) {

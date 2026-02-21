@@ -1,4 +1,4 @@
-import Matrix from "./Matrix"
+import Matrix from "../ggg/Matrix"
 import { GGG, } from "../ggg/gggLang"
 import { ggggxEvents } from "./ggggxLang"
 import { toInt, isString, isNumber } from "../common/util"

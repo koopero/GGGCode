@@ -1,7 +1,7 @@
-import Matrix from "./Matrix"
+import Matrix from "../ggg/Matrix"
 import { StorageClass } from "./Storage"
 import { isNumber, isArray, isObject } from "../common/util"
-import { DimPad, DimOffset } from "./Dim"
+import { DimPad, DimOffset } from "../ggg/Dim"
 import { floor, min, trunc, abs, saturate } from "../common/math"
 
 

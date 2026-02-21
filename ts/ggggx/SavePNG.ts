@@ -1,4 +1,4 @@
-import Matrix from "./Matrix"
+import Matrix from "../ggg/Matrix"
 import SaveImageData, { SaveImageDataOptions } from "./SaveImageData"
 import { encode, ImageData as LibImageData } from "fast-png"
 

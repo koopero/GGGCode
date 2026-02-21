@@ -1,7 +1,7 @@
 import { floor, saturate, abs, max, min } from "../common/math"
 import { GGG } from "./gggLang"
 import { gggDescribed } from "./gggLang"
-import gggNamedList, { gggNamedListItem } from "./gggNamedList"
+import gggNamedList, { gggNamedListItem } from "./NamedList"
 
 type EncodingType = gggNamedListItem & gggDescribed & {
 
