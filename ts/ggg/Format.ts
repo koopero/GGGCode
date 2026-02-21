@@ -1,6 +1,6 @@
 import { isString, isObject, isArray, isDefined, isBoolean, isNumber } from "../common/util"
 import { floor } from "../common/math"
-import { GGG, gggPrimitive, gggCasedString, gggToken, gggRangeAxis, gggRangeAxes, gggReference } from "./gggLang"
+import { GGG, gggPrimitive, gggCasedString, gggToken, gggRangeAxis, gggRangeAxes, gggReference, UnitaryNames } from "./gggLang"
 import { HexModifiers } from "./hexlist"
 
 
@@ -169,10 +169,10 @@ export function FormatData( data:undefined|string|number|boolean|gggPrimitive|gg
         return `0${encoding}`+data.map( d => isNumber( d ) ? formatHexListItem( d, digits, div ) : "" ).join("")
       }
 
-      case GGG.EncodedMinusOne:
-      case GGG.EncodedZero:
-      case GGG.EncodedOne:
-        return data.map( d => !isNumber( d ) ? "" : d > 0 ? GGG.EncodedOne : d < 0 ? GGG.EncodedMinusOne : GGG.EncodedZero ).join("")
+      case UnitaryNames.MinusOne:
+      case UnitaryNames.Zero:
+      case UnitaryNames.One:
+        return data.map( d => !isNumber( d ) ? "" : d > 0 ? UnitaryNames.One : d < 0 ? UnitaryNames.MinusOne : UnitaryNames.Zero ).join("")
 
 
       case "":
@@ -243,9 +243,9 @@ export default function Format( token : FormatProps = "" ) {
 
 export function FormatOkayNumber( num:number ) {
   switch ( num ) {
-    case 0: return GGG.EncodedZero
-    case 1: return GGG.EncodedOne
-    case -1: return GGG.EncodedMinusOne
+    case 0: return UnitaryNames.Zero
+    case 1: return UnitaryNames.One
+    case -1: return UnitaryNames.MinusOne
     default: return floor(num).toString()
   }
 }

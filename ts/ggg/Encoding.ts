@@ -1,5 +1,5 @@
 import { floor, saturate, abs, max, min } from "../common/math"
-import { GGG } from "./gggLang"
+import { GGG, UnitaryNames } from "./gggLang"
 import { gggDescribed } from "./gggLang"
 import gggNamedList, { gggNamedListItem } from "./NamedList"
 
@@ -23,7 +23,7 @@ const EncodingDefault = { name: GGG.Data, index: EncodingIndexes[GGG.Data], desc
 const EncodingList = new gggNamedList<EncodingType>( [
   EncodingDefault,
   { name: GGG.Dimension, index: EncodingIndexes[GGG.Dimension], description: "Integer" },
-  { name: GGG.EncodedZero, index: EncodingIndexes[GGG.EncodedZero], description: "Unitary" },
+  { name: GGG.EncodedOne, index: EncodingIndexes[GGG.EncodedOne], description: "Unitary" },
   { name: GGG.HexNumber, index: EncodingIndexes[GGG.HexNumber], description: "Hex" },
   { name: GGG.HexNorm2, index: EncodingIndexes[GGG.HexNorm2], description: "HexNorm2" },
   { name: GGG.HexNorm1, index: EncodingIndexes[GGG.HexNorm1], description: "HexNorm1" },
@@ -59,7 +59,7 @@ function respresentUnitary() {
 const HexOverhead = 2
 
 const EncodingShortestOptions = [ 
-  { name: GGG.EncodedZero, overhead: 0, canRepresent: respresentUnitary() },
+  { name: UnitaryNames.Zero, overhead: 0, canRepresent: respresentUnitary() },
   { name: GGG.HexList1, overhead: HexOverhead, canRepresent: representHex( 1, false ) },
   { name: GGG.HexNorm1, overhead: HexOverhead, canRepresent: representHex( 1, true ) },
   { name: GGG.HexList2, overhead: HexOverhead, canRepresent: representHex( 1, false ) },

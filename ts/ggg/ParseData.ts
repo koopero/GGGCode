@@ -1,4 +1,4 @@
-import { GGG, gggCasedString, gggPrimitive, gggRangeAxis, gggReference, ParseOptions } from "./gggLang"
+import { GGG, gggCasedString, gggPrimitive, gggRangeAxis, gggReference, ParseOptions, UnitaryNames, UnitaryValues } from "./gggLang"
 import { HexModifiers, HexModifier } from "./hexlist"
 
 
@@ -11,12 +11,12 @@ const doubleQuotedString = /^((""|".*?[^\\]"))/
 const RegexEscape = ( str:string ) => str.replace( /[-\/\\^$*+?.()|[\]{}]/g, '\\$&' )
 const referenceReg = new RegExp( `^${RegexEscape(GGG.Reference)}([a-zA-Z0-9_]*)(${RegexEscape(GGG.Subscript)}?)` )
 
-const unitConstantCodes = GGG.EncodedOne + GGG.EncodedZero + GGG.EncodedMinusOne
-const unitConstant = new RegExp( `^[${unitConstantCodes}]`, "i" )
-const unitConstantMap = {
-  [GGG.EncodedOne]: 1,
-  [GGG.EncodedZero]: 0,
-  [GGG.EncodedMinusOne]: -1,
+const unitaryPattern = new RegExp( `^[${Object.values(UnitaryNames).map(RegexEscape).join('')}]`, "iu" )
+const unitaryMap: Record<string, number> = {}
+for ( const [name, value] of Object.entries(UnitaryValues) ) {
+  unitaryMap[name] = value
+  if ( name !== name.toUpperCase() ) unitaryMap[name.toUpperCase()] = value
+  if ( name !== name.toLowerCase() ) unitaryMap[name.toLowerCase()] = value
 }
 
 const hexDigitReg = /[0-9a-fA-F]/g
@@ -134,6 +134,12 @@ function parseExpression( numbers, symbols, encodings, keepEncoding ) {
 
   }
 
+  // Handle trailing range symbol with no end value (open range, e.g. "R-1:")
+  const trailingSymbol = symbols[numbers.length]
+  if ( trailingSymbol == GGG.Range ) {
+    axis.inclusive = true
+  }
+
   if ( axis ) {
     axes.push( axis )
   }
@@ -197,7 +203,10 @@ export default function ParseData( str:string, options:ParseOptions = {} ) : [ a
 
     let unicode = (str.match( /^./u ) || [""])[0].codePointAt(0) || 0
 
-    if ( unicode >= 0x80 ) {
+    if ( match = str.match( unitaryPattern ) ) {
+      const value = unitaryMap[ match[0] ]
+      pushNumber( value, GGG.EncodedOne, false )
+    } else if ( unicode >= 0x80 ) {
       // Unicode character as number
       let uniChar = String.fromCodePoint( unicode )
       pushNumber( unicode, uniChar, false )
@@ -224,11 +233,6 @@ export default function ParseData( str:string, options:ParseOptions = {} ) : [ a
         subscriptStack.push( reference )
         currentList = reference.subscript        
       }
-    } else if ( match = str.match( unitConstant ) ) {
-      const unitCode = gggCasedString( match[0] )
-      const value = unitConstantMap[ unitCode ]
-      pushNumber( value, GGG.EncodedOne, false )
-
     } else if ( match = str.match( hexNumber ) ) {
       // Hex number
       const hexMatch = match[0]
@@ -254,8 +258,24 @@ export default function ParseData( str:string, options:ParseOptions = {} ) : [ a
       }
     }
 
-    if ( !match )
+    if ( !match ) {
+      // Allow consecutive symbols (e.g. ":/3" — open range with count)
+      // by injecting NaN for the missing number before consuming the symbol.
+      const tail = str[0]
+      if ( numbers.length > 0 && (
+        tail == GGG.Range ||
+        tail == GGG.Uninclusive ||
+        tail == GGG.Multiplier ||
+        tail == GGG.Count ||
+        tail == GGG.NextAxis
+      )) {
+        pushNumber( NaN, "", false )
+        str = str.substring(1)
+        pushSymbol( tail )
+        continue
+      }
       break
+    }
 
     str = str.substring( match[0].length )
 

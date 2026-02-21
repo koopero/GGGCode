@@ -20,9 +20,9 @@ export enum GGG {
   HexNorm1 = "J",
   HexNorm2 = "H",
   EncodedOne = "K",
-  EncodedZero = "Z",
+  // EncodedZero = "Z",
+  // EncodedMinusOne = "N",
   Operator = "Q",
-  EncodedMinusOne = "N",
   Alias = "L",
   StringToEOL = "`",
   Dimension = "D",
@@ -45,6 +45,29 @@ export enum GGG {
 }
 
 export type gggEncodingName = string
+
+export enum UnitaryNames {
+  Zero = "Z",
+  One = "K",
+  MinusOne = "N",
+  Pi = "π",
+  TwoPi = "τ",
+  Euler = "e",
+  GoldenRatio = "φ",
+  EulerMascheroni = "γ",
+}
+
+export const UnitaryValues = {
+  [UnitaryNames.Zero]: 0,
+  [UnitaryNames.One]: 1,
+  [UnitaryNames.MinusOne]: -1,
+  [UnitaryNames.Pi]: Math.PI,
+  [UnitaryNames.TwoPi]: Math.PI * 2,
+  [UnitaryNames.Euler]: Math.E,
+  [UnitaryNames.GoldenRatio]: (1 + Math.sqrt(5)) / 2,
+  [UnitaryNames.EulerMascheroni]: 0.5772156649,
+}
+
 
 export enum gggHooks {
   Stack = "hookStack",

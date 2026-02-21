@@ -42,10 +42,15 @@ Arguments follow the command and can include:
   - Quoted: `"Hello, world!"`
   - To end of line: `` `Rest of line becomes string``
 
-- **Special Constants**:
-  - One: `K`
-  - Zero: `Z`
-  - Minus One: `N`
+- **Unitary Constants** — named numeric literals, case-insensitive for ASCII:
+  - `K` = 1
+  - `Z` = 0
+  - `N` = -1
+  - `π` = Pi (~3.14159)
+  - `τ` = 2π (~6.28318)
+  - `e` = Euler's number (~2.71828)
+  - `φ` = Golden ratio (~1.61803)
+  - `γ` = Euler-Mascheroni constant (~0.57722)
 
 - **References**: 
   - Basic: `$variable`
@@ -55,10 +60,12 @@ Arguments follow the command and can include:
 
 Values can be modified using:
 
-- **Ranges**: `1:10` (inclusive range)
+- **Ranges**: `1:10` (inclusive range from 1 to 10)
+- **Open Ranges**: `1:` (range from 1 with no fixed end)
+- **Open Range with Count**: `0:/4` (open-ended range divided into 4 steps)
 - **Uninclusive Ranges**: `1>10` (exclusive range)
 - **Multipliers**: `5*3` (multiplication)
-- **Count**: `1/3` (division/count)
+- **Count**: `1:10/4` (range divided into 4 steps)
 - **Multi-axis**: `1|2|3` (separate axis values)
 - **Lists**: `1,2,3` (comma-separated values)
 

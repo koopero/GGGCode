@@ -1,5 +1,5 @@
 import { describe, test, expect } from "@jest/globals"
-import { GGG } from "../ts/ggg/gggLang"
+import { GGG, UnitaryNames, UnitaryValues } from "../ts/ggg/gggLang"
 import { ParseArg } from "../ts/index"
 
 
@@ -100,6 +100,11 @@ describe("ParseArg", () => {
         data: [ { value: 1, encoding: "K" } ],
       })
     })
+
+    test("encoding: Pi (π) — all unitary constants use EncodedOne encoding", () => {
+      const [ token ] = ParseArg( `Gπ`, { keepEncoding: true } )
+      expect( token?.data ).toEqual( [ { value: Math.PI, encoding: GGG.EncodedOne } ] )
+    })
   })
 
   describe("formulas", () => {
@@ -151,6 +156,57 @@ describe("ParseArg", () => {
     })
 
 
+  })
+
+  describe("unitary constants", () => {
+    test.each( Object.entries( UnitaryValues ) )(
+      "%s parses to its numeric value",
+      ( name, value ) => {
+        const [ token ] = ParseArg( `G${name}` )
+        expect( token?.data ).toEqual( [value] )
+      }
+    )
+
+    test("lowercase ASCII variants (z, k, n, e) parse correctly", () => {
+      const cases: [string, number][] = [
+        ["z", UnitaryValues[UnitaryNames.Zero]],
+        ["k", UnitaryValues[UnitaryNames.One]],
+        ["n", UnitaryValues[UnitaryNames.MinusOne]],
+        ["e", UnitaryValues[UnitaryNames.Euler]],
+      ]
+      for ( const [char, expected] of cases ) {
+        const [ token ] = ParseArg( `G${char}` )
+        expect( token?.data ).toEqual( [expected] )
+      }
+    })
+
+    test("unicode constants resolve to values, not codepoints", () => {
+      const unicodeNames = [
+        UnitaryNames.Pi,
+        UnitaryNames.TwoPi,
+        UnitaryNames.GoldenRatio,
+        UnitaryNames.EulerMascheroni,
+      ]
+      for ( const name of unicodeNames ) {
+        const codePoint = name.codePointAt(0)!
+        const [ token ] = ParseArg( `G${name}` )
+        expect( token?.data ).not.toEqual( [codePoint] )
+        expect( token?.data ).toEqual( [UnitaryValues[name]] )
+      }
+    })
+
+    test("unitary constants in a range", () => {
+      const [ token ] = ParseArg( `Rπ:τ` )
+      expect( token ).toMatchObject( {
+        code: "R",
+        data: [ { start: Math.PI, end: Math.PI * 2, inclusive: true } ],
+      })
+    })
+
+    test("multiple unitary constants as data", () => {
+      const [ token ] = ParseArg( `GZ,K,N,π` )
+      expect( token?.data ).toEqual( [0, 1, -1, Math.PI] )
+    })
   })
 
   describe("ranges", () => {

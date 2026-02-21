@@ -1,6 +1,6 @@
 import { floor } from "../common/math"
 import { isDefined, isNumber, isString } from "../common/util"
-import { GGG, gggCasedString, gggToken, gggToken, gggPrimitive } from "./gggLang"
+import { GGG, gggCasedString, gggToken, gggToken, gggPrimitive, UnitaryValues } from "./gggLang"
 
 const gggDimensions = 4
 
@@ -298,15 +298,10 @@ export default function gggParser( props:ParserArgs = {}) {
       startStringToEOL()
     } else {
       _char = gggCasedString( _char )
-      if ( _char == GGG.EncodedOne ) {
+      const unitaryValue = (UnitaryValues as Record<string, number>)[ _char ]
+      if ( unitaryValue !== undefined ) {
         finishCompound()
-        await dataAppend( 1. )
-      } else if ( _char == GGG.EncodedZero ) {
-        finishCompound()
-        await dataAppend( 0. )
-      } else if ( _char == GGG.EncodedMinusOne ) {
-        finishCompound()
-        await dataAppend( -1. )
+        await dataAppend( unitaryValue )
       }
     }
   }

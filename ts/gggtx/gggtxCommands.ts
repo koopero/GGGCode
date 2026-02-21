@@ -16,10 +16,9 @@ export enum gggtxCodes {
   WriteRegisters = `${gggtxRegisterPrefix}${CommandConvention.Write}`,
 
   BlockEnd = `${gggtxFlowPrefix}1`,
-  LoopWhile = `${gggtxFlowPrefix}30`,
-  LoopAsync = `${gggtxFlowPrefix}31`,
-  LoopIf = `${gggtxFlowPrefix}31`,
-  LoopFunction = `${gggtxFlowPrefix}32`,
+  ProcedureInit = `${gggtxFlowPrefix}10`,
+  ProcedureRun = `${gggtxFlowPrefix}11`,
+  Loop = `${gggtxFlowPrefix}30`,
 }
 
 const RegisterIndexArg = {
@@ -123,6 +122,17 @@ const BooleanCommandHookValue = ( args ) => {
   }
 }
 
+const LoopArgs = {
+  'E': {
+    description: "Loop each"
+  },
+  'W': {
+    description: "Loop while"
+  },
+  'I': {
+    description: "Loop if"
+  },
+}
 
 const gggtxFlowCommands : gggCommands = {
   [gggtxCodes.BlockEnd]: {

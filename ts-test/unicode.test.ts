@@ -1,5 +1,6 @@
 import ParseData from "../ts/ggg/ParseData"
 import { Solve } from "../ts/ggg/Solve"
+import { UnitaryNames, UnitaryValues } from "../ts/ggg/gggLang"
 
 
 const funUnicodeChars: string[] =  [...`⚡🚀🐉🎩🦄🀄🎶🔱🔮` ]
@@ -30,6 +31,47 @@ describe("ts:unicode", () => {
       const codePoint2 = 0x1f4a9
       const str = `💩${value}💩`
       expect( ParseData(str) ).toEqual([[codePoint1, value, codePoint2], ""])
+    })
+  })
+
+  describe("unitary unicode constants", () => {
+    const unicodeUnitaries = [
+      UnitaryNames.Pi,
+      UnitaryNames.TwoPi,
+      UnitaryNames.GoldenRatio,
+      UnitaryNames.EulerMascheroni,
+    ]
+
+    test.each( unicodeUnitaries )(
+      "%s resolves to its value, not its codepoint",
+      ( name ) => {
+        const value = UnitaryValues[ name ]
+        const codePoint = name.codePointAt(0)!
+        const [ data ] = ParseData( name )
+        expect( data ).toEqual( [value] )
+        expect( data ).not.toEqual( [codePoint] )
+      }
+    )
+
+    test("unitary unicode mixed with non-unitary unicode", () => {
+      const nonUnitary = "💩"
+      const codePoint = nonUnitary.codePointAt(0)!
+      const [ data ] = ParseData( `${nonUnitary}π${nonUnitary}` )
+      expect( data ).toEqual( [codePoint, Math.PI, codePoint] )
+    })
+
+    test("unitary unicode mixed with numbers", () => {
+      const [ data ] = ParseData( `3π2` )
+      expect( data ).toEqual( [3, Math.PI, 2] )
+    })
+
+    test("sequence of unitary unicode constants", () => {
+      const [ data ] = ParseData( `πτφ` )
+      expect( data ).toEqual( [
+        UnitaryValues[UnitaryNames.Pi],
+        UnitaryValues[UnitaryNames.TwoPi],
+        UnitaryValues[UnitaryNames.GoldenRatio],
+      ])
     })
   })
   
