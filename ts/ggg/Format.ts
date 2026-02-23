@@ -1,6 +1,6 @@
 import { isString, isObject, isArray, isDefined, isBoolean, isNumber } from "../common/util"
 import { floor } from "../common/math"
-import { GGG, gggPrimitive, gggCasedString, gggToken, gggRangeAxis, gggRangeAxes, gggReference, UnitaryNames } from "./gggLang"
+import { GGG, Primitive, CasedString, Token, RangeAxis, RangeAxes, Reference, UnitaryNames } from "./Language"
 import { HexModifiers } from "./hexlist"
 
 
@@ -60,17 +60,17 @@ export function FormatNumberSubsequent( data:number, encoding?:EncodingArg ) : s
   }
 }
 
-export function FormatRangeAxes( data:gggRangeAxes, encoding?:EncodingArg ) : string {
+export function FormatRangeAxes( data:RangeAxes, encoding?:EncodingArg ) : string {
   return data.axes.map( a => FormatRangeAxis( a, encoding ) ).join(GGG.NextAxis)
 }
 
-export function FormatReference( data:gggReference ) : string {
+export function FormatReference( data:Reference ) : string {
   let { register, subscript } = data
 
   return `${GGG.Reference}${register}[${FormatData(subscript)}]`
 }
 
-export function FormatRangeAxis( data:gggRangeAxis, encoding?:EncodingArg ) : string {
+export function FormatRangeAxis( data:RangeAxis, encoding?:EncodingArg ) : string {
   const { 
     start,
     end,
@@ -107,7 +107,7 @@ export function FormatRangeAxis( data:gggRangeAxis, encoding?:EncodingArg ) : st
   return result
 }
 
-export function FormatPrimitive( data:gggPrimitive, encoding:EncodingArg = EncodingDefault ) : string {
+export function FormatPrimitive( data:Primitive, encoding:EncodingArg = EncodingDefault ) : string {
   if ( isString( data ) ) {
     return JSON.stringify( data )
   }
@@ -136,7 +136,7 @@ export function FormatPrimitive( data:gggPrimitive, encoding:EncodingArg = Encod
 }
 
 
-export function FormatData( data:undefined|string|number|boolean|gggPrimitive|gggPrimitive[], encoding:EncodingArg = EncodingDefault ) : string {
+export function FormatData( data:undefined|string|number|boolean|Primitive|Primitive[], encoding:EncodingArg = EncodingDefault ) : string {
   if ( !isDefined( data ) ) {
     return ""
   }
@@ -157,7 +157,7 @@ export function FormatData( data:undefined|string|number|boolean|gggPrimitive|gg
     return ""
   }
 
-  encoding = gggCasedString( encoding )
+  encoding = CasedString( encoding )
 
   if ( isArray( data ) ) {
     switch ( encoding ) {
@@ -193,7 +193,7 @@ export function FormatData( data:undefined|string|number|boolean|gggPrimitive|gg
 //   comment?: string,
 // } | FormatToken[]
 
-export type FormatProps = string | gggToken | string[] | gggToken[]
+export type FormatProps = string | Token | string[] | Token[]
 
 export default function Format( token : FormatProps = "" ) {
   if ( isString( token ) ) {

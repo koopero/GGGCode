@@ -1,7 +1,7 @@
 import { EventEmitter } from "../common/events"
 import { isFunction, isObject, isString } from "../common/util"
 import Format from "../ggg/Format"
-import { GGG, gggToken } from "../ggg/gggLang"
+import { GGG, Token } from "../ggg/Language"
 import Machine from "../ggg/Machine"
 import ParseLine from "../ggg/ParseLine"
 import { Duplex } from "stream"
@@ -25,7 +25,7 @@ type LineStreamQueueItem = {
   status?: 'ok' | 'timeout' | 'error'
   resolve?: ( result: LineStreamQueueItem ) => void
   timer?: NodeJS.Timeout
-  result: gggToken[]
+  result: Token[]
   timeout: number
   timeoutActual: number
 }
@@ -138,7 +138,7 @@ export class Runner extends EventEmitter {
     }
   }
 
-  onResponseToken( item:gggToken ) {
+  onResponseToken( item:Token ) {
     const { running } = this
     const { code = "" } = item
 

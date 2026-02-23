@@ -1,6 +1,6 @@
 import { floor } from "../common/math"
 import { isDefined, isNumber, isString } from "../common/util"
-import { GGG, gggCasedString, gggToken, gggToken, gggPrimitive, UnitaryValues } from "./gggLang"
+import { GGG, CasedString, Token, Token, Primitive, UnitaryValues } from "./Language"
 
 const gggDimensions = 4
 
@@ -68,7 +68,7 @@ type StateType = {
   argBuffer:string
   numbers:number[]
   symbols:string[]
-  value:gggPrimitive
+  value:Primitive
   compoundIndex:number
   compoundAxes:any[]
   hexAccum:number
@@ -268,7 +268,7 @@ export default function gggParser( props:ParserArgs = {}) {
 
   async function parseCode( _char:string ) {
     if ( /^[A-Z]$/i.test( _char ) ) {
-      _char = gggCasedString( _char )
+      _char = CasedString( _char )
       state.code = _char
       resetArg()
       if ( state.lineMode == gggParserMode.Argument ) {
@@ -297,7 +297,7 @@ export default function gggParser( props:ParserArgs = {}) {
     } else if ( _char == GGG.StringToEOL ) {
       startStringToEOL()
     } else {
-      _char = gggCasedString( _char )
+      _char = CasedString( _char )
       const unitaryValue = (UnitaryValues as Record<string, number>)[ _char ]
       if ( unitaryValue !== undefined ) {
         finishCompound()
@@ -410,7 +410,7 @@ export default function gggParser( props:ParserArgs = {}) {
     state.argBuffer += _char
   }
 
-  async function dataAppend( value:gggPrimitive ) {
+  async function dataAppend( value:Primitive ) {
     if ( state.skipData ) {
       return
     }
@@ -472,7 +472,7 @@ export default function gggParser( props:ParserArgs = {}) {
   async function finishCompound() {
     await finishNumber()
     const { numbers, symbols } = state
-    let value:gggPrimitive
+    let value:Primitive
     
     if ( numbers.length == 1 && symbols.length == 0 ) {
       value = numbers[0]
@@ -588,7 +588,7 @@ export default function gggParser( props:ParserArgs = {}) {
   }
 
   async function parseAfterZero( _char:string ) {
-    _char = gggCasedString( _char )
+    _char = CasedString( _char )
     switch( _char ) {
       case GGG.HexNumber: startHex( 0, false ); break
       case GGG.HexList1: startHex( 1, false ); break
@@ -656,7 +656,7 @@ export default function gggParser( props:ParserArgs = {}) {
 
 function normalizeCommandName( code:string, value:number ) {
   if ( !isNaN( value ) ) {
-    code = gggCasedString( code )
+    code = CasedString( code )
     code += floor( value ).toString()
   } else {
     code = ""
@@ -664,11 +664,11 @@ function normalizeCommandName( code:string, value:number ) {
   return code
 }
 
-export function gggTokenParser( props ) {
+export function TokenParser( props ) {
   const { hookLine, keepComments } = props
 
-  let line:gggToken
-  let arg:gggToken 
+  let line:Token
+  let arg:Token 
   resetLine()
   resetArg()
 
@@ -721,7 +721,7 @@ export async function parseLines( text:string, options:ParserOptions = {} ) {
   function hookLine( line ) {
     lines.push( line )
   }
-  const { run } = gggTokenParser( { hookLine, keepComments } )
+  const { run } = TokenParser( { hookLine, keepComments } )
   await run( text )
   return lines
 }

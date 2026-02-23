@@ -1,26 +1,26 @@
 import { describe, test, expect } from "@jest/globals"
-import { gggReference } from "../ts/ggg/gggLang"
+import { Reference } from "../ts/ggg/Language"
 import ParseData from "../ts/ggg/ParseData"
 import { floor } from "../ts/common/math"
-import { ggggxContext } from "../ts/ggggx"
+import { GXContext } from "../ts/ggggx"
 import { Solve } from "../ts/ggg/Solve"
 
 function testContext() {
-  const context = ggggxContext( { registers: { test: [10,11,12,13,14,15,16,17,18,19] } }  )
+  const context = GXContext( { registers: { test: [10,11,12,13,14,15,16,17,18,19] } }  )
   return context
 }
 
 describe( "solveNumbers", () => {
   test( "number", () => {
     const src = 1
-    const { Solve } = ggggxContext( )
+    const { Solve } = GXContext( )
     const result = [...Solve( src )]
     expect( result ).toEqual( [ 1 ] )
   })
 
   test( "data", () => {
     const src = "0x11,2e3"
-    const { Solve } = ggggxContext( )
+    const { Solve } = GXContext( )
     const result = [...Solve( src )]
     expect( result ).toEqual( [ 17,2000 ] )
   })
@@ -33,14 +33,14 @@ describe( "solveNumbers", () => {
   })
 
   test( "register", () => {
-    const src = { register: "test", subscript: [0,3,6] } as gggReference
+    const src = { register: "test", subscript: [0,3,6] } as Reference
     const { Solve } = testContext( )
     const result = [...Solve( src )]
     expect( result ).toEqual([ 10, 13, 16 ])
   })
 
   test( "register span", () => {
-    const src = { register: "test", subscript: {} } as gggReference
+    const src = { register: "test", subscript: {} } as Reference
     const { MatrixResolve, Solve } = testContext()
     const register = MatrixResolve( "test" )
     expect( register ).toBeDefined()

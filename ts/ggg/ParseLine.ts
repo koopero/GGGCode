@@ -1,9 +1,9 @@
 import { FormatPrimitive } from "./Format"
-import { GGG, gggToken, ParseOptions } from "./gggLang"
+import { GGG, Token, ParseOptions } from "./Language"
 import { gggLimits } from "./gggLimits"
 import ParseArg from "./ParseArg"
 
-function formatCommand( token:gggToken ) {
+function formatCommand( token:Token ) {
   const {
     code,
     data,
@@ -15,9 +15,9 @@ function formatCommand( token:gggToken ) {
   return `${code}${valueStr}`
 }
 
-export default function ParseLine( str:string, options:ParseOptions = {} ) : [ gggToken, string ] {
+export default function ParseLine( str:string, options:ParseOptions = {} ) : [ Token, string ] {
   const { keepComments = true } = options
-  const args:gggToken[] = []
+  const args:Token[] = []
   let command = ""
   let comment = ""
   let remain = ""
@@ -56,7 +56,7 @@ export default function ParseLine( str:string, options:ParseOptions = {} ) : [ g
       command = formatCommand( first )
   }
 
-  const line:gggToken = {
+  const line:Token = {
     command,
     args,
     comment

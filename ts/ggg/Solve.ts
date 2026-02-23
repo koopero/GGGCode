@@ -1,5 +1,5 @@
 import { isArray, isNumber, isObject, isUndefined, isString } from "../common/util"
-import { gggRangeAxis, gggRangeAxes, gggReference, gggValueWithEncoding, gggPrimitive } from "./gggLang"
+import { RangeAxis, RangeAxes, Reference, ValueWithEncoding, Primitive } from "./Language"
 import { floor } from "../common/math"
 import ParseData from "./ParseData"
 import { Matrix } from "../ggggx"
@@ -12,7 +12,7 @@ export type SolveOptions = {
   solveStrings?: boolean
 }
 
-type SolveArgument = gggPrimitive | gggPrimitive[]
+type SolveArgument = Primitive | Primitive[]
 
 export function* Solve( arg:SolveArgument, options:SolveOptions = {
   solveStrings: true
@@ -40,19 +40,19 @@ export function* Solve( arg:SolveArgument, options:SolveOptions = {
       }
     } else if ( isObject( value ) ) {
       if ( "value" in value ) {
-        yield* solve( ( value as gggValueWithEncoding ).value )
+        yield* solve( ( value as ValueWithEncoding ).value )
       } else if ( "axes" in value ) {
-        yield* solveRangeAxes( value as gggRangeAxes, register )
+        yield* solveRangeAxes( value as RangeAxes, register )
       } else if ( "register" in value ) {
-        yield* solveReference( value as gggReference )
+        yield* solveReference( value as Reference )
       } else {
         const dimension = register ? register.getSize() : 1
-        yield* solveRangeAxis( value as gggRangeAxis, dimension, 1 )
+        yield* solveRangeAxis( value as RangeAxis, dimension, 1 )
       }
     }
   }
 
-  function* solveReference( value:gggReference ):Generator<number> {
+  function* solveReference( value:Reference ):Generator<number> {
     const { register, subscript } = value
     const reg = MatrixResolve && MatrixResolve( register )
     if ( reg ) {
@@ -67,7 +67,7 @@ export function* Solve( arg:SolveArgument, options:SolveOptions = {
     }
   }
 
-  function* solveRangeAxis( value:gggRangeAxis, dimension:number, stride:number ):Generator<number> {
+  function* solveRangeAxis( value:RangeAxis, dimension:number, stride:number ):Generator<number> {
     let { start, end, count, step, multiplier, inclusive } = value
 
     start = start || 0
@@ -109,7 +109,7 @@ export function* Solve( arg:SolveArgument, options:SolveOptions = {
     }
   }
 
-  function* solveRangeAxes( value:gggRangeAxes, register?:Matrix ):Generator<number> {
+  function* solveRangeAxes( value:RangeAxes, register?:Matrix ):Generator<number> {
     const { axes } = value
     const dimensions:number[] = register ? register.getDimensions() : []
     const strides:number[] = []

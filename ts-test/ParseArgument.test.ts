@@ -1,5 +1,5 @@
 import { describe, test, expect } from "@jest/globals"
-import { GGG, UnitaryNames, UnitaryValues } from "../ts/ggg/gggLang"
+import { GGG, UnitaryNames, UnitaryValues } from "../ts/ggg/Language"
 import { ParseArg } from "../ts/index"
 
 

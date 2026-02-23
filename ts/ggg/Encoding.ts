@@ -1,9 +1,9 @@
 import { floor, saturate, abs, max, min } from "../common/math"
-import { GGG, UnitaryNames } from "./gggLang"
-import { gggDescribed } from "./gggLang"
-import gggNamedList, { gggNamedListItem } from "./NamedList"
+import { GGG, UnitaryNames } from "./Language"
+import { Described } from "./Language"
+import NamedList, { NamedListItem } from "./NamedList"
 
-type EncodingType = gggNamedListItem & gggDescribed & {
+type EncodingType = NamedListItem & Described & {
 
 }
 
@@ -20,7 +20,7 @@ enum EncodingIndexes {
 
 const EncodingDefault = { name: GGG.Data, index: EncodingIndexes[GGG.Data], description: "Decimal" }
 
-const EncodingList = new gggNamedList<EncodingType>( [
+const EncodingList = new NamedList<EncodingType>( [
   EncodingDefault,
   { name: GGG.Dimension, index: EncodingIndexes[GGG.Dimension], description: "Integer" },
   { name: GGG.EncodedOne, index: EncodingIndexes[GGG.EncodedOne], description: "Unitary" },

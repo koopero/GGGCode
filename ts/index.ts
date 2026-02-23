@@ -13,5 +13,5 @@ export { Format }
 import Machine from "./ggg/Machine"
 export { Machine }
 
-import { GGG, gggHooks } from "./ggg/gggLang"
-export { GGG, gggHooks }
+import { GGG, Hooks } from "./ggg/Language"
+export { GGG, Hooks }

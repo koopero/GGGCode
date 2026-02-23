@@ -1,14 +1,14 @@
 import { isArray, isString } from "../common/util"
-import { gggToken, gggParseOptions, ParseOptions } from "./gggLang"
+import { Token, ParseOptions } from "./Language"
 import { gggLimits } from "./gggLimits"
 import ParseLine from "./ParseLine"
 
 export type ParseLinesArg = undefined | string 
-export type ParseLinesArgs = gggToken | gggToken[] | ParseLinesArg | ParseLinesArg[]
+export type ParseLinesArgs = Token | Token[] | ParseLinesArg | ParseLinesArg[]
 
 
-export default function ParseLines( arg:ParseLinesArgs, options:ParseOptions = {} ) : gggToken[] {
-  const lines:gggToken[] = []
+export default function ParseLines( arg:ParseLinesArgs, options:ParseOptions = {} ) : Token[] {
+  const lines:Token[] = []
   let row = 1
 
   function parseChunk( chunk:ParseLinesArgs ) {

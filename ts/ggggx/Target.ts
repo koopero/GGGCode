@@ -1,9 +1,9 @@
 import Matrix from "../ggg/Matrix"
-import { GGG, } from "../ggg/gggLang"
-import { ggggxEvents } from "./ggggxLang"
+import { GGG, } from "../ggg/Language"
+import { MatrixEvents } from "./GXLanguage"
 import { toInt, isString, isNumber } from "../common/util"
-import { ggggxEncodingOptions } from "./ggggxLang"
-import ggggxContext from "./ggggxContext"
+import { ggggxEncodingOptions } from "./GXLanguage"
+import { GXContext } from "./GXContext"
 
 export function TargetHookCommand( arg, target ) {
   const { code, state, value, machine } = arg
@@ -22,7 +22,7 @@ export function TargetHookCommand( arg, target ) {
     case GGG.Register:
       const buffer = machine.getRegisterNumbers( value ) as Matrix
       if ( buffer ) {
-        machine.emit( ggggxEvents.Display, { buffer } ) 
+        machine.emit( MatrixEvents.Display, { buffer } ) 
       }
       break
   }
@@ -84,7 +84,7 @@ export function TargetResolveNumbers( arg ) {
   const { code, state, value, machine } = arg
   let { dim, name, index, length, storage, create } = state
 
-  let context = ggggxContext( { machine } )
+  let context = GXContext( { machine } )
   let { MatrixResolve, MatrixInit } = context
 
   let lookup = index >= 0 ? index : name
@@ -112,7 +112,7 @@ function TargetBuffer( arg ) {
   if ( buffer ) {
     return buffer
   }
-  let context = ggggxContext( { machine } )
+  let context = GXContext( { machine } )
   let { MatrixResolve, MatrixInit } = context
 
   buffer = MatrixResolve( name ) || MatrixResolve( index )

@@ -1,4 +1,4 @@
-import { GGG, gggCasedString, gggPrimitive, gggRangeAxis, gggReference, ParseOptions, UnitaryNames, UnitaryValues } from "./gggLang"
+import { GGG, CasedString, Primitive, RangeAxis, Reference, ParseOptions, UnitaryNames, UnitaryValues } from "./Language"
 import { HexModifiers, HexModifier } from "./hexlist"
 
 
@@ -60,7 +60,7 @@ function parseExpression( numbers, symbols, encodings, keepEncoding ) {
 
   let axis
   let axisIndex
-  const axes: gggRangeAxis[] = []
+  const axes: RangeAxis[] = []
   let lastSymbol
 
   function resetAxis() {
@@ -158,7 +158,7 @@ export default function ParseData( str:string, options:ParseOptions = {} ) : [ a
   let encodings:string[] = []
   let symbols:string[] = []
 
-  const data : gggPrimitive[] = []
+  const data : Primitive[] = []
   const subscriptStack:any[] = []
   let currentList = data
 
@@ -229,7 +229,7 @@ export default function ParseData( str:string, options:ParseOptions = {} ) : [ a
       const reference = { register, subscript: [] }
 
       if ( subscriptStart ) {
-        currentList.push( reference as gggReference )
+        currentList.push( reference as Reference )
         subscriptStack.push( reference )
         currentList = reference.subscript        
       }
@@ -237,7 +237,7 @@ export default function ParseData( str:string, options:ParseOptions = {} ) : [ a
       // Hex number
       const hexMatch = match[0]
       const hexData = hexMatch.substring(2)
-      const hexModCode = gggCasedString(hexMatch[1])
+      const hexModCode = CasedString(hexMatch[1])
       const hexConfig = HexModifiers[ hexModCode ]
 
       if ( hexConfig ) {

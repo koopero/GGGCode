@@ -1,6 +1,6 @@
 import ParseData from "../ts/ggg/ParseData"
 import { Solve } from "../ts/ggg/Solve"
-import { UnitaryNames, UnitaryValues } from "../ts/ggg/gggLang"
+import { UnitaryNames, UnitaryValues } from "../ts/ggg/Language"
 
 
 const funUnicodeChars: string[] =  [...`⚡🚀🐉🎩🦄🀄🎶🔱🔮` ]

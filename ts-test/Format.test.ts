@@ -1,4 +1,4 @@
-import { GGG, gggRangeAxis } from "../ts/ggg/gggLang"
+import { GGG, RangeAxis } from "../ts/ggg/Language"
 import Format, { FormatData } from "../ts/ggg/Format"
 
 
@@ -30,7 +30,7 @@ describe("FormatData", () => {
       const multiplier = 3
       const inclusive = true
 
-      const data = { start, end, step, multiplier, inclusive } as gggRangeAxis
+      const data = { start, end, step, multiplier, inclusive } as RangeAxis
       const str = `${start}${GGG.Range}${end}${GGG.Range}${step}${GGG.Multiplier}${multiplier}`
       expect( FormatData( data ) ).toBe( str )
     })

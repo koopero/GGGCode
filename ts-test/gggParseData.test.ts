@@ -1,6 +1,6 @@
 import { describe, test, expect } from "@jest/globals"
 import ParseData from "../ts/ggg/ParseData"
-import { GGG } from "../ts/ggg/gggLang"
+import { GGG } from "../ts/ggg/Language"
 
 describe("ParseData",() => {
   describe("basic", () => {

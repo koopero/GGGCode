@@ -97,7 +97,7 @@ To implement GGGCode in your application:
 const commands = {
   "P0": {
     description: "Print a string to output",
-    [gggHooks.Value]: (arg) => {
+    [Hooks.Value]: (arg) => {
       const { machine, code, value } = arg
       switch (code) {
         case "S":

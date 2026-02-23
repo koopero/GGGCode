@@ -1,4 +1,4 @@
-import gggNamedList, { gggNamedListItem } from "../ggg/NamedList"
+import NamedList, { NamedListItem } from "../ggg/NamedList"
 
 enum DocType {
   Any = "any",
@@ -13,7 +13,7 @@ type DocArgument = {
   description: string,
   quantity: string,
   keys: string[],
-  options: gggNamedList<gggNamedListItem>
+  options: NamedList<NamedListItem>
 }
 
 type DocCommand = {
@@ -22,7 +22,7 @@ type DocCommand = {
   args: DocArgument[],
 }
 
-import { CommandConvention, gggHooks } from "../ggg/gggLang"
+import { CommandConvention, Hooks } from "../ggg/Language"
 const description = "List available commands."
 const prefix = "D"
 
@@ -71,7 +71,7 @@ const DocCommands = {
   [ gggdxCodes.CommandsList ]: {
     // command: gggdxCodes.CommandsList,
     description,
-    [gggHooks.End]: hookD1End,
+    [Hooks.End]: hookD1End,
   }
 }
 

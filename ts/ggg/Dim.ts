@@ -1,11 +1,11 @@
 import { isArray, isDefined, isNumber, isObject, isRealNumber } from "../common/util"
 import { min, max, floor, ceil, toNorm8, toVector } from "../common/math"
-import { ggggxDimension, ggggxVecArg, ggggxDimArg } from "./gggLang"
+import { Dimensions, VecArg, DimArg } from "./Language"
 
 
 
 
-export function DimOffset( dim: ggggxDimension, coord:ggggxVecArg = 0, defaultValue:number = -1 ) {
+export function DimOffset( dim: Dimensions, coord:VecArg = 0, defaultValue:number = -1 ) {
   coord = toVector( coord )
   let dimIndex = 0
   let mult = 1
@@ -34,7 +34,7 @@ export function DimOffset( dim: ggggxDimension, coord:ggggxVecArg = 0, defaultVa
 
 
 
-export function DimFrom( dim: ggggxDimArg ) : ggggxDimension {
+export function DimFrom( dim: DimArg ) : Dimensions {
   if ( !dim ) {
     dim = []
   } else if ( isNumber( dim ) ) {
@@ -47,10 +47,10 @@ export function DimFrom( dim: ggggxDimArg ) : ggggxDimension {
     dim.pop()
   }
 
-  return dim as ggggxDimension
+  return dim as Dimensions
 }
 
-export function DimPad( dim: ggggxDimension, length:number ) {
+export function DimPad( dim: Dimensions, length:number ) {
   if ( dim.length >= length ) {
     return dim
   }
@@ -61,11 +61,30 @@ export function DimPad( dim: ggggxDimension, length:number ) {
   return newDim
 }
 
-export function DimSize( dim: ggggxDimension ) {
+export function DimSize( dim: Dimensions ) {
   if ( !dim.length ) return 0
   return dim.reduce( ( a, b ) => a * b, 1 )
 }
 
+export function DimNext( coord: VecArg | null, size: Dimensions, offset: VecArg = 0 ) : number[] | null {
+  if ( !coord ) {
+    return toVector( offset )
+  }
+
+  coord = toVector( coord )
+
+  for ( let i = 0; i < size.length; i++ ) {
+    const value = ( coord[i] || 0 ) + ( offset[i] || 0 )
+    if ( value < size[i] ) {
+      coord[i] = value
+      return coord
+    } else {
+      coord[i] = 0
+    }
+  }
+
+  return null
+}
 
 export function *DimIterate(dim: number[], step: number | number[] = 1): Generator<number[]> {
   // Handle step as either a single number or an array

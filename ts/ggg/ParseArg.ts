@@ -1,10 +1,10 @@
-import { gggCasedString, gggToken, ParseOptions } from "./gggLang"
+import { CasedString, Token, ParseOptions } from "./Language"
 import ParseData from "./ParseData"
 
 export const regTokenStart = /^(\s*)([a-z])/i
 export const regNumberStart = /^[0-9+-]/
 
-export default function ParseArg( str:string, options:ParseOptions = {}, col:number = 1 ) : [ gggToken | null, string ] {
+export default function ParseArg( str:string, options:ParseOptions = {}, col:number = 1 ) : [ Token | null, string ] {
   if ( !str )  return [ null, "" ]
 
   const match = regTokenStart.exec( str )
@@ -13,7 +13,7 @@ export default function ParseArg( str:string, options:ParseOptions = {}, col:num
 
   const [ , preamble ] = match
   let [ , , code ] = match
-  code = gggCasedString( code )
+  code = CasedString( code )
 
   let len = code.length
   str = str.substring( preamble.length + len )
@@ -22,7 +22,7 @@ export default function ParseArg( str:string, options:ParseOptions = {}, col:num
   const [ data, remain ] = ParseData( str, options )
   len += str.length - remain.length
 
-  const token : gggToken = {
+  const token : Token = {
     col,
     code,
     len,

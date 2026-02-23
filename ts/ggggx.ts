@@ -4,8 +4,8 @@ export { Matrix }
 import Sample from "./ggggx/Sample"
 export { Sample }
 
-import ggggxContext from "./ggggx/ggggxContext"
-export { ggggxContext }
+import { GXContext } from "./ggggx/GXContext"
+export { GXContext }
 
 import SavePNG from "./ggggx/SavePNG"
 export { SavePNG }

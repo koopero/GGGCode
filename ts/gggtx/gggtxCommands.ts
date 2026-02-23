@@ -1,7 +1,7 @@
 
 import { isString } from "../common/util"
 import { FormatData } from "../ggg/Format"
-import { GGG, CommandConvention, gggHooks } from "../ggg/gggLang"
+import { GGG, CommandConvention, Hooks } from "../ggg/Language"
 const gggtxRegisterPrefix = "R"
 
 const gggtxFlowPrefix = "T"
@@ -28,15 +28,15 @@ const RegisterIndexArg = {
 
 const ListRegistersDescription = "List registers"
 
-const gggtxRegisterCommands : gggCommands = {
+const gggtxRegisterCommands : Commands = {
   [gggtxCodes.ListRegisters]: {
     description: ListRegistersDescription,
-    [gggHooks.Command]: ( args ) => {
+    [Hooks.Command]: ( args ) => {
       const { machine, state } = args
       state.hasListed = false
       machine.output( { code: gggtxCodes.ListRegistersResponse, comment: ListRegistersDescription } )
     },
-    [gggHooks.Value]: ( arg ) => {
+    [Hooks.Value]: ( arg ) => {
       const { machine, state, value } = arg
       const { registers } = machine
 
@@ -46,7 +46,7 @@ const gggtxRegisterCommands : gggCommands = {
         machine.output( { value: register } )
       }
     },
-    [gggHooks.End]: ( arg ) => {
+    [Hooks.End]: ( arg ) => {
       const { machine, state } = arg
       if ( !state.hasListed ) {
         const { registers } = machine
@@ -64,12 +64,12 @@ const gggtxRegisterCommands : gggCommands = {
     args: {
       [gggtxRegisterPrefix]: RegisterIndexArg,
     },
-    [gggHooks.Command]: ( args ) => {
+    [Hooks.Command]: ( args ) => {
       const { machine, state } = args
       state.register = null
       state.writeIndex = 0
     },
-    [gggHooks.Value]: ( args ) => {
+    [Hooks.Value]: ( args ) => {
       const { machine, state, code, value } = args
       const { registers } = machine
       switch ( code ) {
@@ -134,15 +134,15 @@ const LoopArgs = {
   },
 }
 
-const gggtxFlowCommands : gggCommands = {
+const gggtxFlowCommands : Commands = {
   [gggtxCodes.BlockEnd]: {
     description: "End of block",
   },
   [gggtxCodes.LoopWhile]: {
     description: "Loop while condition is met",
-    [gggHooks.Command]: BooleanCommandHookCommand,
-    [gggHooks.Value]: BooleanCommandHookValue,
-    [gggHooks.End]: ( args ) => {
+    [Hooks.Command]: BooleanCommandHookCommand,
+    [Hooks.Value]: BooleanCommandHookValue,
+    [Hooks.End]: ( args ) => {
       const { machine, state } = args
       const { bool } = state
 
@@ -153,7 +153,7 @@ const gggtxFlowCommands : gggCommands = {
       machine.pushStack( stackState )
       machine.setSkip( !bool )
     }, 
-    [gggHooks.Stack]: ( args ) => { 
+    [Hooks.Stack]: ( args ) => { 
       const { machine, state, command } = args
       if ( command == gggtxCodes.BlockEnd ) {
         machine.popStack()
@@ -168,9 +168,9 @@ const gggtxFlowCommands : gggCommands = {
   },
   [gggtxCodes.LoopIf]: {
     description: "Run if condition is met",
-    [gggHooks.Command]: BooleanCommandHookCommand,
-    [gggHooks.Value]: BooleanCommandHookValue,
-    [gggHooks.End]: ( args ) => {
+    [Hooks.Command]: BooleanCommandHookCommand,
+    [Hooks.Value]: BooleanCommandHookValue,
+    [Hooks.End]: ( args ) => {
       const { machine, state } = args
       const { bool } = state
       const stackState = {
@@ -179,7 +179,7 @@ const gggtxFlowCommands : gggCommands = {
       machine.pushStack( stackState )
       machine.setSkip( !bool )
     }, 
-    [gggHooks.Stack]: ( args ) => { 
+    [Hooks.Stack]: ( args ) => { 
       const { machine, state, command } = args
       if ( command == gggtxCodes.BlockEnd ) {
         machine.popStack()

@@ -1,6 +1,6 @@
 import { isArray, isNumber, isString } from "../common/util"
 
-export type gggNamedListItem = {
+export type NamedListItem = {
   name?: string,
   index?: number,
 }
@@ -31,7 +31,7 @@ export function toKeyDescription( key:string|number|{ index?:number, name?:strin
   return result
 }
 
-export default class gggNamedList<T extends gggNamedListItem> {
+export default class NamedList<T extends NamedListItem> {
   named: { [key:string]:T } = {}
   list: T[] = []
   constructor( item?:{ [key:string]:T }|T[] ) {

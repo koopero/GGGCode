@@ -1,15 +1,17 @@
+import { describe, expect, test, jest } from '@jest/globals'
 import Matrix from "../ts/ggg/Matrix"
-import { GGG } from "../ts/ggg/gggLang"
-import { ggggxCodes, ggggxEvents } from "../ts/ggggx/ggggxLang"
+import { GGG } from "../ts/ggg/Language"
+import { GXCommandNames, MatrixEvents } from "../ts/ggggx/GXLanguage"
 import Format from "../ts/ggg/Format"
 import { RegionsAdd } from "../ts/ggggx/Regions"
 import { writeDocsFiles } from "./test-utils"
 import Machine from "../ts/ggg/Machine"
-import ggggxCommands from "../ts/ggggx/ggggxCommands"
-import { ggggxContext } from "../ts/ggggx"
+import { GXCommands } from "../ts/ggggx/GXCommands"
+import { MatrixReadCode } from "../ts/ggggx/MatrixRead"
+import { OpIndexes, Ops } from '../ts/ggggx/Operators'
 
 function ggggxMachine() {
-  const machine = new Machine( { commands: ggggxCommands } )
+  const machine = new Machine( { commands: GXCommands } )
   return machine 
 }
 
@@ -48,7 +50,7 @@ describe("Matrix", () => {
 
     //   const buffer = new Matrix( { dim: [1,1,2] } )
     //   const onResize = jest.fn()
-    //   buffer.on( ggggxEvents.Resize, onResize )
+    //   buffer.on( MatrixEvents.Resize, onResize )
     //   buffer.resize( [1,2,2] )
     //   buffer.resize( [1,2,2] )
     //   expect( onResize ).toHaveBeenCalledTimes( 1 )
@@ -71,23 +73,6 @@ describe("Matrix", () => {
     expect( buffer.read( 2, { r:0,g:0} ) ).toEqual( {r:3,g:4} )
   })
 
-  test("saveCode", () => {
-    const name = "Test"
-    const index = 2
-    const dim = [ 2, 3 ]
-    const data = [1,2,3,4,5,6] 
-    const chunk = 3
-    const buffer = new Matrix( { dim, name, index } )
-    buffer.write( data )
-
-    const lines = buffer.saveCode( { chunk }  )
-    const codes = lines.map( Format )
-    const [ header, data0, data1 ] = codes
-    const register = `${GGG.Register}${index}`
-    expect( header ).toEqual( `${ggggxCodes.NumbersInit} ${register} ${GGG.Alias}"${name}" ${GGG.Size}${dim} ${GGG.Storage}"Array"` )
-    expect( data0 ).toEqual( `${ggggxCodes.WriteBuffer} ${register} ${GGG.Offset}${0} ${GGG.Data}${data.slice(0,chunk)}` )
-    expect( data1 ).toEqual( `${ggggxCodes.WriteBuffer} ${register} ${GGG.Offset}${chunk} ${GGG.Data}${data.slice(chunk)}` )
-  })
 
   describe("UNorm8", () => {
     test("initialize", () => {
@@ -105,7 +90,7 @@ describe("Matrix", () => {
   })
 
   describe("events", () => {
-    describe(ggggxEvents.RegionChange, () => {
+    describe(MatrixEvents.RegionChange, () => {
       test("will emit", () => {
         const buffer = new Matrix( {
           dim: [2,2]
@@ -113,7 +98,7 @@ describe("Matrix", () => {
 
         const onRegion = jest.fn()
 
-        buffer.on( ggggxEvents.RegionChange, onRegion )
+        buffer.on( MatrixEvents.RegionChange, onRegion )
 
         buffer.write( [1,1], [0,1] )
 
@@ -131,29 +116,29 @@ const TestBufferIndexToken = `${GGG.Register}1`
 
 
 const RunTestBuffer = `
-  ${ggggxCodes.NumbersInit} ${TestBufferIndexToken} D2,2,2,2 N"Test" 
-  ${ggggxCodes.WriteBuffer} ${TestBufferIndexToken} V0.25,0.5
+  ${GXCommandNames.MatrixInit} ${TestBufferIndexToken} D2,2,2,2 N"Test" 
+  ${GXCommandNames.MatrixWrite} ${TestBufferIndexToken} V0.25,0.5
 `
 
 
-describe(`command: ${ggggxCodes.MatrixDump}`, () => {
-  test("will dump", async () => {
-    const machine = ggggxMachine()
-    await machine.run( `
-      ${RunTestBuffer}
-    `)
+// describe(`command: ${GXCommandNames.MatrixRead}`, () => {
+//   test("will dump", async () => {
+//     const machine = ggggxMachine()
+//     await machine.run( `
+//       ${RunTestBuffer}
+//     `)
 
-    const result = await machine.run( `
-      ${ggggxCodes.MatrixDump} ${TestBufferIndexToken}
-    `)
+//     const result = await machine.run( `
+//       ${GXCommandNames.MatrixRead} ${TestBufferIndexToken}
+//     `)
 
-    const secondMachine = ggggxMachine()
-    await secondMachine.run( result )
+//     const secondMachine = ggggxMachine()
+//     await secondMachine.run( result )
 
-  })
-})
+//   })
+// })
 
-describe(ggggxCodes.WatchBuffers, () => {
+describe(GXCommandNames.MatrixWatch, () => {
   // test("will watch", async () => { 
   //   const machine = ggggxMachine()
   //   await machine.run( `

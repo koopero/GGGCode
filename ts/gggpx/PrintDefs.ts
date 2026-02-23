@@ -1,7 +1,7 @@
 import { floor } from "../common/math"
 import { isArray, isNumber, isObject, isString } from "../common/util"
 import Format, { FormatData } from "../ggg/Format"
-import { GGG, CommandConvention, gggNumeric, gggRangeAxes } from "../ggg/gggLang"
+import { GGG, CommandConvention, Numeric, RangeAxes } from "../ggg/Language"
 
 export const PrintPrefix = "P"
 export const PrintNumbersName = `${PrintPrefix}${CommandConvention.Read}`

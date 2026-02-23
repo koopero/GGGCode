@@ -1,15 +1,12 @@
 import { isArray, isDefined, isNumber, isObject, isRealNumber } from "../common/util"
 import { min, max, floor, ceil, toNorm8, toVector } from "../common/math"
 import { EventEmitter } from "../common/events"
-import { ggggxCodes, ggggxEvents } from "../ggggx/ggggxLang"
-import { ggggxDimension, ggggxVecArg, ggggxDimArg } from "./gggLang"
-import { gggToken, GGG } from "./gggLang"
+import { Dimensions, VecArg, DimArg } from "./Language"
 import SaveImageData, { ImageData, SaveImageDataOptions, ImageDataArg } from "../ggggx/SaveImageData"
-
 import { DimFrom, DimIterate, DimOffset, DimPad, DimSize } from "./Dim"
 import { StorageFromDepth, StorageNormValue, StorageValueNorm } from "../ggggx/Storage"
-
 import { StorageProps, StorageType, StorageTypes } from "../ggggx/Storage"
+import { MatrixEvents } from "../ggggx/GXLanguage"
 
 function DataArgIterate( vec, callback ) {
   for ( let i = 0; i < vec.length; i++ ) {
@@ -22,7 +19,7 @@ export type MatrixProps = string | number | {
   storage?: StorageProps,
   index?: number,
   name?: string,
-  dim?: ggggxDimArg,
+  dim?: DimArg,
   data?: number[],
 }
 
@@ -35,35 +32,25 @@ const BufferDefaults = {
   dim: [1,1,1,1],
 }
 
-type saveCodeOptions = {
-  lines?: gggToken[],
-  header?: boolean,
-  encoding?: string,
-  region?: number[],
-  regions?: number[][],
-  chunk?: number,
-}
-
-
 type resizeProps = {
-  dim?: ggggxDimArg,
+  dim?: DimArg,
   storage?: StorageProps,
   resample?: boolean,
   data?:number[], 
   dimension?: number,
 }
 
-export type clearOptions = ggggxVecArg | {
-  data?: ggggxVecArg,
+export type clearOptions = VecArg | {
+  data?: VecArg,
   storage?: StorageProps,
-  dim?: ggggxDimArg,
+  dim?: DimArg,
 }
 
 export default class Matrix extends EventEmitter {
   name:string = ""
   index:number = -1
   size:number = 0 
-  dim: ggggxDimension
+  dim: Dimensions
   data: any
   storage:StorageType
 
@@ -98,7 +85,7 @@ export default class Matrix extends EventEmitter {
     return this.size
   }
 
-  resize( props: resizeProps | ggggxDimArg ) {
+  resize( props: resizeProps | DimArg ) {
     if ( isArray( props ) || isNumber( props ) ) {
       props = { dim: props }
     }
@@ -160,7 +147,7 @@ export default class Matrix extends EventEmitter {
     this.dim = dim
     this.data = data
     this.storage = storage
-    this.emit( ggggxEvents.Resize, { dim, size, storage } )
+    this.emit( MatrixEvents.Resize, { dim, size, storage } )
 
     return true
   }
@@ -226,7 +213,7 @@ export default class Matrix extends EventEmitter {
 
   }
 
-  clearData( value:ggggxVecArg = 0 ) {
+  clearData( value:VecArg = 0 ) {
     value = toVector( value )
 
     if ( value.length < 1 )
@@ -248,14 +235,14 @@ export default class Matrix extends EventEmitter {
     }
 
     if ( start >= 0 ) {
-      this.emit( ggggxEvents.RegionChange, [ start, end ] )
+      this.emit( MatrixEvents.RegionChange, [ start, end ] )
       return true
     }
 
     return false
   }
 
-  write( value:ggggxVecArg = [], coord:ggggxVecArg = 0 ) : boolean {
+  write( value:VecArg = [], coord:VecArg = 0 ) : boolean {
     value = toVector( value )
     const { dim, data, storage } = this
     const coordIndex = DimOffset( dim, coord )
@@ -279,7 +266,7 @@ export default class Matrix extends EventEmitter {
     })
 
     if ( start >= 0 ) {
-      this.emit( ggggxEvents.RegionChange, [ start, end ] )
+      this.emit( MatrixEvents.RegionChange, [ start, end ] )
       return true
     }
 
@@ -314,7 +301,7 @@ export default class Matrix extends EventEmitter {
   }
 
 
-  read( coord:ggggxVecArg = 0, value:ggggxReadVecArg = -1 ) {
+  read( coord:VecArg = 0, value:ggggxReadVecArg = -1 ) {
     const { dim, data, storage } = this
     let index = DimOffset( dim, coord )
 
@@ -348,69 +335,10 @@ export default class Matrix extends EventEmitter {
     return value
   }
 
-  readNumber( coord:ggggxVecArg = 0, defaultValue:number = -1 ) {
+  readNumber( coord:VecArg = 0, defaultValue:number = -1 ) {
     const value = this.read( coord, defaultValue )
     return isRealNumber( value ) ? value : defaultValue
   }
-
-  saveCode( { 
-    lines = [],
-    header = true,
-    encoding = "",
-    region = [],
-    regions = [],
-    chunk = 128,
-  }:saveCodeOptions = {} ) {
-    const { name = "", index = -1, dim, storage } = this
-    encoding = encoding || storage.encoding 
-
-    if ( header ) {
-      lines.push( { command: ggggxCodes.NumbersInit, args: [
-        { code: GGG.Register, data: index },
-        { code: GGG.Alias, data: name },
-        { code: GGG.Size, data: dim },
-        { code: GGG.Storage, data: storage.name },
-      ] } )
-
-      if ( ( !regions || !regions.length ) && ( !regions || !region.length ) ) {
-        region = [ 0, DimSize( dim ) ]
-      }
-    }
-
-    if ( region && region.length ) {
-      const [ start, end ] = region
-      const size = end - start
-      const chunkCount = ceil( size / chunk )
-      for ( let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++ ) {
-        const chunkStart = start + chunkIndex * chunk
-        const chunkEnd = Math.min( chunkStart + chunk, end )
-        const chunkSize = chunkEnd - chunkStart
-        const data = this.read( chunkStart, new Array( chunkSize ) ) as number[]
-        lines.push( {
-          command: ggggxCodes.WriteBuffer,
-          args: [
-            { code: GGG.Register, data: index },
-            { code: GGG.Offset, data: [ chunkStart ] },
-            { 
-              code: GGG.Data, 
-              data,
-              encoding
-            },
-          ]
-        } )
-      }
-    }
-
-
-    if ( regions && regions.length ) {
-      for ( const region of regions ) {
-        this.saveCode( { lines, header: false, encoding, region, chunk } )
-      }
-    } 
-
-    return lines
-  }
-
 
   readIndex( index:number, defaultValue:number = -1 ) {
     const { size } = this
@@ -432,7 +360,7 @@ function fromNormDepth( val:number = 0, depth:number = 8 ) {
 
 
 
-export function describeBuffer( buffer:Matrix ) {
+export function describeMatrix( buffer:Matrix ) {
   const { storage, dim } = buffer
   const { name } = storage
   return `${name}(${dim.toString()})`

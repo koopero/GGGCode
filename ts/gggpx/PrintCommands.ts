@@ -1,18 +1,18 @@
 import { isNumber, isString } from "../common/util"
 import { EncodingCode } from "../ggg/Encoding"
 import { FormatNumber, FormatNumberFirst, FormatNumberSubsequent } from "../ggg/Format"
-import { gggHookArgs, gggHooks } from "../ggg/gggLang"
-import { GGG } from "../ggg/gggLang"
+import { HookArgs, Hooks } from "../ggg/Language"
+import { GGG } from "../ggg/Language"
 import { PrintPrefix } from "./PrintDefs"
 
 const EncodingEscape = -1
 
-function PrintNumbersHookCommand( arg: gggHookArgs ): void {
+function PrintNumbersHookCommand( arg: HookArgs ): void {
   const { state } = arg
   state.needSeperator = false
 }
 
-function PrintNumbersHookCode( arg: gggHookArgs ): void {
+function PrintNumbersHookCode( arg: HookArgs ): void {
   const { state } = arg
   state.firstValue = true
   state.writeEncoding = false
@@ -32,7 +32,7 @@ function *valueToNumber( value: number|string|undefined ) : Generator<number> {
   }
 }
 
-function PrintNumbersHookValue( arg: gggHookArgs ): void {
+function PrintNumbersHookValue( arg: HookArgs ): void {
   const { state, code, value, machine } = arg
 
   switch ( arg.code ) {
@@ -75,18 +75,18 @@ function PrintNumbersHookValue( arg: gggHookArgs ): void {
   }
 }
 
-function PrintNumbersHookEnd( arg: gggHookArgs ): void {
+function PrintNumbersHookEnd( arg: HookArgs ): void {
   const { state, machine } = arg
   machine.output( GGG.End )
   machine.outputOk()
 }
 
-function PrintStringHookCommand( arg: gggHookArgs ): void {
+function PrintStringHookCommand( arg: HookArgs ): void {
   const { state, machine } = arg
   machine.output( GGG.Comment )
 }
 
-function PrintStringHookValue( arg: gggHookArgs ): void {
+function PrintStringHookValue( arg: HookArgs ): void {
   const { value, machine } = arg
   if ( isNumber( value ) ) {
     machine.output( String.fromCodePoint( value ) )
@@ -95,7 +95,7 @@ function PrintStringHookValue( arg: gggHookArgs ): void {
   }
 }
 
-function PrintStringHookEnd( arg: gggHookArgs ): void {
+function PrintStringHookEnd( arg: HookArgs ): void {
   const { machine } = arg
   machine.output( GGG.End )
   machine.outputOk()
@@ -121,10 +121,10 @@ export function PrintMakeCommands( args: PrintMakeCommandsArgs = PrintMakeComman
     result[command] = {
       command,
       description: "Print args as numbers.",
-      [gggHooks.Command]: PrintNumbersHookCommand,
-      [gggHooks.Code]: PrintNumbersHookCode,
-      [gggHooks.Value]: PrintNumbersHookValue,
-      [gggHooks.End]: PrintNumbersHookEnd,
+      [Hooks.Command]: PrintNumbersHookCommand,
+      [Hooks.Code]: PrintNumbersHookCode,
+      [Hooks.Value]: PrintNumbersHookValue,
+      [Hooks.End]: PrintNumbersHookEnd,
     }
   }
 
@@ -133,9 +133,9 @@ export function PrintMakeCommands( args: PrintMakeCommandsArgs = PrintMakeComman
     result[command] = {
       command,
       description: "Print data as comment string.",
-      [gggHooks.Command]: PrintStringHookCommand,
-      [gggHooks.Value]: PrintStringHookValue,
-      [gggHooks.End]: PrintStringHookEnd
+      [Hooks.Command]: PrintStringHookCommand,
+      [Hooks.Value]: PrintStringHookValue,
+      [Hooks.End]: PrintStringHookEnd
     }
   }
   return result

@@ -5,8 +5,8 @@ type BufferIndexT = number
 import { floor, mod, max, min, fract, toVector } from "../common/math"
 import { isArray, isUndefined } from "../common/util"
 import Matrix from "../ggg/Matrix"
-import { ggggxVecArg } from "../ggg/gggLang"
-import { Filter, Edge, Coord } from "./ggggxLang"
+import { VecArg } from "../ggg/Language"
+import { Filter, Edge, Coord } from "./GXLanguage"
 
 
 interface ResolvedAxis {
@@ -23,7 +23,7 @@ export interface SampleOptions {
   coord?: Coord | string
 }
 
-export default function Sample( buffer:Matrix, position:ggggxVecArg = 0, options:SampleOptions = {}, value?:ggggxVecArg  ):number[] | number {
+export default function Sample( buffer:Matrix, position:VecArg = 0, options:SampleOptions = {}, value?:VecArg  ):number[] | number {
   const { dim } = buffer
   const { dimension = 1 } = options
   const pos = toVector( position )

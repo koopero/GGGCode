@@ -1,6 +1,6 @@
 import { describe, test, expect } from "@jest/globals"
 
-import { gggHooks, GGG } from "../ts/ggg/gggLang"
+import { Hooks, GGG } from "../ts/ggg/Language"
 import DocCommands from "../ts/gggdx/DocCommands"
 import { ParseLines, ParseLine, ParseArg, Machine, Format } from "../ts/index"
 import { gggMessage } from "../ts/ggg/Machine"
@@ -18,10 +18,10 @@ describe("Machine", () => {
 
     machine.addCommands( {
       Q1: {
-        [gggHooks.Command]: onCommand,
-        [gggHooks.Value]: onValue,
-        [gggHooks.Code]: onCode,
-        [gggHooks.End]: ( arg ) => {
+        [Hooks.Command]: onCommand,
+        [Hooks.Value]: onValue,
+        [Hooks.Code]: onCode,
+        [Hooks.End]: ( arg ) => {
           arg.machine.outputOk()
           onEnd()
         },

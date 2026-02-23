@@ -1,6 +1,6 @@
 import { describe, test, expect } from "@jest/globals"
 
-import { gggHooks, GGG } from "../ts/ggg/gggLang"
+import { Hooks, GGG } from "../ts/ggg/Language"
 import DocCommands from "../ts/gggdx/DocCommands"
 import { ParseLines, ParseLine, ParseArg, Machine, Format } from "../ts/index"
 

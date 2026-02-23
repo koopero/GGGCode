@@ -1,18 +1,14 @@
-import gggNamedList, { gggNamedListItem } from "../ggg/gggNamedList"
+import NamedList, { NamedListItem } from "../ggg/NamedList"
 
 const bool = ( a ) => a ? 1 : 0
 
-type OperatorItem = gggNamedListItem & { 
+type OperatorItem = NamedListItem & { 
   args:number
   fn:(...args:any[]) => any
   description?:string
 }
 
-const Boolish = 0x100
-const Compare = 0x200
-
-
-enum Ops {
+export enum Ops {
   nop = 'nop',
   set = 'set',
   bool = 'bool',
@@ -75,13 +71,19 @@ enum Ops {
   rmod = 'rmod',
 }
 
-const gggOperators = new gggNamedList<OperatorItem>({
-  [Ops.nop]: { args: 1, fn: (a) => a },
-  [Ops.set]: { args: 2, fn: (a, b) => b },
+export const OpIndexes = {
+  [Ops.nop]: 0,
+  [Ops.set]: 1,
+  [Ops.bool]: 2,
+  [Ops.clamp]: 3,
+  [Ops.sat]: 4,
+}
 
-  [Ops.bool]: { args: 2, fn: (a,b) => a ? 1 : 0 },
-  [Ops.clamp]: { args: 2, fn: (a,b) => !b ? a : Math.min(1, Math.max(0, a)) },
-
+const Operators = new NamedList<OperatorItem>({
+  [Ops.nop]: { index: OpIndexes[Ops.nop], args: 1, fn: (a) => a, description: "No Operation" },
+  [Ops.set]: { index: OpIndexes[Ops.set], args: 2, fn: (a, b) => b, description: "Set" },
+  [Ops.bool]: { index: OpIndexes[Ops.bool], args: 2, fn: (a,b) => a ? 1 : 0, description: "Boolean" },
+  [Ops.clamp]: { index: OpIndexes[Ops.clamp], args: 2, fn: (a,b) => !b ? a : Math.min(1, Math.max(0, a)), description: "Clamp" },
   [Ops.zero]: { args: 2, fn: (a,b) => !b? 0: a, description: "Zero" },
   [Ops.rand]: { args: 2, fn: (a,b) => !b? Math.random(): a, description: "Random" },
   [Ops.dec]: { args: 1, fn: (a,b) => !b ? a - 1 : a, description: "Decrement" },
@@ -144,8 +146,8 @@ const gggOperators = new gggNamedList<OperatorItem>({
   [Ops.rmod]: { args: 2, fn: (a,b) => b % a, description: "Reverse Modulus" },
 })
 
-gggOperators.code = GGG.Operator
-gggOperators.name = "gggOperators"
-gggOperators.description = "Operators"
+// Operators.code = GGG.Operator
+// Operators.name = "gggOperators"
+// Operators.description = "Operators"
 
-export default gggOperators
+export default Operators

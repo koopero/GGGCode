@@ -1,4 +1,4 @@
-import { GGG } from "../ggg/gggLang"
+import { GGG } from "../ggg/Language"
 import Strings from "./CxxStrings"
 import { resolve } from "path"
 import { writeFileSync, existsSync } from "fs"

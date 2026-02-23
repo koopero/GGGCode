@@ -1,32 +1,31 @@
-import { GGG, gggHooks, gggToken, gggTokenArg, gggCommand, gggCommands, gggHookArgs, gggCasedString, gggPrimitive } from "./gggLang"
+import { GGG, Hooks, Token, TokenArg, Command, Commands, HookArgs, CasedString, Primitive } from "./Language"
 import ParseLines, { ParseLinesArgs } from "./ParseLines"
 import { EventEmitter } from "../common/events"
 import { isArray, isNumber, isString, isBoolean, isDefined } from "../common/util"
-import gggNamedList, { gggNamedListItem } from "./NamedList"
+import NamedList, { NamedListItem } from "./NamedList"
 import { SolveOptions, Solve } from "./Solve"
-import GGGGX from "../ggggx/ggggxLang"
 
 type QueueItem = {
   callback?: () => void
-  line?: gggToken
+  line?: Token
   running?: Promise<any>|null
   ref?: object
 }
 
 type StackItem = {
-  command:gggCommand,
+  command:Command,
   state:{ [key:string]:any },
   pointer?: QueueItem,
 }
 
-type gggRegister = gggNamedListItem
+type gggRegister = NamedListItem
 
-type MachineRegisterList = gggNamedList<gggRegister>
+type MachineRegisterList = NamedList<gggRegister>
 
 
 
 type MachineProps = {
-  commands?: gggCommands
+  commands?: Commands
   state?:{ [key:string]:any }
   limits?:MachineLimits
 }
@@ -49,7 +48,7 @@ export type MachineLimits = {
 }
 
 function isBlankCommand( command:string ) {
-  const compare = gggCasedString( command.trim() )
+  const compare = CasedString( command.trim() )
   return !compare || compare.startsWith( GGG.Okay )
   }
 
@@ -57,20 +56,20 @@ import Matrix from "./Matrix"
 import { FormatOkayNumber } from "./Format"
 
 
-type MachineSolve = ( arg:gggPrimitive|gggPrimitive[], options? ) => Generator<number|string>
+type MachineSolve = ( arg:Primitive|Primitive[], options? ) => Generator<number|string>
 
 export default class Machine extends EventEmitter  {
   state:{ [key:string]:any } = {}
 
   limits:MachineLimits = {}
   
-  commands:gggCommands = {}
+  commands:Commands = {}
   commandState:{ [key:string]:any } = {}
   stack:StackItem[] = []
   queue:QueueItem[] = []
   queuePointer:number = 0
-  runningCommand:gggCommand|null = null
-  registers:Map<object,gggNamedList<gggRegister>> = new Map<object,gggNamedList<gggRegister>>()
+  runningCommand:Command|null = null
+  registers:Map<object,NamedList<gggRegister>> = new Map<object,NamedList<gggRegister>>()
 
   timeout:ReturnType<typeof setTimeout>|null = null
   skip:boolean = false
@@ -90,13 +89,13 @@ export default class Machine extends EventEmitter  {
     this.run( code )
   }
 
-  addCommands( data: { [key:string]: gggCommand } ) {
+  addCommands( data: { [key:string]: Command } ) {
     for ( const key in data ) {
       this.commands[key] = data[key]
     }
   }
 
-  output( tokens: string | string[] | gggToken | gggToken[] ) {
+  output( tokens: string | string[] | Token | Token[] ) {
     if ( isArray( tokens ) ) {
       for ( const token of tokens ) {
         this.emit( MachineEvents.Output, token )
@@ -144,10 +143,10 @@ export default class Machine extends EventEmitter  {
   }
 
 
-  getRegisterList( registerClass:object ) : gggNamedList<gggRegister> {
+  getRegisterList( registerClass:object ) : NamedList<gggRegister> {
     let registers = this.registers.get( registerClass )
     if ( !registers ) {
-      registers = new gggNamedList<gggRegister>()
+      registers = new NamedList<gggRegister>()
       this.registers.set( registerClass, registers )
     }
     return registers
@@ -159,7 +158,7 @@ export default class Machine extends EventEmitter  {
 
     if ( defaultRegister ) {
       if ( !registers ) {
-        registers = new gggNamedList<gggRegister>()
+        registers = new NamedList<gggRegister>()
         this.registers.set( registerClass, registers )
       }
 
@@ -181,13 +180,13 @@ export default class Machine extends EventEmitter  {
     }
   }
 
-  *solve( arg:gggPrimitive|gggPrimitive[], options?:SolveOptions ) : Generator<number|string> {
+  *solve( arg:Primitive|Primitive[], options?:SolveOptions ) : Generator<number|string> {
     const MatrixResolveDefault = ( name:string ) => this.getMatrix( name )
     const { MatrixResolve = MatrixResolveDefault } = options || {}
     yield* Solve( arg, { MatrixResolve, ...options } )
   }
 
-  async execLine( line:gggToken ) {
+  async execLine( line:Token ) {
     const machine = this
     if ( line.command ) {
       const command = line.command
@@ -197,7 +196,7 @@ export default class Machine extends EventEmitter  {
       const { stack } = machine
       const top = stack[stack.length-1]
       if ( top ) {
-        const hook = top.command[gggHooks.Stack]
+        const hook = top.command[Hooks.Stack]
         if ( hook ) {
           await hook( { machine, command, state: top.state } )
         }
@@ -207,30 +206,30 @@ export default class Machine extends EventEmitter  {
       if ( impl ) {
         this.runningCommand = impl
         const state = this.commandState[command] = this.commandState[command] || {}
-        await this.execCommandHook( gggHooks.Command, { machine, command, state } )
+        await this.execCommandHook( Hooks.Command, { machine, command, state } )
 
         const { args } = line
         if ( args ) {
           for ( const arg of args ) {
             const { code, data } = arg
-            await this.execCommandHook( gggHooks.Code, { machine, command, state, code } )
+            await this.execCommandHook( Hooks.Code, { machine, command, state, code } )
 
             if ( data || data === 0 ) {
               for ( const value of this.solve( data ) ) {
-                await this.execCommandHook( gggHooks.Value, { machine, command, state, code, value } )
+                await this.execCommandHook( Hooks.Value, { machine, command, state, code, value } )
               }
             }
-            await this.execCommandHook( gggHooks.EndArg, { machine, command, state, code } )
+            await this.execCommandHook( Hooks.EndArg, { machine, command, state, code } )
           }
         }
-        await this.execCommandHook( gggHooks.End, { machine, state, command } )
+        await this.execCommandHook( Hooks.End, { machine, state, command } )
       } else if ( !isBlankCommand( command ) ) {
         this.outputOk( 0, gggMessage.CommandNotFound )
       }
     }
   }
 
-  async execCommandHook( hook:gggHooks, arg:gggHookArgs ) {
+  async execCommandHook( hook:Hooks, arg:HookArgs ) {
     const command = this.runningCommand
     if ( !command ) return
     const func = command[hook]
@@ -238,13 +237,13 @@ export default class Machine extends EventEmitter  {
     await func( arg )
   }
 
-  async run( code:ParseLinesArgs ) : Promise<gggToken[]> {
+  async run( code:ParseLinesArgs ) : Promise<Token[]> {
     const { queue } = this
     const lines = ParseLines( code )
-    const result = new Promise<gggToken[]>( resolve => {
-      const output : gggToken[] = []
+    const result = new Promise<Token[]>( resolve => {
+      const output : Token[] = []
 
-      const onOutput = ( line:gggToken ) => output.push( line )
+      const onOutput = ( line:Token ) => output.push( line )
 
       queue.push( { callback: () => {
         this.on( MachineEvents.Output, onOutput )
@@ -263,6 +262,6 @@ export default class Machine extends EventEmitter  {
   }
 }
 
-export type MachineHookArgs = gggHookArgs & {
+export type MachineHookArgs = HookArgs & {
   machine:Machine,
 }

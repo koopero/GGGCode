@@ -1,24 +1,24 @@
 import Matrix, { clearOptions } from "../ggg/Matrix"
-import GGGGX, { MatrixLimits} from "./ggggxLang"
+import { MatrixLimits} from "./GXLanguage"
 import Machine from "../ggg/Machine"
 import { Solve } from "../ggg/Solve"
 import { clear } from "console"
 import { isDefined, isObject } from "../common/util"
-import { gggCommands } from "../ggg/gggLang"
+import { Commands } from "../ggg/Language"
 
 
 
 type ContextOptions = {
   registers?: { [key: string]: number[] },
   machine?: Machine,
-  commands?: gggCommands,
+  commands?: Commands,
   limits?: MatrixLimits
 }
 
 type MatrixLookupArg = number | string | { name?:string, index?:number } | Matrix
 type MatrixInitOptions = { name?:string, index?:number, dim?:number[], storage?:number }
 
-export default function ggggxContext( options?: ContextOptions ) {
+export function GXContext( options?: ContextOptions ) {
 
   let { registers, machine, commands, limits } = options || {}
 
@@ -28,14 +28,14 @@ export default function ggggxContext( options?: ContextOptions ) {
 
   if ( registers ) {
     for ( let name in registers ) {
-      let register = machine.getRegister( GGGGX, name, new Matrix() ) as Matrix
+      let register = machine.getRegister( Matrix, name, new Matrix() ) as Matrix
       let clearData = registers[name]
       register.clear( clearData )
     }
   }
 
   const MatrixResolve = ( name ) => {
-    return machine.getRegister( GGGGX, name ) as Matrix
+    return machine.getRegister( Matrix, name ) as Matrix
   }
 
   // function addRegister( name, data ) {
@@ -67,7 +67,7 @@ export default function ggggxContext( options?: ContextOptions ) {
     let buffer = MatrixResolve( search )
     if ( !buffer ) {
       buffer = new Matrix( { name, index } )
-      machine?.getRegister( GGGGX, search, buffer )
+      machine?.getRegister( Matrix, search, buffer )
     }
 
     if ( buffer && clear ) {

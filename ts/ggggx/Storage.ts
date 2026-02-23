@@ -1,5 +1,5 @@
-import gggNamedList, { gggNamedListItem } from "../ggg/NamedList"
-import { GGG } from "../ggg/gggLang"
+import NamedList, { NamedListItem } from "../ggg/NamedList"
+import { GGG } from "../ggg/Language"
 import { isDefined, isNumber, isObject, isString } from "../common/util"
 import { floor, max, min } from "../common/math"
 
@@ -17,7 +17,7 @@ export enum StorageTypeNames {
 }
 
 
-export type StorageProps = string | number | gggNamedListItem & {
+export type StorageProps = string | number | NamedListItem & {
   dim?: number[],
   dataClass?: any,
   norm1?: number,
@@ -54,7 +54,7 @@ const RangeI16:RangeType = [-32768,32767]
 const RangeU32:RangeType = [0,4294967295]
 const RangeI32:RangeType = [-2147483648,2147483647]
 
-export const StorageTypes = new gggNamedList<StorageType>( [
+export const StorageTypes = new NamedList<StorageType>( [
   StorageDefault,
   { index: 8, name: StorageTypeNames.UNorm8, dataClass: Uint8Array, encoding: GGG.HexNorm2, norm1: 255, range: RangeU8, cxxStorage: "uint8_t" },
   { index: 255, name: StorageTypeNames.UInt8, dataClass: Uint8Array, encoding: GGG.HexNorm2, norm1: 1, range: RangeU8, cxxStorage: "uint8_t" },

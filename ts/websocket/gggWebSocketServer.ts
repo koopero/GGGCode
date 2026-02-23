@@ -1,6 +1,6 @@
 import { isNumber, isObject } from "../common/util"
 import Format from "../ggg/Format"
-import type { gggCommands } from "../ggg/gggLang"
+import type { Commands } from "../ggg/Language"
 import Machine from "../ggg/Machine"
 import DocCommands from "../gggdx/DocCommands"
 
