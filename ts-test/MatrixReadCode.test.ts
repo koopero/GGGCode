@@ -3,9 +3,9 @@ import { GGG } from "../ts/ggg/Language"
 import { GXCommandNames as GX } from "../ts/ggggx/GXLanguage"
 import { MatrixReadCode } from "../ts/ggggx/MatrixRead"
 import Format from "../ts/ggg/Format"
-import { OpIndexes, Ops } from "../ts/ggggx/Operators"
+import { Ops } from "../ts/ggggx/Operators"
 
-describe("Matrix", () => {
+describe("MatrixReadCode", () => {
   test("saveCode", () => {
     const name = "Test"
     const index = 2
@@ -20,7 +20,7 @@ describe("Matrix", () => {
     const codes = lines.map( ( line ) => Format( line ) )
     const [ header, data0, data1 ] = codes
     const register = `${GGG.Register}${index}`
-    const operator = `${GGG.Operator}${OpIndexes[Ops.set]}`
+    const operator = `${GGG.Operator}"${Ops.set}"`
     expect( header ).toEqual( `${GX.MatrixInit} ${register} ${GGG.Alias}"${name}" ${GGG.Size}${dim} ${GGG.Storage}"Array"` )
     expect( data0 ).toEqual( `${GX.MatrixWrite} ${register} ${operator} ${GGG.Offset}${0} ${GGG.Data}${data.slice(0,chunk)}` )
     expect( data1 ).toEqual( `${GX.MatrixWrite} ${register} ${operator} ${GGG.Offset}${chunk} ${GGG.Data}${data.slice(chunk)}` )

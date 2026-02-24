@@ -590,11 +590,11 @@ export default function gggParser( props:ParserArgs = {}) {
   async function parseAfterZero( _char:string ) {
     _char = CasedString( _char )
     switch( _char ) {
-      case GGG.HexNumber: startHex( 0, false ); break
-      case GGG.HexList1: startHex( 1, false ); break
-      case GGG.HexList2: startHex( 2, false ); break
-      case GGG.HexNorm1: startHex( 1, true );  break
-      case GGG.HexNorm2: startHex( 2, true );  break
+      case HexEncodings.HexNumber: startHex( 0, false ); break
+      case HexEncodings.HexList1: startHex( 1, false ); break
+      case HexEncodings.HexList2: startHex( 2, false ); break
+      case HexEncodings.HexNorm1: startHex( 1, true );  break
+      case HexEncodings.HexNorm2: startHex( 2, true );  break
 
       default:
         state.expressionMode = gggParserMode.Data

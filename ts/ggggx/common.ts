@@ -1,6 +1,6 @@
 import { GXCommandNames, ggggxEncodingOptions } from "./GXLanguage"
 import { StorageTypes } from "./Storage"
-import { ArgsType } from "../ggg/Language"
+import { ArgType } from "../ggg/Language"
 
 export const ArgsBuffer = {
   description: "Buffer index.",

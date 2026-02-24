@@ -13,14 +13,9 @@ export enum GGG {
   Value = "V",
   Size = "S",
   Offset = "P",
+  Repeat = "G",
   Zero = "0",
   Number = "+",
-  HexNumber = "X",
-  HexFraction = "Y",
-  HexList1 = "I",
-  HexList2 = "G",
-  HexNorm1 = "J",
-  HexNorm2 = "H",
   EncodedOne = "K",
   Operator = "Q",
   Alias = "L",
@@ -55,6 +50,15 @@ export enum UnitaryNames {
   Euler = "e",
   GoldenRatio = "φ",
   EulerMascheroni = "γ",
+}
+
+export enum HexEncodings {
+  HexNumber = "X",
+  HexFraction = "Y",
+  HexList1 = "I",
+  HexList2 = "G",
+  HexNorm1 = "J",
+  HexNorm2 = "H",
 }
 
 export const UnitaryValues = {

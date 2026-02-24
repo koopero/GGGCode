@@ -1,4 +1,4 @@
-import { GGG, RangeAxis } from "../ts/ggg/Language"
+import { GGG, RangeAxis, HexEncodings } from "../ts/ggg/Language"
 import Format, { FormatData } from "../ts/ggg/Format"
 
 
@@ -8,7 +8,7 @@ describe("Format", () => {
   })
 
   test("hex", () => {
-    expect( Format( { code: 'G', data: [ 16/255 ], encoding: GGG.HexNorm2 } ) ).toBe( `G0${GGG.HexNorm2}10` )
+    expect( Format( { code: 'G', data: [ 16/255 ], encoding: HexEncodings.HexNorm2 } ) ).toBe( `G0${HexEncodings.HexNorm2}10` )
   })
 
   test("line", () => {

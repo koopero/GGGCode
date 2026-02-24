@@ -1,6 +1,6 @@
 import { isString, isObject, isArray, isDefined, isBoolean, isNumber } from "../common/util"
 import { floor } from "../common/math"
-import { GGG, Primitive, CasedString, Token, RangeAxis, RangeAxes, Reference, UnitaryNames } from "./Language"
+import { GGG, Primitive, CasedString, Token, RangeAxis, RangeAxes, Reference, UnitaryNames, HexEncodings } from "./Language"
 import { HexModifiers } from "./hexlist"
 
 
@@ -19,12 +19,12 @@ function formatHexListItem( num, digits:number = 2, div:number = 1 ) {
 }
 
 function formatHexNumber( num:number ) {
-  return `0${GGG.HexNumber}${num.toString(16)}`
+  return `0${HexEncodings.HexNumber}${num.toString(16)}`
 }
 
 export function FormatNumber( data:number, encoding?:EncodingArg ) : string {
   switch ( encoding ) {
-    case GGG.HexNumber:
+    case HexEncodings.HexNumber:
       return formatHexNumber( data )
 
     default:
@@ -34,10 +34,10 @@ export function FormatNumber( data:number, encoding?:EncodingArg ) : string {
 
 export function FormatNumberFirst( data:number, encoding?:EncodingArg ) : string {
   switch ( encoding ) {
-    case GGG.HexList1:
-    case GGG.HexList2:
-    case GGG.HexNorm1:
-    case GGG.HexNorm2:
+    case HexEncodings.HexList1:
+    case HexEncodings.HexList2:
+    case HexEncodings.HexNorm1:
+    case HexEncodings.HexNorm2:
       const { digits, div } = HexModifiers[ encoding ]
       return `0${encoding}` + formatHexListItem( data, digits, div )
 
@@ -48,10 +48,10 @@ export function FormatNumberFirst( data:number, encoding?:EncodingArg ) : string
 
 export function FormatNumberSubsequent( data:number, encoding?:EncodingArg ) : string {
   switch ( encoding ) {
-    case GGG.HexList1:
-    case GGG.HexList2:
-    case GGG.HexNorm1:
-    case GGG.HexNorm2:
+    case HexEncodings.HexList1:
+    case HexEncodings.HexList2:
+    case HexEncodings.HexNorm1:
+    case HexEncodings.HexNorm2:
       const { digits, div } = HexModifiers[ encoding ]
       return formatHexListItem( data, digits, div )
 
@@ -161,10 +161,10 @@ export function FormatData( data:undefined|string|number|boolean|Primitive|Primi
 
   if ( isArray( data ) ) {
     switch ( encoding ) {
-      case GGG.HexList1:
-      case GGG.HexList2:
-      case GGG.HexNorm1:
-      case GGG.HexNorm2: {
+      case HexEncodings.HexList1:
+      case HexEncodings.HexList2:
+      case HexEncodings.HexNorm1:
+      case HexEncodings.HexNorm2: {
         const { digits, div } = HexModifiers[ encoding ]
         return `0${encoding}`+data.map( d => isNumber( d ) ? formatHexListItem( d, digits, div ) : "" ).join("")
       }

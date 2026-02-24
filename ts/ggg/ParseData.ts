@@ -1,8 +1,8 @@
-import { GGG, CasedString, Primitive, RangeAxis, Reference, ParseOptions, UnitaryNames, UnitaryValues } from "./Language"
+import { GGG, CasedString, Primitive, RangeAxis, Reference, ParseOptions, UnitaryNames, UnitaryValues, HexEncodings } from "./Language"
 import { HexModifiers, HexModifier } from "./hexlist"
 
 
-const hexPrefixCodes = GGG.HexList1 + GGG.HexList2 + GGG.HexNorm1 + GGG.HexNorm2 + GGG.HexNumber
+const hexPrefixCodes = HexEncodings.HexList1 + HexEncodings.HexList2 + HexEncodings.HexNorm1 + HexEncodings.HexNorm2 + HexEncodings.HexNumber
 const hexNumberPattern = `^0[${hexPrefixCodes}][0-9a-f]+`
 const hexNumber = new RegExp( hexNumberPattern, "i" )
 const decimalNumber = /^[+-]?(\d+(\.\d+)?)([Ee][+-]?\d+)?/
@@ -152,7 +152,7 @@ function parseExpression( numbers, symbols, encodings, keepEncoding ) {
 }
 
 
-export default function ParseData( str:string, options:ParseOptions = {} ) : [ any, string ] {
+export default function ParseData( str:string, options:ParseOptions = {} ) : [ Primitive[], string ] {
   const { keepEncoding = false } = options
   let numbers:number[] = []
   let encodings:string[] = []
@@ -244,7 +244,7 @@ export default function ParseData( str:string, options:ParseOptions = {} ) : [ a
         parseHexList( hexData, hexConfig, pushNumber )
       } else {
         const value = parseInt( hexData, 16 )
-        pushNumber( value, GGG.HexNumber, false )
+        pushNumber( value, HexEncodings.HexNumber, false )
       }
     } else if ( match = str.match( decimalNumber ) ) {
       const value = parseFloat( match[0] )
@@ -254,7 +254,7 @@ export default function ParseData( str:string, options:ParseOptions = {} ) : [ a
         const string = JSON.parse( match[0] )
         pushString( string, GGG.Quote )
       } catch ( err ) {
-        console.warn("Bad string")
+        // console.warn("Bad string")
       }
     }
 

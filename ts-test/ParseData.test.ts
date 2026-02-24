@@ -1,16 +1,80 @@
+import { describe, test, expect } from "@jest/globals"
 import ParseData from "../ts/ggg/ParseData"
-import { Solve } from "../ts/ggg/Solve"
-import { UnitaryNames, UnitaryValues } from "../ts/ggg/Language"
-
+import { GGG, UnitaryNames, UnitaryValues } from "../ts/ggg/Language"
 
 const funUnicodeChars: string[] =  [...`⚡🚀🐉🎩🦄🀄🎶🔱🔮` ]
 function getRandomUnicodeChar(): string {
   return funUnicodeChars[Math.floor(Math.random() * funUnicodeChars.length)];
 }
 
+describe("ParseData",() => {
+  describe("basic", () => {
+    test("will parse some data", () => {
+      const str = "100"
+      const result = ParseData( str )
+      const [ data, remain ] = result
 
-describe("ts:unicode", () => {
-  describe("ParseData", () => {
+      expect( data ).toEqual( [ 100 ] )
+      expect( remain ).toBe("")
+    })
+
+    test("will pass remaining string", () => {
+      const str = "123,456 other"
+      const result = ParseData( str )
+      const [ data, remain ] = result
+
+      expect( data ).toEqual( [ 123, 456 ] )
+      expect( remain ).toBe(" other")
+    })
+  })
+
+  describe("encoding", () => {
+    test(`StringToEOL (${GGG.StringToEOL})`, () => {
+      const str = `${GGG.StringToEOL}foo bar foo\nbaz`
+      const [ data, remain ] = ParseData( str )
+      expect( data ).toEqual( [ "foo bar foo" ])
+      expect( remain ).toBe("\nbaz")
+    })
+  })
+
+  describe("references", () => {
+    test("simple reference", () => {
+      const str = "$test[1,2,3]"
+      const [ data, remain ] = ParseData( str )
+      expect( data ).toMatchObject( [ {
+        register: "test",
+        subscript: [ 1, 2, 3 ]
+      } ] )
+    })
+  })
+
+  describe("ranges", () => {
+    test("default range", () => {
+      const str = "10:30:4:3"
+      const [ data, remain ] = ParseData( str )
+      expect( data ).toMatchObject( [ {
+        start: 10,
+        end: 30,
+        inclusive: true,
+        step: 4,
+        multiplier: 3,
+      } ] )
+    })
+
+    test("multi axis", () => {
+      const str = "Z>10|0x14:30|40:50"
+      const [ data, remain ] = ParseData( str )
+      expect( data ).toMatchObject( [ {
+        axes: [
+          { start: 0, end: 10, inclusive: false },
+          { start: 20, end: 30, inclusive: true },
+          { start: 40, end: 50, inclusive: true },
+        ]
+      } ] )
+    })
+  })
+
+    describe("Unicode parsing", () => {
     test("higher code points interpreted as numbers", () => {
       const str = getRandomUnicodeChar()
       const codePoint = str.codePointAt(0) || 0
@@ -74,16 +138,4 @@ describe("ts:unicode", () => {
       ])
     })
   })
-  
-  // describe("Solve", () => {
-  //   test("unicode math?!", () => {
-  //     const char1 = getRandomUnicodeChar()
-  //     const char2 = getRandomUnicodeChar()
-  //     const point1 = char1.codePointAt(0) || 0
-  //     const point2 = char2.codePointAt(0) || 0
-  //     const str = `${char1}|${char2}`
-  //     const result = [ ...Solve(str, { solveStrings: true }) ]
-  //     expect(result).toEqual([point1 + point2])
-  //   })
-  // })
 })

@@ -16,8 +16,7 @@ describe("png", () => {
 
     for ( let y = 0; y < height; y++ ) {
       for ( let x = 0; x < width; x++ ) {
-        // buffer.write( [ 0.5 ], [ 0, 0, 0, (y * width + x) * 3 ] )
-        buffer.write( [ x/(width-1), y/(height-1), 1 ], [ x, y ] )
+        buffer.write( [ x/(width-1), y/(height-1), 1 ], [ 0, x, y ] )
       }
     }
 

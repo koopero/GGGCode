@@ -1,4 +1,4 @@
-import { GGG, CommandConvention as CC } from "../ggg/Language"
+import { GGG, CommandConvention as CC, HexEncodings } from "../ggg/Language"
 import { MachineLimits } from "../ggg/Machine"
 import NamedList, { NamedListItem } from "../ggg/NamedList"
 import { Dimensions } from "../ggg/Language"
@@ -27,8 +27,8 @@ export type MatrixLimits = MachineLimits & {
 
 export const ggggxEncodingOptions = new NamedList<ggggxEncodingMeta>( [
   { index: 0, name: GGG.Value, description: "Decimal", encoding: GGG.Value },
-  { index: 8, name: `0${GGG.HexNorm2}`, description: "HexNorm2", encoding: GGG.HexNorm2 },
-  { index: 4, name: `0${GGG.HexNorm1}`, description: "HexNorm1", encoding: GGG.HexNorm1 },
+  { index: 8, name: `0${HexEncodings.HexNorm2}`, description: "HexNorm2", encoding: HexEncodings.HexNorm2 },
+  { index: 4, name: `0${HexEncodings.HexNorm1}`, description: "HexNorm1", encoding: HexEncodings.HexNorm1 },
 ])
 
 export enum GXFails {

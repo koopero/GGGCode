@@ -4,9 +4,7 @@ import Machine from "../ggg/Machine"
 import { Solve } from "../ggg/Solve"
 import { clear } from "console"
 import { isDefined, isObject } from "../common/util"
-import { Commands } from "../ggg/Language"
-
-
+import type { Commands } from "../ggg/Language"
 
 type ContextOptions = {
   registers?: { [key: string]: number[] },
@@ -21,6 +19,8 @@ type MatrixInitOptions = { name?:string, index?:number, dim?:number[], storage?:
 export function GXContext( options?: ContextOptions ) {
 
   let { registers, machine, commands, limits } = options || {}
+
+  commands = commands 
 
   if ( !machine ) {
     machine = new Machine( { commands, limits } )

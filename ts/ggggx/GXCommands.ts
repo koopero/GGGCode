@@ -1,15 +1,16 @@
 
 import { Command, GGG, Hooks } from "../ggg/Language"
 import { ArgsBufferIndex, ArgsBufferRef, ArgsBufferStorage, 
-  ArgsDimension, ArgsName, ArgsPosition, ArgsSize, ArgsEncoding, ArgType } from "./common"
+  ArgsDimension, ArgsName, ArgsPosition, ArgsSize, ArgsEncoding } from "./common"
+import { ArgType } from "../ggg/Language"
 
 import { MatrixListHooks } from "./MatrixList"
 import { MatrixInitHooks } from "./MatrixInit"
 import { MatrixWatchHooks } from "./MatrixWatch"
 import { MatrixReadForNamespace } from "./MatrixRead"
-import { WriteBufferHooks } from "./MatrixWrite"
 import { MatrixDisplayHooks } from "./MatrixDisplay"
 import { GXCommandNumbers, GXNamespace, GXNamespaceArg } from "./GXLanguage"
+import { MatrixWriteHooks } from "./MatrixWrite"
 
 
 function GXCommandsForNamespace( namespace?: GXNamespaceArg ) {
@@ -98,11 +99,10 @@ function GXCommandsForNamespace( namespace?: GXNamespaceArg ) {
           type: ArgType.Number,
         }
       },
-      responds: {
 
-      },
-      ...WriteBufferHooks
+      ...MatrixWriteHooks
     }
+    
   }
 
   if ( MatrixWatch ) {

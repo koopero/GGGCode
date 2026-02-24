@@ -41,7 +41,7 @@ export default class NamedList<T extends NamedListItem> {
       } )
     } else if ( item as { [key:string]:T } ) {
       for ( const key in item ) {
-        this.add( item[key], item )
+        this.add( item[key], key )
       }
     }
   }

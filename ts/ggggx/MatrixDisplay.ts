@@ -23,6 +23,8 @@ function DisplayHookValue( arg:HookArgs ) {
 
 function DisplayHookEnd( arg:HookArgs ) {
   const { machine, state } = arg
+
+  machine.outputOk()
 }
 
 export const MatrixDisplayHooks = {

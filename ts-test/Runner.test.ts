@@ -9,7 +9,6 @@ describe("Runner", () => {
     // runner.run("D1\n")
 
     const result = await runner.run(`P10 A16 B0xFF C1:10\n`)
-    console.dir( result, { depth: 10 } )
     expect( result ).toBeDefined()
 
     expect( runner ).toBeDefined()

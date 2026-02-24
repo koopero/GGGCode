@@ -49,7 +49,6 @@ class RunnerStream extends Duplex {
   }
 
   _write( chunk, encoding, callback ) {
-    console.log('write', chunk, encoding )
     callback()
   }
 }
@@ -65,6 +64,13 @@ function codeMatches( code: string, query: LineQuery ) {
     return query.test( code )
   }
   return false
+}
+
+function LineIsCommand( line:string ) : boolean {
+  let [ beforeComment ] = line.split( GGG.Comment )
+  beforeComment = beforeComment.trim()
+  
+  return /^[a-zA-Z].+/.test( beforeComment )
 }
 
 export class Runner extends EventEmitter {
@@ -85,38 +91,39 @@ export class Runner extends EventEmitter {
   attachMachine( machine: Machine ) {
     machine.on("output", line => this.onOutput( line ) )
     this.on("output", ( line ) => {
-      console.log("machine_write", line )
       machine.run( line )
     })
   }
 
-  async run( cmd: RunArg, options: RunOptions = {} ): Promise<LineStreamQueueItem> {
+  async run( cmd: RunArg, options: RunOptions = {} ): Promise<LineStreamQueueItem[]> {
     const { timeout = 1000 } = options
-    const [ prefix ] = cmd.split(' ')
-    cmd = cmd.trim()+"\n"
-    const result = await new Promise<LineStreamQueueItem>( ( resolve, reject ) => {
-      let { resultFilter = true, endFilter = "O" } = options
 
-      const item = {
-        resultFilter,
-        endFilter,
-        prefix,
-        cmd,
-        resolve,
-        result: [],
-        timeout: now() + timeout,
-        timeoutActual: timeout,
-      }
-      this.queue.push( item )
+    const lines = cmd.split("\n").map( l => l.trim() ).filter( LineIsCommand )
 
-      setImmediate( () => this.tick() )
-    }) 
+    let results = lines.map( line => {
+      const cmd = line.trim()+"\n"
+      const result = new Promise<LineStreamQueueItem>( ( resolve, reject ) => {
+        let { resultFilter = true, endFilter = "O" } = options
 
-    return result
+        const item = {
+          resultFilter,
+          endFilter,
+          cmd,
+          resolve,
+          result: [],
+          timeout: now() + timeout,
+          timeoutActual: timeout,
+        }
+        this.queue.push( item )
+      }) 
+
+      return result
+    })
+    setImmediate( () => this.tick() )
+    return await Promise.all( results )
   }
 
   write( str: string ) {
-    console.log('write', str )
     this.emit('output', str )
   }
 
@@ -157,6 +164,7 @@ export class Runner extends EventEmitter {
         delete running.resolve
         resolve && resolve( running )
         this.running = null
+        setImmediate( () => this.tick() )
       }
     }
   }

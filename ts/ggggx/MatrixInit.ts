@@ -44,7 +44,7 @@ export function MatrixInitHookEnd( arg:HookArgs ) {
 
   }
 
-  machine.output( { code: "G-11", comment: `${toKeyDescription(buffer)} ; ${describeMatrix( buffer)}` } )
+  machine.outputOk()
 }
 
 export const MatrixInitHooks = {

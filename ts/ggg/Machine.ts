@@ -215,7 +215,7 @@ export default class Machine extends EventEmitter  {
             await this.execCommandHook( Hooks.Code, { machine, command, state, code } )
 
             if ( data || data === 0 ) {
-              for ( const value of this.solve( data ) ) {
+              for ( const value of this.solve( data, { solveStrings: false } ) ) {
                 await this.execCommandHook( Hooks.Value, { machine, command, state, code, value } )
               }
             }

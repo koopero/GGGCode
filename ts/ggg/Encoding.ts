@@ -1,5 +1,5 @@
 import { floor, saturate, abs, max, min } from "../common/math"
-import { GGG, UnitaryNames } from "./Language"
+import { GGG, UnitaryNames, HexEncodings } from "./Language"
 import { Described } from "./Language"
 import NamedList, { NamedListItem } from "./NamedList"
 
@@ -24,11 +24,11 @@ const EncodingList = new NamedList<EncodingType>( [
   EncodingDefault,
   { name: GGG.Dimension, index: EncodingIndexes[GGG.Dimension], description: "Integer" },
   { name: GGG.EncodedOne, index: EncodingIndexes[GGG.EncodedOne], description: "Unitary" },
-  { name: GGG.HexNumber, index: EncodingIndexes[GGG.HexNumber], description: "Hex" },
-  { name: GGG.HexNorm2, index: EncodingIndexes[GGG.HexNorm2], description: "HexNorm2" },
-  { name: GGG.HexNorm1, index: EncodingIndexes[GGG.HexNorm1], description: "HexNorm1" },
-  { name: GGG.HexList2, index: EncodingIndexes[GGG.HexList2], description: "HexList2" },
-  { name: GGG.HexList1, index: EncodingIndexes[GGG.HexList1], description: "HexList1" },
+  { name: HexEncodings.HexNumber, index: EncodingIndexes[HexEncodings.HexNumber], description: "Hex" },
+  { name: HexEncodings.HexNorm2, index: EncodingIndexes[HexEncodings.HexNorm2], description: "HexNorm2" },
+  { name: HexEncodings.HexNorm1, index: EncodingIndexes[HexEncodings.HexNorm1], description: "HexNorm1" },
+  { name: HexEncodings.HexList2, index: EncodingIndexes[HexEncodings.HexList2], description: "HexList2" },
+  { name: HexEncodings.HexList1, index: EncodingIndexes[HexEncodings.HexList1], description: "HexList1" },
 ] )
 
 export function EncodingCode( code:string|number ) {
@@ -60,10 +60,10 @@ const HexOverhead = 2
 
 const EncodingShortestOptions = [ 
   { name: UnitaryNames.Zero, overhead: 0, canRepresent: respresentUnitary() },
-  { name: GGG.HexList1, overhead: HexOverhead, canRepresent: representHex( 1, false ) },
-  { name: GGG.HexNorm1, overhead: HexOverhead, canRepresent: representHex( 1, true ) },
-  { name: GGG.HexList2, overhead: HexOverhead, canRepresent: representHex( 1, false ) },
-  { name: GGG.HexNorm2, overhead: HexOverhead, canRepresent: representHex( 1, true ) },
+  { name: HexEncodings.HexList1, overhead: HexOverhead, canRepresent: representHex( 1, false ) },
+  { name: HexEncodings.HexNorm1, overhead: HexOverhead, canRepresent: representHex( 1, true ) },
+  { name: HexEncodings.HexList2, overhead: HexOverhead, canRepresent: representHex( 1, false ) },
+  { name: HexEncodings.HexNorm2, overhead: HexOverhead, canRepresent: representHex( 1, true ) },
   { name: GGG.Data, overhead: 1, canRepresent: () => true },
 ]
 

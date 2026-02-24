@@ -58,3 +58,32 @@ export async function testCxxMachine( program:string ) : Promise<string> {
     console.error( stderr )
   }
 }
+
+import { GXContext } from "../ts/ggggx"
+import { Runner } from "../ts/stream/Runner";
+import { GXCommands } from "../ts/ggggx/GXCommands";
+import { MatrixEvents } from "../ts/ggggx/GXLanguage";
+import { Solve } from "../ts/ggg/Solve";
+
+export function TestGXProgramResult( testname:string, program: string, expected: string | number | number[] | ( string | number )[] ) {
+  expected = [ ...Solve( expected ) ]
+  test( testname, async () => {
+    const commands = GXCommands
+    const context = GXContext( { commands } )
+    const { machine } = context
+    const runner = new Runner( { machine } )
+    const fn = jest.fn()
+    let gotData = null
+    machine.on( MatrixEvents.Display, ( { buffer } ) => {
+      fn()
+      gotData = buffer.data
+    })
+
+    const result = await runner.run( program, { timeout: 1000 } )
+    expect( result.length ).toBeGreaterThan( 0 )
+    const last = result[result.length-1]
+    expect( last.status ).toEqual( "ok" )
+    expect( fn ).toHaveBeenCalledTimes(1)
+    expect( gotData ).toEqual( expected )
+   })
+}

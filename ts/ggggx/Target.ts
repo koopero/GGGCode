@@ -9,14 +9,13 @@ export function TargetHookCommand( arg, target ) {
   const { code, state, value, machine } = arg
   const { create = false } = target
 
-  state.create = create
+  state.create = false
   state.index = -1
   state.storage = 0
   state.dim = []
   state.dimIndex = 0
-  state.offset = parseInt( state.offset ) || 0
-  state.offsetMultiplier = 1
-  state.offsetDimension = 0
+  state.offset = []
+  state.offsetIndex = 0
 
   switch( code ) {
     case GGG.Register:
@@ -29,12 +28,23 @@ export function TargetHookCommand( arg, target ) {
 }
 
 export function TargetHookCode( arg ) {
+  const { code, state, value, machine } = arg
+  switch( code ) {
+    case GGG.Size:
+      state.dim = []
+      state.dimIndex = 0
+      break
 
+    case GGG.Offset:
+      state.offset = []
+      state.offsetIndex = 0
+      break
+  }
 }
 
 export function TargetHookValue( arg ) {
   const { code, state, value, machine } = arg
-  const { dim } = state
+  const { dim, offset } = state
   switch( code ) {
     case GGG.Size:
       dim[state.dimIndex++] = toInt( value )
@@ -59,19 +69,7 @@ export function TargetHookValue( arg ) {
       break
 
     case GGG.Offset:
-      const { offsetMultiplier = 1 } = state
-      state.offset += toInt( value ) * offsetMultiplier
-      let buffer = TargetBuffer( arg )
-      let bufferDim = buffer && buffer.dim
-      if ( bufferDim && state.offsetDimension < bufferDim.length ) {
-        state.offsetMultiplier = offsetMultiplier * bufferDim[state.offsetDimension]
-      }
-      state.offsetDimension++
-      break
-
-
-    case GGG.Size:
-      state.length = value
+      offset[state.offsetIndex++] = toInt( value )
       break
 
     case GGG.Encoding:
@@ -82,27 +80,24 @@ export function TargetHookValue( arg ) {
 
 export function TargetResolveNumbers( arg ) {
   const { code, state, value, machine } = arg
-  let { dim, name, index, length, storage, create } = state
-
-  let context = GXContext( { machine } )
-  let { MatrixResolve, MatrixInit } = context
+  let { dim, offset, name, index, length, storage, create } = state
 
   let lookup = index >= 0 ? index : name
-  let buffer:Matrix|null = lookup && MatrixResolve( lookup )
+  let buffer:Matrix|null = machine.getMatrix( lookup ) as Matrix
 
   if ( !buffer && create ) {
-    buffer = MatrixInit( lookup, { index, name, dim, storage } )
+    // buffer = MatrixInit( lookup, { index, name, dim, storage } )
   }
 
 
-  let position = state.position
   let encoding
   let size
 
   state.buffer = buffer
+  state.offset = offset
+  
 
-
-  return { position, buffer, dim, encoding, size }
+  return { offset, buffer, dim, encoding, size }
 }
 
 function TargetBuffer( arg ) {

@@ -1,11 +1,11 @@
 import { GGG, HookArgs, Hooks, Token } from "../ggg/Language"
-import { TargetHookCode, TargetHookCommand, TargetHookValue, TargetResolveNumbers } from "./Target"
-import { ggggxEncodingOptions, GXCode, GXCommandNumbers, GXFails, GXNamespace, GXNamespaceArg } from "./GXLanguage"
+import { TargetHookCommand, TargetHookValue, TargetResolveNumbers } from "./Target"
+import { GXCode, GXCommandNumbers, GXFails, GXNamespace, GXNamespaceArg } from "./GXLanguage"
 import { RegionsAdd } from "./Regions"
 import { DimOffset, DimSize } from "../ggg/Dim"
 import { Matrix } from "../ggggx"
 import { ceil, min } from "../common/math"
-import { Ops, OpIndexes } from "./Operators"
+import { Ops } from "./Operators"
 
 type MatrixReadCodeOptions = {
   lines?: Token[],
@@ -70,7 +70,7 @@ export function MatrixReadForNamespace( namespace?: GXNamespaceArg ) {
             command: commandName( MatrixWrite ),
             args: [
               { code: GGG.Register, data: index },
-              { code: GGG.Operator, data: OpIndexes[Ops.set] },
+              { code: GGG.Operator, data: Ops.set },
               { code: GGG.Offset, data: [ chunkStart ] },
               { 
                 code: GGG.Data, 
@@ -104,7 +104,7 @@ export function MatrixReadForNamespace( namespace?: GXNamespaceArg ) {
 
   function MatrixReadHookEnd( arg:HookArgs) {
     const { machine, state } = arg
-    const { buffer, position, encoding, size } = TargetResolveNumbers( arg )
+    let { buffer, offset, encoding, size } = TargetResolveNumbers( arg )
 
     if ( !buffer )
       return machine.fail( { comment: GXFails.BufferNotFound } )
@@ -113,7 +113,7 @@ export function MatrixReadForNamespace( namespace?: GXNamespaceArg ) {
       return machine.fail( { comment: GXFails.BufferNotFound } )
 
     const { index, dim, size:bufferSize } = buffer
-    let offset = DimOffset( dim, position )
+    offset = DimOffset( dim, offset )
     let { length } = state
     length = length < 0 ? dim[3] : length
     length = min( length, bufferSize - offset )

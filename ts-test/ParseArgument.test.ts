@@ -1,5 +1,5 @@
 import { describe, test, expect } from "@jest/globals"
-import { GGG, UnitaryNames, UnitaryValues } from "../ts/ggg/Language"
+import { GGG, UnitaryNames, UnitaryValues, HexEncodings } from "../ts/ggg/Language"
 import { ParseArg } from "../ts/index"
 
 
@@ -15,8 +15,8 @@ describe("ParseArg", () => {
       })
     })
 
-    test(`encoding: HexNorm2 (0${GGG.HexNorm2})`, () => {
-      const [ token, remain ] = ParseArg( `G0${GGG.HexNorm2}FFF0`)
+    test(`encoding: HexNorm2 (0${HexEncodings.HexNorm2})`, () => {
+      const [ token, remain ] = ParseArg( `G0${HexEncodings.HexNorm2}FFF0`)
       expect( token ).toEqual( {
         col: 1,
         code: "G",
@@ -25,8 +25,8 @@ describe("ParseArg", () => {
       })
     })
 
-    test(`encoding: HexList2 (0${GGG.HexList2})`, () => {
-      const [ token, remain ] = ParseArg( `G0${GGG.HexList2}FFF0`)
+    test(`encoding: HexList2 (0${HexEncodings.HexList2})`, () => {
+      const [ token, remain ] = ParseArg( `G0${HexEncodings.HexList2}FFF0`)
       expect( token ).toEqual( {
         col: 1,
         code: "G",
@@ -36,8 +36,8 @@ describe("ParseArg", () => {
     })
 
 
-    test(`encoding: HexNorm1 (0${GGG.HexNorm1})`, () => {
-      const [ token, remain ] = ParseArg( `G0${GGG.HexNorm1}FE`)
+    test(`encoding: HexNorm1 (0${HexEncodings.HexNorm1})`, () => {
+      const [ token, remain ] = ParseArg( `G0${HexEncodings.HexNorm1}FE`)
       expect( token ).toEqual( {
         col: 1,
         code: "G",
@@ -46,8 +46,8 @@ describe("ParseArg", () => {
       })
     })
 
-    test(`encoding: HexList1 (0${GGG.HexList1})`, () => {
-      const [ token, remain ] = ParseArg( `G0${GGG.HexList1}AB` )
+    test(`encoding: HexList1 (0${HexEncodings.HexList1})`, () => {
+      const [ token, remain ] = ParseArg( `G0${HexEncodings.HexList1}AB` )
       expect( token ).toEqual( {
         col: 1,
         code: "G",
@@ -78,15 +78,15 @@ describe("ParseArg", () => {
       })
     })
 
-    test(`encoding: HexList2 (0${GGG.HexList2})`, () => {
-      const [ token, remain ] = ParseArg( `G0${GGG.HexList2}FFF0`, { keepEncoding: true } )
+    test(`encoding: HexList2 (0${HexEncodings.HexList2})`, () => {
+      const [ token, remain ] = ParseArg( `G0${HexEncodings.HexList2}FFF0`, { keepEncoding: true } )
       expect( token ).toEqual( {
         col: 1,
         code: "G",
         len: 7,
         data: [
-          { value: 255, encoding: GGG.HexList2 },
-          { value: 240, encoding: GGG.HexList2 },
+          { value: 255, encoding: HexEncodings.HexList2 },
+          { value: 240, encoding: HexEncodings.HexList2 },
         ],
       })
     })

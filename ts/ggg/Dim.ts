@@ -71,15 +71,17 @@ export function DimNext( coord: VecArg | null, size: Dimensions, offset: VecArg 
     return toVector( offset )
   }
 
+  offset = toVector( offset )
   coord = toVector( coord )
+  coord = [...coord]
 
   for ( let i = 0; i < size.length; i++ ) {
-    const value = ( coord[i] || 0 ) + ( offset[i] || 0 )
-    if ( value < size[i] ) {
+    const value = ( coord[i] || 0 ) + 1
+    if ( value < size[i] + ( offset[i] || 0 ) ) {
       coord[i] = value
       return coord
     } else {
-      coord[i] = 0
+      coord[i] = offset[i] || 0
     }
   }
 

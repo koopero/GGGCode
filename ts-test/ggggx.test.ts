@@ -2,13 +2,9 @@ import { describe, expect, test, jest } from '@jest/globals'
 import Matrix from "../ts/ggg/Matrix"
 import { GGG } from "../ts/ggg/Language"
 import { GXCommandNames, MatrixEvents } from "../ts/ggggx/GXLanguage"
-import Format from "../ts/ggg/Format"
-import { RegionsAdd } from "../ts/ggggx/Regions"
-import { writeDocsFiles } from "./test-utils"
 import Machine from "../ts/ggg/Machine"
 import { GXCommands } from "../ts/ggggx/GXCommands"
-import { MatrixReadCode } from "../ts/ggggx/MatrixRead"
-import { OpIndexes, Ops } from '../ts/ggggx/Operators'
+
 
 function ggggxMachine() {
   const machine = new Machine( { commands: GXCommands } )
