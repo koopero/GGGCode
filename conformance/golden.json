@@ -1,0 +1,32 @@
+[
+  {
+    "name": "print_single",
+    "program": "P10 V42",
+    "expected": "V42\nOK"
+  },
+  {
+    "name": "print_list",
+    "program": "P10 V1,2,3",
+    "expected": "V1,2,3\nOK"
+  },
+  {
+    "name": "print_zero",
+    "program": "P10 V0",
+    "expected": "V0\nOK"
+  },
+  {
+    "name": "print_negatives",
+    "program": "P10 V-5,-10,15",
+    "expected": "V-5,-10,15\nOK"
+  },
+  {
+    "name": "print_two_args",
+    "program": "P10 V1,2,3 V4,5,6",
+    "expected": "V1,2,3 V4,5,6\nOK"
+  },
+  {
+    "name": "print_bytes",
+    "program": "P10 V255,128,64",
+    "expected": "V255,128,64\nOK"
+  }
+]

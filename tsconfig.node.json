@@ -13,5 +13,7 @@
     "ts/cli.ts",
     "ts/ggggx/SavePNG.ts",
     "ts/ggggx/LoadPNG.ts",
+    "ts/gggpx/PrintCommands.ts",
+    "ts/ggggx/GXCommands.ts",
   ]
 }

@@ -17,7 +17,7 @@ async function MatrixWatchHookValue( arg:HookArgs ) {
       state.encoding = ggggxEncodingOptions.get( value as string )
       break
 
-    case GGG.Register:
+    case GGG.Register: {
       const key = value as string
       const watcher = bufferWatchers[key] = bufferWatchers[key] || {}
       let header = false
@@ -35,11 +35,11 @@ async function MatrixWatchHookValue( arg:HookArgs ) {
       }
 
       const spec = `${buffer.name}:${buffer.dim}`
-      
+
       if ( watcher.spec !== spec ) {
         watcher.spec = spec
         header = true
-      } 
+      }
 
       if ( header || (regions && regions.length) ) {
         const { encoding = ggggxEncodingOptions.get()  } = state
@@ -49,6 +49,7 @@ async function MatrixWatchHookValue( arg:HookArgs ) {
       }
 
       break
+    }
   }
 }
 

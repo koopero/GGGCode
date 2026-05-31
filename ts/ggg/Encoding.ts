@@ -3,9 +3,7 @@ import { GGG, UnitaryNames, HexEncodings } from "./Language"
 import { Described } from "./Language"
 import NamedList, { NamedListItem } from "./NamedList"
 
-type EncodingType = NamedListItem & Described & {
-
-}
+type EncodingType = NamedListItem & Described
 
 enum EncodingIndexes {
   EncodedZero = 0,
@@ -40,13 +38,13 @@ export function EncodingCode( code:string|number ) {
 function representHex ( digits:number, normal:boolean ) {
   if ( normal ) {
     return ( value:number, allowQuantize:number ) => {
-      let quant = floor( saturate( value ) * (16 ** digits - 1) ) / (16 ** digits - 1)
+      const quant = floor( saturate( value ) * (16 ** digits - 1) ) / (16 ** digits - 1)
       return abs( value - quant ) <= allowQuantize
     }
   } else {
     const maxValue = 16 ** digits - 1
     return ( value:number, allowQuantize:number ) => {
-      let quant = max( 0, min( maxValue, floor( value ) ) )
+      const quant = max( 0, min( maxValue, floor( value ) ) )
       return abs( value - quant ) <= allowQuantize
     }
   }

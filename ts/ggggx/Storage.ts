@@ -58,7 +58,7 @@ export const StorageTypes = new NamedList<StorageType>( [
   StorageDefault,
   { index: 8, name: StorageTypeNames.UNorm8, dataClass: Uint8Array, encoding: HexEncodings.HexNorm2, norm1: 255, range: RangeU8, cxxStorage: "uint8_t" },
   { index: 255, name: StorageTypeNames.UInt8, dataClass: Uint8Array, encoding: HexEncodings.HexNorm2, norm1: 1, range: RangeU8, cxxStorage: "uint8_t" },
-  { index: 9, name: StorageTypeNames.Norm8, dataClass: Int8Array, encoding: HexEncodings.HexNorm2, norm1: 127, range: RangeI8, cxxStorage: "uint8_t" },
+  { index: 9, name: StorageTypeNames.Norm8, dataClass: Int8Array, encoding: HexEncodings.HexNorm2, norm1: 127, range: RangeI8, cxxStorage: "int8_t" },
   { index: 10, name: StorageTypeNames.Int8, dataClass: Int8Array, encoding: HexEncodings.HexNorm2, norm1: 1, range: RangeI8, cxxStorage: "int8_t" },
   { index: 11, name: StorageTypeNames.UNorm4, dataClass: Uint8Array, encoding: HexEncodings.HexNorm2, norm1: 16, range: RangeU8, cxxStorage: "uint8_t" },
   { index: 12, name: StorageTypeNames.Norm4, dataClass: Int8Array, encoding: HexEncodings.HexNorm2, norm1: 8, range: RangeI8, cxxStorage: "int8_t" },
@@ -100,6 +100,6 @@ export function StorageValueNorm( storage:StorageProps, value:number ) {
 export function StorageNormValue( storage:StorageProps, norm:number ) {
   storage = Storage( storage )
   const { norm1 = 1 } = storage
-  let value = norm / norm1
+  const value = norm / norm1
   return value
 }

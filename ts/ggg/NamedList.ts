@@ -67,7 +67,7 @@ export default class NamedList<T extends NamedListItem> {
 
   setItemName( item:T, name:string ) {
     const { named, list } = this
-    for ( let key in named ) {
+    for ( const key in named ) {
       if ( named[key] === item ) {
         delete named[key]
         break

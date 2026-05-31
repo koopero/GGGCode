@@ -74,15 +74,18 @@ function loadCommandsFromBuiltinExtension( name:string ) {
 
     case "g":
     case "ggggx":
-      return require("./ggggx/ggggxCommands").default
+      return require("./ggggx/GXCommands").GXCommands
 
     case "t":
     case "gggtx":
       return require("./gggtx/gggtxCommands").default
 
+    case "p":
+    case "gggpx":
+      return require("./gggpx/PrintCommands").default
   }
 
-  throw new Error(`Builtin extension not found: ${name}`)
+  throw new Error(`Built-in extension not found: ${name}`)
 }
 
 
@@ -151,7 +154,7 @@ export function runCLI() {
 
   machine.on( "output", line => {
     line = Format( line )
-    console.log( line )
+    process.stdout.write( line )
   })
 
   const files = options._

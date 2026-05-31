@@ -1,6 +1,6 @@
-import { existsSync, mkdirSync } from 'fs'
-import { cp } from 'fs/promises'
-import { dirname, resolve } from 'path'
+import { existsSync, mkdirSync } from "fs"
+import { cp } from "fs/promises"
+import { dirname, resolve } from "path"
 
 
 async function copyPlatformioSource(src, dest) {
@@ -12,10 +12,10 @@ async function copyPlatformioSource(src, dest) {
     mkdirSync(destDir, { recursive: true } )
   }
 
-  await cp(src, dest, { recursive: true });
+  await cp(src, dest, { recursive: true })
 }
 
 // Usage
-copyPlatformioSource('include', 'include');
-copyPlatformioSource('misc/platformio.ini', 'platformio.ini');
-copyPlatformioSource('test-pio/', 'test/');
+copyPlatformioSource("include", "include")
+copyPlatformioSource("misc/platformio.ini", "platformio.ini")
+copyPlatformioSource("test-pio/", "test/")

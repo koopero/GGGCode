@@ -10,7 +10,7 @@ namespace ggg {
   struct MachineState {
     GGG lineMode = GGG::Command;
     GGG expressionMode = GGG::Code;
-    GGG dataMode;
+    Char dataMode;  // holds a code from either the GGG or HexEncodings enum
 
     enum {
       Start,
@@ -222,10 +222,10 @@ namespace ggg {
         if ( _char == GGG::EncodedOne ) {
           finishCompound();
           dataAppend( 1. );
-        } else if ( _char == GGG::EncodedZero ) {
+        } else if ( _char == EncodedZero ) {
           finishCompound();
           dataAppend( 0. );
-        } else if ( _char == GGG::EncodedMinusOne ) {
+        } else if ( _char == EncodedMinusOne ) {
           finishCompound();
           dataAppend( -1. );
         }
@@ -272,13 +272,13 @@ namespace ggg {
         state.dataMode = GGG::Quote;
       } else if ( parseEndOfNumber( _char ) ) {
         // We're done
-      } else if ( state.dataMode == GGG::HexNumber ) {
+      } else if ( state.dataMode == HexNumber ) {
         parseHex( _char );
       } else if ( state.dataMode == GGG::Zero ) {
         parseAfterZero( _char );
       } else if ( state.dataMode == GGG::Number ) {
         bufferAppend( _char );
-      } else if ( state.dataMode == GGG::HexNumber ) {
+      } else if ( state.dataMode == HexNumber ) {
         parseHex( _char );
       }
     }
@@ -345,13 +345,13 @@ namespace ggg {
     }
 
     void finishNumber() {
-      if ( state.dataMode == GGG::HexNumber && state.hexDigit > 0 && state.hexDigitCount == 0 ) {
+      if ( state.dataMode == HexNumber && state.hexDigit > 0 && state.hexDigitCount == 0 ) {
         NumberType value = float(state.hexAccum);
         if ( state.hexNormalize ) {
           value /= float( (1 << ( state.hexDigit * 4 )) - 1 );
         }
         state.numbers.push_back( value );
-      } else if ( !state.argBuffer.empty() && state.dataMode == GGG::Number ) {
+      } else if ( !state.argBuffer.empty() && ( state.dataMode == GGG::Number || state.dataMode == GGG::Zero ) ) {
         std::stringstream ss(state.argBuffer);
         NumberType value;
         if (ss >> value) {
@@ -448,7 +448,7 @@ namespace ggg {
     void startHex( int _digitCount, bool _normalize ) {
       state.argBuffer.clear();
       state.expressionMode = GGG::Data;
-      state.dataMode = GGG::HexNumber;
+      state.dataMode = HexNumber;
       state.hexDigitCount = _digitCount;
       state.hexNormalize = _normalize;
       state.hexAccum = 0;
@@ -536,16 +536,23 @@ namespace ggg {
       commands->append( command );
     }
 
-    void output( String str ) {
+    // All command output funnels through write(). Override it to redirect
+    // output -- e.g. to a buffer for conformance tests, or to Serial on
+    // embedded targets where std::cout is unavailable.
+    virtual void write( const String &str ) {
       std::cout << str;
     }
 
+    void output( String str ) {
+      write( str );
+    }
+
     void output( Char chr ) {
-      std::cout << chr;
+      write( String( 1, chr ) );
     }
 
     void outputInteger( Int value ) {
-      std::cout << value;
+      write( std::to_string( value ) );
     }
 
     void outputOK( Int value = 1 ) {
@@ -553,9 +560,9 @@ namespace ggg {
       if ( value == 1 ) {
         output( GGG::EncodedOne );
       } else if ( value == 0 ) {
-        output( GGG::EncodedZero );
+        output( EncodedZero );
       } else if ( value == -1 ) {
-        output( GGG::EncodedMinusOne );
+        output( EncodedMinusOne );
       } else {
         outputInteger( value );
       }

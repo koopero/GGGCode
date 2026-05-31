@@ -22,7 +22,7 @@ type LineStreamQueueItem = {
   resultFilter: LineQuery
   endFilter: LineQuery
   cmd: string
-  status?: 'ok' | 'timeout' | 'error'
+  status?: "ok" | "timeout" | "error"
   resolve?: ( result: LineStreamQueueItem ) => void
   timer?: NodeJS.Timeout
   result: Token[]
@@ -45,7 +45,7 @@ type RunnerOptions = {
 
 class RunnerStream extends Duplex {
   _read( size ) {
-    console.log('read', size )
+    console.log("read", size )
   }
 
   _write( chunk, encoding, callback ) {
@@ -84,7 +84,7 @@ export class Runner extends EventEmitter {
     super()
     const { machine } = options
     if ( machine ) {
-     this.attachMachine( machine )
+      this.attachMachine( machine )
     }
   }
 
@@ -100,10 +100,10 @@ export class Runner extends EventEmitter {
 
     const lines = cmd.split("\n").map( l => l.trim() ).filter( LineIsCommand )
 
-    let results = lines.map( line => {
+    const results = lines.map( line => {
       const cmd = line.trim()+"\n"
       const result = new Promise<LineStreamQueueItem>( ( resolve, reject ) => {
-        let { resultFilter = true, endFilter = "O" } = options
+        const { resultFilter = true, endFilter = "O" } = options
 
         const item = {
           resultFilter,
@@ -124,7 +124,7 @@ export class Runner extends EventEmitter {
   }
 
   write( str: string ) {
-    this.emit('output', str )
+    this.emit("output", str )
   }
 
   onOutput( line ) {
@@ -132,8 +132,8 @@ export class Runner extends EventEmitter {
       this.onResponseToken( line )
     } else if ( isString( line ) ) {
       this.accum += line
-      do {
-        let index = this.accum.indexOf( GGG.End)
+      for ( ;; ) {
+        const index = this.accum.indexOf( GGG.End)
         if ( index == -1 ) {
           break
         }
@@ -141,7 +141,7 @@ export class Runner extends EventEmitter {
         this.accum = this.accum.substring( index + 1 )
         const [ token ] = ParseLine( line )
         this.onResponseToken( token )
-      } while( 1)
+      }
     }
   }
 
@@ -160,7 +160,7 @@ export class Runner extends EventEmitter {
 
       if ( codeMatches( code, endFilter ) ) {
         const { resolve } = running
-        running.status = 'ok'
+        running.status = "ok"
         delete running.resolve
         resolve && resolve( running )
         this.running = null
@@ -170,12 +170,12 @@ export class Runner extends EventEmitter {
   }
 
   tick() {
-    let { running } = this
+    const { running } = this
     if ( running ) {
       const { timeout } = running
       if ( timeout && timeout < now() ) {
         const { resolve } = running
-        running.status = 'timeout'
+        running.status = "timeout"
         delete running.resolve
 
         if ( running.timer ) {

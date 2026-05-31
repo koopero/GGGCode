@@ -21,12 +21,13 @@ export function MatrixInitHookValue( arg:HookArgs ) {
 
   const { code, state, value, machine } = arg
   switch ( code ) {
-    case GGG.Alias:
+    case GGG.Alias: {
       const { buffer } = state
       if ( buffer ) {
         buffer.name = value
       }
       break
+    }
   }
 }
 
@@ -37,11 +38,11 @@ export function MatrixInitHookEnd( arg:HookArgs ) {
   const { MatrixInit } = ggggx
   const { index, name, dim, storage  } = state || {}
   const key = name || index
-  let buffer = MatrixInit({ name, index }, { dim, storage } )
+  const buffer = MatrixInit({ name, index }, { dim, storage } )
   buffer.clear( { dim, storage})
 
   if ( !buffer ) {
-
+    // buffer creation failed
   }
 
   machine.outputOk()

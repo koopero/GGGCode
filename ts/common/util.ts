@@ -39,6 +39,6 @@ export function isUndefined( token:any ) : boolean {
   return token === undefined
 }
 
-export function isFunction( token:any ) : token is Function {
+export function isFunction( token:any ) : token is ( ...args:any[] ) => any {
   return typeof token === "function"
 }

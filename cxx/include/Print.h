@@ -3,86 +3,51 @@
 #include "./Format.h"
 
 namespace ggg {
+  // Mirrors the TS gggpx PrintNumbers hooks (ts/gggpx/PrintCommands.ts) so both
+  // implementations emit identical output: the code letter is written once per
+  // argument (a space separates arguments), values are comma-separated, and the
+  // line is terminated with End + OK. No response-command prefix is emitted.
   class PrintNumbers : virtual public CommandType {
   public:
-    bool sentCommand = false;
-    Char sentCode = 0;
-    Char nextSeperator = 0;
+    bool needSeperator = false;
+    bool wroteCode = false;
+    bool firstValue = true;
 
     PrintNumbers() {
       name = PrintNumbersName;
     }
-    void hookBefore() override { }
-    void hookCommand() override { 
-      sentCommand = false;
+
+    void hookCommand() override {
+      needSeperator = false;
       okay = 1;
     }
+
     void hookCode() override {
-      // printf("; hookCode %c\n", code );
-    }
-    void hookString() override {
-      if ( code == GGG::Command ) {
-        if ( !sentCommand ) {
-          machine->output( string );
-          sentCommand = true;
-          nextSeperator = EndArgument;
-        }
-        return;
-      } 
-      
-      if ( !sentCommand ) {
-        machine->output( PrintResponseName );
-        sentCommand = true;
-        nextSeperator = EndArgument;
-      }
-      
-      if ( nextSeperator ) {
-        machine->output( nextSeperator );
-      }
-
-      if ( code != sentCode ) {
-        machine->output( code );
-        sentCode = code;
-      }
-
-      machine->output( FormatString( string ) );
-      nextSeperator = Comma;
+      firstValue = true;
+      wroteCode = false;
     }
 
     void hookNumber() override {
-      if ( code == GGG::Command ) {
-        if ( !sentCommand ) {
-          machine->output( PrintPrefix );
-          machine->output( FormatNumber( number ) );
-          sentCommand = true;
-          nextSeperator = EndArgument;
+      if ( !wroteCode ) {
+        if ( needSeperator ) {
+          machine->output( GGG::EndArgument );
         }
-        return;
-      } 
-      
-      if ( !sentCommand ) {
-        machine->output( PrintResponseName );
-        sentCommand = true;
-        nextSeperator = EndArgument;
-      }
-      
-      if ( nextSeperator ) {
-        machine->output( nextSeperator );
-      }
-
-      if ( code != sentCode ) {
         machine->output( code );
-        sentCode = code;
+        wroteCode = true;
+        needSeperator = true;
       }
 
+      if ( !firstValue ) {
+        machine->output( GGG::Comma );
+      }
       machine->output( FormatNumber( number ) );
-      nextSeperator = Comma;
+      firstValue = false;
     }
+
     void hookFinish() override {
       machine->output( End );
       machine->outputOK( okay );
     }
-
   };
 
   class PrintString : virtual public CommandType {

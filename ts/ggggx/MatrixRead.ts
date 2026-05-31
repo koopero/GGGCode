@@ -8,7 +8,6 @@ import { ceil, min } from "../common/math"
 import { Ops } from "./Operators"
 
 type MatrixReadCodeOptions = {
-  lines?: Token[],
   header?: boolean,
   encoding?: string,
   region?: number[],
@@ -17,7 +16,7 @@ type MatrixReadCodeOptions = {
 }
   
 export function MatrixReadForNamespace( namespace?: GXNamespaceArg ) {
-  if ( 'string' === typeof namespace ) {
+  if ( "string" === typeof namespace ) {
     namespace = { code: namespace }
   }
   namespace = namespace || GXNamespace
@@ -30,7 +29,6 @@ export function MatrixReadForNamespace( namespace?: GXNamespaceArg ) {
 
   function *MatrixReadCode( matrix:Matrix, options: MatrixReadCodeOptions = {} ) : Generator<Token> {
     let { 
-      lines = [],
       header = true,
       encoding = "",
       region = null,
@@ -85,7 +83,7 @@ export function MatrixReadForNamespace( namespace?: GXNamespaceArg ) {
 
     if ( regions && regions.length ) {
       for ( const region of regions ) {
-        yield* MatrixReadCode( matrix, { lines, header: false, encoding, region, chunk } )
+        yield* MatrixReadCode( matrix, { header: false, encoding, region, chunk } )
       }
     } 
 
@@ -104,26 +102,20 @@ export function MatrixReadForNamespace( namespace?: GXNamespaceArg ) {
 
   function MatrixReadHookEnd( arg:HookArgs) {
     const { machine, state } = arg
-    let { buffer, offset, encoding, size } = TargetResolveNumbers( arg )
+    const { buffer, offset, encoding, size } = TargetResolveNumbers( arg )
 
     if ( !buffer )
-      return machine.fail( { comment: GXFails.BufferNotFound } )
+      return machine.outputOk( 0, GXFails.BufferNotFound )
 
     if ( !encoding )
-      return machine.fail( { comment: GXFails.BufferNotFound } )
+      return machine.outputOk( 0, GXFails.BufferNotFound )
 
     const { index, dim, size:bufferSize } = buffer
-    offset = DimOffset( dim, offset )
-    let { length } = state
-    length = length < 0 ? dim[3] : length
-    length = min( length, bufferSize - offset )
-    const data = buffer.read( [ 0,0,0,offset ], new Array( length ) )
-    const tokens = [
-      { code: GGG.Register, data: [ index ] },
-      { code: GGG.Offset, data: [ offset ] },
-      { code: GGG.Data, encoding: encoding.name, data },
-    ]
-    machine.output( { code: "G-1", tokens } )
+    for ( const line of MatrixReadCode( buffer, { header: false, encoding, region: [ offset, offset + size ] } ) ) {
+      machine.output( line )
+    }
+
+    machine.outputOk()
   }
 
   const MatrixReadHooks = {

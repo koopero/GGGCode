@@ -1,5 +1,5 @@
-import { isArray, isDefined, isNumber, isObject, isRealNumber } from "../common/util"
-import { min, max, floor, ceil, toNorm8, toVector } from "../common/math"
+import { isArray, isNumber } from "../common/util"
+import { max, floor, ceil, toVector } from "../common/math"
 import { Dimensions, VecArg, DimArg } from "./Language"
 
 
@@ -94,7 +94,7 @@ export function *DimIterate(dim: number[], step: number | number[] = 1): Generat
     step = step.reduce((acc, val) => acc * val, 1) // Multiply elements if array (equivalent to DimSize)
   }
 
-  let coord = Array(dim.length).fill(0) // Initialize coord with zeros
+  const coord = Array(dim.length).fill(0) // Initialize coord with zeros
 
   while (true) {
     yield [...coord] // Yield a copy of coord

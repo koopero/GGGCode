@@ -50,7 +50,7 @@ export type MachineLimits = {
 function isBlankCommand( command:string ) {
   const compare = CasedString( command.trim() )
   return !compare || compare.startsWith( GGG.Okay )
-  }
+}
 
 import Matrix from "./Matrix"
 import { FormatOkayNumber } from "./Format"

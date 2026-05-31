@@ -1,0 +1,64 @@
+name: CI
+
+# Keeps the TypeScript reference and the C++ port in sync:
+#  - check:codegen   verifies the generated C++ headers + conformance golden are
+#                    up to date with the TS source of truth (fails if someone
+#                    edited a source enum/table without regenerating).
+#  - TS tests        Jest, including the conformance suite (ts-test/conformance.test.ts).
+#  - C++ tests       PlatformIO/Unity, including the conformance test that runs the
+#                    same corpus through the C++ machine and compares to the golden.
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: ~/.platformio
+          key: ${{ runner.os }}-platformio
+
+      - name: Install PlatformIO
+        run: pip install --upgrade platformio
+
+      # The sync gate: generated headers + golden must match the TS source.
+      - name: Check C++ codegen + conformance are up to date
+        run: npm run check:codegen
+
+      # Blocking: all lint errors are fixed. Unused-variable checks are at
+      # warning level (see .eslintrc.js) since the matrix modules are under
+      # active development, so they do not fail the build.
+      - name: Lint
+        run: npm run lint:ts
+
+      - name: TypeScript tests (incl. conformance)
+        run: npm test
+
+      - name: C++ tests (incl. conformance)
+        run: npm run test:pio

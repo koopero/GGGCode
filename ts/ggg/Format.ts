@@ -37,9 +37,10 @@ export function FormatNumberFirst( data:number, encoding?:EncodingArg ) : string
     case HexEncodings.HexList1:
     case HexEncodings.HexList2:
     case HexEncodings.HexNorm1:
-    case HexEncodings.HexNorm2:
+    case HexEncodings.HexNorm2: {
       const { digits, div } = HexModifiers[ encoding ]
       return `0${encoding}` + formatHexListItem( data, digits, div )
+    }
 
     default:
       return FormatNumber( data, encoding )
@@ -51,9 +52,10 @@ export function FormatNumberSubsequent( data:number, encoding?:EncodingArg ) : s
     case HexEncodings.HexList1:
     case HexEncodings.HexList2:
     case HexEncodings.HexNorm1:
-    case HexEncodings.HexNorm2:
+    case HexEncodings.HexNorm2: {
       const { digits, div } = HexModifiers[ encoding ]
       return formatHexListItem( data, digits, div )
+    }
 
     default:
       return GGG.Comma + FormatNumber( data, encoding )
@@ -65,7 +67,7 @@ export function FormatRangeAxes( data:RangeAxes, encoding?:EncodingArg ) : strin
 }
 
 export function FormatReference( data:Reference ) : string {
-  let { register, subscript } = data
+  const { register, subscript } = data
 
   return `${GGG.Reference}${register}[${FormatData(subscript)}]`
 }
@@ -132,6 +134,7 @@ export function FormatPrimitive( data:Primitive, encoding:EncodingArg = Encoding
     }
   }
 
+  return ""
   throw new Error(`Invalid data: ${data}`)
 }
 

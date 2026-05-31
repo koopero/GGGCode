@@ -73,11 +73,12 @@ const gggtxRegisterCommands : Commands = {
       const { machine, state, code, value } = args
       const { registers } = machine
       switch ( code ) {
-        case gggtxCodes.RegisterIndex:
+        case gggtxCodes.RegisterIndex: {
           const register = registers.get( value ) || registers.add( { data: [] }, value )
           state.register = register
           state.writeIndex = 0
           break
+        }
 
         case GGG.Register:
           if ( isString( value ) ) {
@@ -123,13 +124,13 @@ const BooleanCommandHookValue = ( args ) => {
 }
 
 const LoopArgs = {
-  'E': {
+  "E": {
     description: "Loop each"
   },
-  'W': {
+  "W": {
     description: "Loop while"
   },
-  'I': {
+  "I": {
     description: "Loop if"
   },
 }

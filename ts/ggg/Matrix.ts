@@ -132,7 +132,7 @@ export default class Matrix extends EventEmitter {
       for ( const coord of DimIterate( dim ) ) {
         const value = this.read( coord, 0 ) as number
 
-        let norm = StorageValueNorm( storage, value )
+        const norm = StorageValueNorm( storage, value )
         const index = DimOffset( dim, coord )
         if ( index >= 0 && index < data.length ) {
 
@@ -253,7 +253,7 @@ export default class Matrix extends EventEmitter {
     let end = -1
 
     DataArgIterate( value, ( value, index ) => {
-      let norm = StorageValueNorm( storage, value )
+      const norm = StorageValueNorm( storage, value )
       const dataIndex = index + coordIndex
 
       if ( dataIndex >=0 && dataIndex < data.length ) {
@@ -282,7 +282,7 @@ export default class Matrix extends EventEmitter {
     }
 
     if ( !data || !isObject( data ) ) {
-      throw new Error( `Matrix.writeImageData: invalid imageData` )
+      throw new Error( "Matrix.writeImageData: invalid imageData" )
     }
 
     for( let y = 0; y < height; y++ ) {

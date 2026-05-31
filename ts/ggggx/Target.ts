@@ -18,12 +18,13 @@ export function TargetHookCommand( arg, target ) {
   state.offsetIndex = 0
 
   switch( code ) {
-    case GGG.Register:
+    case GGG.Register: {
       const buffer = machine.getRegisterNumbers( value ) as Matrix
       if ( buffer ) {
-        machine.emit( MatrixEvents.Display, { buffer } ) 
+        machine.emit( MatrixEvents.Display, { buffer } )
       }
       break
+    }
   }
 }
 
@@ -80,10 +81,10 @@ export function TargetHookValue( arg ) {
 
 export function TargetResolveNumbers( arg ) {
   const { code, state, value, machine } = arg
-  let { dim, offset, name, index, length, storage, create } = state
+  const { dim, offset, name, index, length, storage, create } = state
 
-  let lookup = index >= 0 ? index : name
-  let buffer:Matrix|null = machine.getMatrix( lookup ) as Matrix
+  const lookup = index >= 0 ? index : name
+  const buffer:Matrix|null = machine.getMatrix( lookup ) as Matrix
 
   if ( !buffer && create ) {
     // buffer = MatrixInit( lookup, { index, name, dim, storage } )
@@ -107,8 +108,8 @@ function TargetBuffer( arg ) {
   if ( buffer ) {
     return buffer
   }
-  let context = GXContext( { machine } )
-  let { MatrixResolve, MatrixInit } = context
+  const context = GXContext( { machine } )
+  const { MatrixResolve, MatrixInit } = context
 
   buffer = MatrixResolve( name ) || MatrixResolve( index )
 

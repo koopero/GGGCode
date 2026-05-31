@@ -8,10 +8,10 @@ const hexNumber = new RegExp( hexNumberPattern, "i" )
 const decimalNumber = /^[+-]?(\d+(\.\d+)?)([Ee][+-]?\d+)?/
 const doubleQuotedString = /^((""|".*?[^\\]"))/
 
-const RegexEscape = ( str:string ) => str.replace( /[-\/\\^$*+?.()|[\]{}]/g, '\\$&' )
+const RegexEscape = ( str:string ) => str.replace( /[-/\\^$*+?.()|[\]{}]/g, "\\$&" )
 const referenceReg = new RegExp( `^${RegexEscape(GGG.Reference)}([a-zA-Z0-9_]*)(${RegexEscape(GGG.Subscript)}?)` )
 
-const unitaryPattern = new RegExp( `^[${Object.values(UnitaryNames).map(RegexEscape).join('')}]`, "iu" )
+const unitaryPattern = new RegExp( `^[${Object.values(UnitaryNames).map(RegexEscape).join("")}]`, "iu" )
 const unitaryMap: Record<string, number> = {}
 for ( const [name, value] of Object.entries(UnitaryValues) ) {
   unitaryMap[name] = value
@@ -41,10 +41,10 @@ function parseHexList( str:string, hexConfig:HexModifier, pushNumber:( num:numbe
 
 
 enum AxisSymbol {
-  Start = 'start',
-  End = 'end',
-  Step = 'step',
-  Multiplier = 'multiplier',
+  Start = "start",
+  End = "end",
+  Step = "step",
+  Multiplier = "multiplier",
 }
 const { Start, End, Step, Multiplier } = AxisSymbol
 
@@ -201,14 +201,14 @@ export default function ParseData( str:string, options:ParseOptions = {} ) : [ P
   while( str ) {
     let match:RegExpMatchArray|null = null
 
-    let unicode = (str.match( /^./u ) || [""])[0].codePointAt(0) || 0
+    const unicode = (str.match( /^./u ) || [""])[0].codePointAt(0) || 0
 
-    if ( match = str.match( unitaryPattern ) ) {
+    if ( ( match = str.match( unitaryPattern ) ) ) {
       const value = unitaryMap[ match[0] ]
       pushNumber( value, GGG.EncodedOne, false )
     } else if ( unicode >= 0x80 ) {
       // Unicode character as number
-      let uniChar = String.fromCodePoint( unicode )
+      const uniChar = String.fromCodePoint( unicode )
       pushNumber( unicode, uniChar, false )
       match = [ uniChar ]
     } else if ( str[0] == GGG.StringToEOL ) {
@@ -221,7 +221,7 @@ export default function ParseData( str:string, options:ParseOptions = {} ) : [ P
       pushString( value, GGG.StringToEOL )
       str = str.substring( endIndex )
       break
-    } else if ( match = str.match( referenceReg ) ) {
+    } else if ( ( match = str.match( referenceReg ) ) ) {
       // Is reference
       const register = match[1] ? match[1] : null
       const subscriptStart = match[2]
@@ -233,7 +233,7 @@ export default function ParseData( str:string, options:ParseOptions = {} ) : [ P
         subscriptStack.push( reference )
         currentList = reference.subscript        
       }
-    } else if ( match = str.match( hexNumber ) ) {
+    } else if ( ( match = str.match( hexNumber ) ) ) {
       // Hex number
       const hexMatch = match[0]
       const hexData = hexMatch.substring(2)
@@ -246,10 +246,10 @@ export default function ParseData( str:string, options:ParseOptions = {} ) : [ P
         const value = parseInt( hexData, 16 )
         pushNumber( value, HexEncodings.HexNumber, false )
       }
-    } else if ( match = str.match( decimalNumber ) ) {
+    } else if ( ( match = str.match( decimalNumber ) ) ) {
       const value = parseFloat( match[0] )
       pushNumber( value, "", false )
-    } else if ( match = str.match( doubleQuotedString ) ) {
+    } else if ( ( match = str.match( doubleQuotedString ) ) ) {
       try {
         const string = JSON.parse( match[0] )
         pushString( string, GGG.Quote )

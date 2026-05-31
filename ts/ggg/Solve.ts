@@ -56,9 +56,9 @@ export function* Solve( arg:SolveArgument, options:SolveOptions = {
     const { register, subscript } = value
     const reg = MatrixResolve && MatrixResolve( register )
     if ( reg ) {
-      for ( let index of solve( subscript, reg ) ) {
+      for ( const index of solve( subscript, reg ) ) {
         if ( isNumber( index ) ) {
-          let val = reg.readNumber( index )
+          const val = reg.readNumber( index )
           if ( isUsable( val ) ) {
             yield val
           }
@@ -116,7 +116,7 @@ export function* Solve( arg:SolveArgument, options:SolveOptions = {
     let stride = 1
     for ( let i = 0; i < axes.length; i++ ) {
       strides.push( stride )
-      let dim = (dimensions[ i ] as number) || 1
+      const dim = (dimensions[ i ] as number) || 1
       stride *= dim
     }
 

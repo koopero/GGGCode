@@ -96,10 +96,11 @@ function resolveAxis(val: FloatT, size: BufferIndexT, filter: string = Filter.Li
     case Edge.Hold:
       axis.index0 = max(0, min(size - 1, axis.index0))
       break
-    case Edge.Mirror:
+    case Edge.Mirror: {
       const mirrored = floor(val / size) % 2 === 0
       axis.index0 = mirrored ? mod(axis.index0, size) : size - 1 - mod(axis.index0, size)
       break
+    }
   }
 
   if (filter === Filter.Nearest) {
@@ -121,10 +122,11 @@ function resolveAxis(val: FloatT, size: BufferIndexT, filter: string = Filter.Li
       case Edge.Hold:
         axis.index1 = max(0, min(size - 1, axis.index1))
         break
-      case Edge.Mirror:
+      case Edge.Mirror: {
         const mirrored = floor((val + 1) / size) % 2 === 0
         axis.index1 = mirrored ? mod(axis.index1, size) : size - 1 - mod(axis.index1, size)
         break
+      }
     }
   }
 

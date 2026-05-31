@@ -291,7 +291,7 @@ export default function gggParser( props:ParserArgs = {}) {
       state.dataMode = gggParserMode.Zero
     } else if ( _char == GGG.Quote ) {
       startQuotedString()
-    } else if ( /^[\d\.\+\-]$/.test( _char ) ) {
+    } else if ( /^[\d.+-]$/.test( _char ) ) {
       startNumber()
       bufferAppend( _char )
     } else if ( _char == GGG.StringToEOL ) {

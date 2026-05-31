@@ -6,18 +6,19 @@ import { GXContext } from "./GXContext"
 
 function DisplayHookValue( arg:HookArgs ) {
   const { code, value, machine, state } = arg
-  const { } = TargetResolveNumbers( arg )
-  
+  TargetResolveNumbers( arg )
+
   switch( code ) {
-    case GGG.Register:
+    case GGG.Register: {
       const context = GXContext( { machine } )
       const { MatrixResolve } = context
 
       const buffer = MatrixResolve( value ) as Matrix
       if ( buffer ) {
-        machine.emit( MatrixEvents.Display, { buffer } ) 
+        machine.emit( MatrixEvents.Display, { buffer } )
       }
       break
+    }
   }
 }
 

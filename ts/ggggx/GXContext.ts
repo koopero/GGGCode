@@ -20,16 +20,14 @@ export function GXContext( options?: ContextOptions ) {
 
   let { registers, machine, commands, limits } = options || {}
 
-  commands = commands 
-
   if ( !machine ) {
     machine = new Machine( { commands, limits } )
   }
 
   if ( registers ) {
-    for ( let name in registers ) {
-      let register = machine.getRegister( Matrix, name, new Matrix() ) as Matrix
-      let clearData = registers[name]
+    for ( const name in registers ) {
+      const register = machine.getRegister( Matrix, name, new Matrix() ) as Matrix
+      const clearData = registers[name]
       register.clear( clearData )
     }
   }
@@ -63,7 +61,7 @@ export function GXContext( options?: ContextOptions ) {
       index = lookup.index || -1
     }
     
-    let search = name || index
+    const search = name || index
     let buffer = MatrixResolve( search )
     if ( !buffer ) {
       buffer = new Matrix( { name, index } )

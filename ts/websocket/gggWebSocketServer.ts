@@ -32,6 +32,7 @@ export default function gggWebSocketServer( options:gggWebSocketServerOptions ) 
   } = options
 
 
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const WebSocket = require( "ws" )
   const { host, port } = parseWebsocketUrl( url )
   if ( port && host ) {

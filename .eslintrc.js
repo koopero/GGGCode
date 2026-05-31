@@ -39,5 +39,13 @@ module.exports = {
         ],
         "@typescript-eslint/no-explicit-any": "off",
         "@typescript-eslint/no-this-alias": "off",
+        "@typescript-eslint/no-unused-vars": [
+            "warn",
+            { "args": "none", "ignoreRestSiblings": true }
+        ],
+        "prefer-const": [
+            "error",
+            { "destructuring": "all" }
+        ],
     }
 }

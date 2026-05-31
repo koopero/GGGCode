@@ -16,15 +16,16 @@ function MatrixWriteHookCode( arg:HookArgs ) {
   TargetHookCode( arg )
 
   switch( arg.code ) {
-    case GGG.Data:
+    case GGG.Data: {
       TargetResolveNumbers( arg )
       const { state } = arg
       state.coord = null
       state.writingData = true
       state.size = SizeDefault( state.size, state.buffer.dim, state.offset )
-      
+
       state.data = []
       break
+    }
   }
 }
 
@@ -60,12 +61,12 @@ function MatrixWriteHookValue( arg:HookArgs ) {
       const matrixIndex = DimOffset( buffer.dim, coord )
 
       if ( matrixIndex >= 0 ) {
-        let currentValue = buffer.read( matrixIndex ) as number
-        let newValue = OperatorApply( operator, currentValue, value )
+        const currentValue = buffer.read( matrixIndex ) as number
+        const newValue = OperatorApply( operator, currentValue, value )
         buffer.write( newValue, matrixIndex )
       }
     }
-    break
+      break
   }
 }
 
@@ -162,12 +163,12 @@ export function MatrixWrite( matrix?:Matrix, options:MatrixWriteArg = {} ) : Mat
 
   let count = 1000000
   while ( coord ) {
-    let value = data[dataIndex]
+    const value = data[dataIndex]
     const matrixIndex = DimOffset( matrix.dim, coord )
 
     if ( matrixIndex >= 0 ) {
-      let currentValue = matrix.read( matrixIndex ) as number
-      let newValue = OperatorApply( operator, currentValue, value )
+      const currentValue = matrix.read( matrixIndex ) as number
+      const newValue = OperatorApply( operator, currentValue, value )
       matrix.write( newValue, matrixIndex )
     }
 

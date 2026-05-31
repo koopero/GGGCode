@@ -1,4 +1,4 @@
-import { GGG, HexEncodings } from "./Language"
+import { HexEncodings } from "./Language"
 
 export type HexModifier = {
   digits:number,

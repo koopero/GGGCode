@@ -1,7 +1,7 @@
 import { isNumber, isString } from "../common/util"
 import { EncodingCode } from "../ggg/Encoding"
 import { FormatNumber, FormatNumberFirst, FormatNumberSubsequent } from "../ggg/Format"
-import { HookArgs, Hooks } from "../ggg/Language"
+import { HookArgs, Hooks, CommandConvention } from "../ggg/Language"
 import { GGG } from "../ggg/Language"
 import { PrintPrefix } from "./PrintDefs"
 
@@ -36,20 +36,21 @@ function PrintNumbersHookValue( arg: HookArgs ): void {
   const { state, code, value, machine } = arg
 
   switch ( arg.code ) {
-    case GGG.Encoding:
+    case GGG.Encoding: {
       const { writeEncoding, firstValue } = state
-      
+
       if ( firstValue ) {
         if ( value == EncodingEscape ) {
           state.firstArg = false
           state.writeEncoding = true
           return
-        } 
-      } 
+        }
+      }
       if ( !writeEncoding ) {
         state.encoding = EncodingCode( value )
         return
       }
+    }
   }
 
   const { wroteCode, needSeperator, firstValue, encoding } = state
@@ -109,8 +110,8 @@ type PrintMakeCommandsArgs = {
 
 const PrintMakeCommandsDefaults = {
   prefix: PrintPrefix,
-  printNumbers: 10,
-  printString: 20,
+  printNumbers: CommandConvention.Read,
+  printString: CommandConvention.Display,
 }
 
 export function PrintMakeCommands( args: PrintMakeCommandsArgs = PrintMakeCommandsDefaults ) {

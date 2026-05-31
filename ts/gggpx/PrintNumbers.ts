@@ -1,7 +1,7 @@
 export function PrintNumbers( value: PrintNumbersArg ) {
   let result = ""
   let _encoding = ""
-  let _code = ''
+  let _code = ""
   let _needComma = false
 
   printValue( value )
@@ -33,7 +33,7 @@ export function PrintNumbers( value: PrintNumbersArg ) {
   }
 
   function printStringAsData( str:string ) {
-    let chars = [ ...str ]
+    const chars = [ ...str ]
     for ( const char of chars ) {
       printNumber( char.charCodeAt(0) )
     }
