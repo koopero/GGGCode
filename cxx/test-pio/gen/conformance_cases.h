@@ -7,11 +7,6 @@
 //   unitary_e: symbolic unitary constants (π τ e φ γ) decode as codepoints in C++
 //   hexnorm2_80: fractional hex-norm precision differs (C++ float vs TS double)
 //   hexnorm1_8: fractional hex-norm precision differs (C++ float vs TS double)
-//   range_incl: range expansion not yet implemented in the C++ parser
-//   range_excl: range expansion not yet implemented in the C++ parser
-//   range_count: range expansion not yet implemented in the C++ parser
-//   range_step: range expansion not yet implemented in the C++ parser
-//   multiaxis: multi-axis (|) handling differs between implementations
 //
 namespace ggg_conformance {
   struct Case { const char* name; const char* program; const char* expected; };
@@ -23,6 +18,7 @@ namespace ggg_conformance {
     { "print_two_args", "P10 V1,2,3 V4,5,6\n", "V1,2,3 V4,5,6\nOK" },
     { "print_bytes", "P10 V255,128,64\n", "V255,128,64\nOK" },
     { "print_decimal", "P10 V-1.5\n", "V-1.5\nOK" },
+    { "print_decimal_zero", "P10 V0.5\n", "V0.5\nOK" },
     { "unitary_one", "P10 VK\n", "V1\nOK" },
     { "unitary_zero", "P10 VZ\n", "V0\nOK" },
     { "unitary_minusone", "P10 VN\n", "V-1\nOK" },
@@ -36,7 +32,16 @@ namespace ggg_conformance {
     { "hex_ff", "P10 V0XFF\n", "V255\nOK" },
     { "hex_zero", "P10 V0X0\n", "V0\nOK" },
     { "hex_100", "P10 V0X100\n", "V256\nOK" },
-    { "hexlist_ff00", "P10 V0IFF00\n", "V15,15,0,0\nOK" }
+    { "hexlist_ff00", "P10 V0IFF00\n", "V15,15,0,0\nOK" },
+    { "range_incl", "P10 V1:5\n", "V1,2,3,4,5\nOK" },
+    { "range_excl", "P10 V1>5\n", "V1,2,3,4\nOK" },
+    { "range_count", "P10 V0:10/5\n", "V0,2.5,5,7.5,10\nOK" },
+    { "range_step", "P10 V0:10:2\n", "V0,2,4,6,8,10\nOK" },
+    { "range_in_list", "P10 V1:3,9\n", "V1,2,3,9\nOK" },
+    { "unitary_range", "P10 VK:5\n", "V1,2,3,4,5\nOK" },
+    { "unitary_range_excl", "P10 VZ>10\n", "V0,1,2,3,4,5,6,7,8,9\nOK" },
+    { "multiaxis", "P10 V1|2|3\n", "\nOK" },
+    { "multiaxis_range", "P10 V1:2|10:20/2|100:200/2\n", "V111,112,121,122,211,212,221,222\nOK" }
   };
   constexpr int caseCount = sizeof( cases ) / sizeof( cases[0] );
 }

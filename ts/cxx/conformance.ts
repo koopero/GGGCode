@@ -32,8 +32,9 @@ export const corpus: ConformanceCase[] = [
   { name: "print_zero",      program: "P10 V0" },
   { name: "print_negatives", program: "P10 V-5,-10,15" },
   { name: "print_two_args",  program: "P10 V1,2,3 V4,5,6" },
-  { name: "print_bytes",     program: "P10 V255,128,64" },
-  { name: "print_decimal",   program: "P10 V-1.5" },
+  { name: "print_bytes",        program: "P10 V255,128,64" },
+  { name: "print_decimal",      program: "P10 V-1.5" },
+  { name: "print_decimal_zero", program: "P10 V0.5" },
 
   // --- unitary constants (ASCII): K=1, Z=0, N=-1 ---
   { name: "unitary_one",      program: "P10 VK" },
@@ -57,17 +58,27 @@ export const corpus: ConformanceCase[] = [
   // --- hex list (0I: one nibble per digit) ---
   { name: "hexlist_ff00", program: "P10 V0IFF00" },
 
+  // --- ranges expand to inclusive/exclusive integer sweeps ---
+  { name: "range_incl",    program: "P10 V1:5" },
+  { name: "range_excl",    program: "P10 V1>5" },
+  { name: "range_count",   program: "P10 V0:10/5" },
+  { name: "range_step",    program: "P10 V0:10:2" },
+  { name: "range_in_list", program: "P10 V1:3,9" },
+
+  // --- unitary constants (K/Z/N) act as range bounds like any number ---
+  { name: "unitary_range",      program: "P10 VK:5" },
+  { name: "unitary_range_excl", program: "P10 VZ>10" },
+
+  // --- multi-axis (|): register-less sweeps add coordinate-wise ---
+  { name: "multiaxis",       program: "P10 V1|2|3" },
+  { name: "multiaxis_range", program: "P10 V1:2|10:20/2|100:200/2" },
+
   // --- known TS<->C++ divergences (TS reference only for now) ---
   { name: "unitary_pi",  program: "P10 Vπ", cxxSkip: "symbolic unitary constants (π τ e φ γ) decode as codepoints in C++" },
   { name: "unitary_tau", program: "P10 Vτ", cxxSkip: "symbolic unitary constants (π τ e φ γ) decode as codepoints in C++" },
   { name: "unitary_e",   program: "P10 Ve", cxxSkip: "symbolic unitary constants (π τ e φ γ) decode as codepoints in C++" },
   { name: "hexnorm2_80", program: "P10 V0H80", cxxSkip: "fractional hex-norm precision differs (C++ float vs TS double)" },
   { name: "hexnorm1_8",  program: "P10 V0J8", cxxSkip: "fractional hex-norm precision differs (C++ float vs TS double)" },
-  { name: "range_incl",  program: "P10 V1:5", cxxSkip: "range expansion not yet implemented in the C++ parser" },
-  { name: "range_excl",  program: "P10 V1>5", cxxSkip: "range expansion not yet implemented in the C++ parser" },
-  { name: "range_count", program: "P10 V0:10/5", cxxSkip: "range expansion not yet implemented in the C++ parser" },
-  { name: "range_step",  program: "P10 V0:10:2", cxxSkip: "range expansion not yet implemented in the C++ parser" },
-  { name: "multiaxis",   program: "P10 V1|2|3", cxxSkip: "multi-axis (|) handling differs between implementations" },
 ]
 
 // Normalize trailing newlines so a terminal "\n" after the OK line (which the

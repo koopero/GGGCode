@@ -3,7 +3,8 @@
 #include "./Types.h"
 #include "./List.h"
 #include "./Command.h"
-#include "./Compound.h"
+#include "./Matrix.h"
+#include "./Solve.h"
 #include "./ggg/Limits.h"
 
 namespace ggg {
@@ -11,12 +12,6 @@ namespace ggg {
     GGG lineMode = GGG::Command;
     GGG expressionMode = GGG::Code;
     Char dataMode;  // holds a code from either the GGG or HexEncodings enum
-
-    enum {
-      Start,
-      End,
-      Step,
-    } listMode;
 
     bool skipData = false;
     bool skipLine = false;
@@ -35,9 +30,6 @@ namespace ggg {
     std::vector<NumberType> numbers;
     std::vector<Char> symbols;
 
-    Index compoundIndex = 0;
-    std::vector<CompoundAxis> compoundAxes;
-
     unsigned long hexAccum;
     Index hexDigit;
     Index hexDigitCount;
@@ -53,7 +45,9 @@ namespace ggg {
     MachineLimits limits;
     MachineState state;
     CommandType *command = nullptr;
-    // List<MachineRegister> *registers = new List<MachineRegister>();
+    // Register table of matrices addressed by index (R) or name (L). Populated
+    // by addRegister() -- e.g. grizzlar appends one entry per published buffer.
+    List<MatrixBase> *registers = new List<MatrixBase>();
     List<CommandType> *commands = new List<CommandType>();
 
     Machine() {
@@ -73,8 +67,6 @@ namespace ggg {
       state.lineMode = GGG::Command;
       state.expressionMode = GGG::Code;
       state.argBuffer.clear();
-
-      state.compoundAxes.resize( limits.maxAxes );
     }
 
     void run( String _code ) {
@@ -218,16 +210,17 @@ namespace ggg {
       } else if ( _char == GGG::StringToEOL ) {
         startStringToEOL();
       } else {
+        // Unitary constants (K=1, Z=0, N=-1) are values like any number: push
+        // them into the compound so they can be a range/axis bound (K:5, Z>10),
+        // not emitted immediately. A following separator is handled by the
+        // parseEndOfNumber() at the top of parseEncoding().
         _char = CasedString( _char );
         if ( _char == GGG::EncodedOne ) {
-          finishCompound();
-          dataAppend( 1. );
+          state.numbers.push_back( 1. );
         } else if ( _char == EncodedZero ) {
-          finishCompound();
-          dataAppend( 0. );
+          state.numbers.push_back( 0. );
         } else if ( _char == EncodedMinusOne ) {
-          finishCompound();
-          dataAppend( -1. );
+          state.numbers.push_back( -1. );
         }
       }
     }
@@ -242,7 +235,7 @@ namespace ggg {
 
         default:
           state.expressionMode = GGG::Data;
-          state.dataMode = GGG::Value;
+          state.dataMode = GGG::Number;
           bufferAppend( _char );
           break;
       }
@@ -251,9 +244,7 @@ namespace ggg {
 
 
     void parseData( Char _char ) {
-      if ( state.dataMode == GGG::Value ) {
-        bufferAppend( _char );
-      } else if ( state.dataMode == GGG::Quote ) {
+      if ( state.dataMode == GGG::Quote ) {
         if ( _char == Quote ) {
           dataAppend( state.argBuffer );
           state.argBuffer.clear();
@@ -361,22 +352,22 @@ namespace ggg {
       }
     }
 
-    // void finishSegment( Char _char ) {
-    //   finishNumber();
-    //   if ( state.compoundIndex < limits.maxAxes ) {
-    //     state.compoundAxes[state.compoundIndex].ingest( state.value, _char );
-    //     state.compoundIndex++;
-    //   }
-    // }
-
     void finishCompound() {
       finishNumber();
-      if ( state.numbers.size() > 0 ) {
-        for ( NumberType value : state.numbers ) {
+      if ( state.numbers.empty() && state.symbols.empty() ) {
+        return;
+      }
+      if ( state.numbers.size() == 1 && state.symbols.empty() ) {
+        // Plain bare number -- no range / axis modifiers.
+        dataAppend( state.numbers[0] );
+      } else {
+        // Range or multi-axis expression: fold numbers + symbols into axes and
+        // expand them (mirrors ParseData.parseExpression + Solve in the TS reference).
+        for ( NumberType value : solveCompound( state.numbers, state.symbols ) ) {
           dataAppend( value );
         }
-        state.numbers.clear();
       }
+      state.numbers.clear();
       state.symbols.clear();
     }
 
@@ -534,6 +525,16 @@ namespace ggg {
     void addCommand( CommandType * command ) {
       command->machine = this;
       commands->append( command );
+    }
+
+    // Register table. append() assigns each matrix item->index in call order, so
+    // addRegister() in buffer-index order makes getRegister(R) == that buffer.
+    void addRegister( MatrixBase * matrix ) {
+      registers->append( matrix );
+    }
+
+    MatrixBase * getRegister( Index index ) {
+      return registers->getByIndex( index );
     }
 
     // All command output funnels through write(). Override it to redirect

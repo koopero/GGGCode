@@ -35,6 +35,11 @@
     "expected": "V-1.5\nOK"
   },
   {
+    "name": "print_decimal_zero",
+    "program": "P10 V0.5",
+    "expected": "V0.5\nOK"
+  },
+  {
     "name": "unitary_one",
     "program": "P10 VK",
     "expected": "V1\nOK"
@@ -105,6 +110,51 @@
     "expected": "V15,15,0,0\nOK"
   },
   {
+    "name": "range_incl",
+    "program": "P10 V1:5",
+    "expected": "V1,2,3,4,5\nOK"
+  },
+  {
+    "name": "range_excl",
+    "program": "P10 V1>5",
+    "expected": "V1,2,3,4\nOK"
+  },
+  {
+    "name": "range_count",
+    "program": "P10 V0:10/5",
+    "expected": "V0,2.5,5,7.5,10\nOK"
+  },
+  {
+    "name": "range_step",
+    "program": "P10 V0:10:2",
+    "expected": "V0,2,4,6,8,10\nOK"
+  },
+  {
+    "name": "range_in_list",
+    "program": "P10 V1:3,9",
+    "expected": "V1,2,3,9\nOK"
+  },
+  {
+    "name": "unitary_range",
+    "program": "P10 VK:5",
+    "expected": "V1,2,3,4,5\nOK"
+  },
+  {
+    "name": "unitary_range_excl",
+    "program": "P10 VZ>10",
+    "expected": "V0,1,2,3,4,5,6,7,8,9\nOK"
+  },
+  {
+    "name": "multiaxis",
+    "program": "P10 V1|2|3",
+    "expected": "\nOK"
+  },
+  {
+    "name": "multiaxis_range",
+    "program": "P10 V1:2|10:20/2|100:200/2",
+    "expected": "V111,112,121,122,211,212,221,222\nOK"
+  },
+  {
     "name": "unitary_pi",
     "program": "P10 Vπ",
     "expected": "V3.141592653589793\nOK",
@@ -133,35 +183,5 @@
     "program": "P10 V0J8",
     "expected": "V0.5333333333333333\nOK",
     "cxxSkip": "fractional hex-norm precision differs (C++ float vs TS double)"
-  },
-  {
-    "name": "range_incl",
-    "program": "P10 V1:5",
-    "expected": "V1,2,3,4,5\nOK",
-    "cxxSkip": "range expansion not yet implemented in the C++ parser"
-  },
-  {
-    "name": "range_excl",
-    "program": "P10 V1>5",
-    "expected": "V1,2,3,4\nOK",
-    "cxxSkip": "range expansion not yet implemented in the C++ parser"
-  },
-  {
-    "name": "range_count",
-    "program": "P10 V0:10/5",
-    "expected": "V0,2.5,5,7.5,10\nOK",
-    "cxxSkip": "range expansion not yet implemented in the C++ parser"
-  },
-  {
-    "name": "range_step",
-    "program": "P10 V0:10:2",
-    "expected": "V0,2,4,6,8,10\nOK",
-    "cxxSkip": "range expansion not yet implemented in the C++ parser"
-  },
-  {
-    "name": "multiaxis",
-    "program": "P10 V1|2|3",
-    "expected": "\nOK",
-    "cxxSkip": "multi-axis (|) handling differs between implementations"
   }
 ]

@@ -33,11 +33,11 @@ namespace ggg {
 
 
 
-  Char CasedString( Char _char ) {
+  inline Char CasedString( Char _char ) {
     return std::toupper( _char );
   }
 
-  bool isNumberStart( Char _char ) {
+  inline bool isNumberStart( Char _char ) {
     return ( _char >= '0' && _char <= '9' ) || _char == '.' || _char == '+' || _char == '-';
   }
 }; // namespace ggg

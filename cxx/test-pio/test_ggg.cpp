@@ -1,9 +1,11 @@
 #include <unity.h>
 #include <string>
+#include <cstring>
 #include "Normal.h"
 #include "Matrix.h"
 #include "ggg.h"
 #include "Print.h"
+#include "MatrixCommands.h"
 #include "gen/conformance_cases.h"
 
 // Test functions
@@ -167,12 +169,54 @@ void test_conformance() {
   }
 }
 
+// Matrix command layer: register table + G20 Write / G10 Read round-trip.
+struct MatrixCmdMachine : public ggg::Machine {
+  std::string out;
+  void write( const ggg::String &s ) override { out += s; }
+};
+
+void test_matrix_commands() {
+  MatrixCmdMachine m;
+  m.addCommand( new ggg::MatrixWrite() );
+  m.addCommand( new ggg::MatrixRead() );
+
+  auto mat = new ggg::Matrix<float,true>({1,4});  // 1 comp x 4 = size 4, watched
+  mat->allocate();
+  mat->name = "buf0";
+  m.addRegister( mat );
+
+  TEST_ASSERT_EQUAL_PTR( mat, m.getRegister(0) );
+
+  m.run("G20 R0 P0 V10,20,30,40\n");
+  TEST_ASSERT_EQUAL_FLOAT( 10, mat->readNumber(0) );
+  TEST_ASSERT_EQUAL_FLOAT( 40, mat->readNumber(3) );
+  TEST_ASSERT_TRUE( mat->changeIndex > 0 );
+  TEST_ASSERT_EQUAL_STRING( "OK\n", m.out.c_str() );
+
+  m.out.clear();
+  m.run("G20 R0 P1 V99\n");                 // partial write at offset
+  TEST_ASSERT_EQUAL_FLOAT( 99, mat->readNumber(1) );
+  TEST_ASSERT_EQUAL_FLOAT( 10, mat->readNumber(0) );
+
+  m.out.clear();
+  m.run("G10 R0 P0 S4\n");                   // read -> replayable G20 write
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "G20 R0 P0 V10,99,30,40" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "OK\n" ) );
+
+  m.out.clear();
+  m.run("G10 R0 P2 S2\n");                   // sub-range read
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "G20 R0 P2 V30,40" ) );
+
+  delete mat;
+}
+
 // Run all tests
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_norm_compare);
   RUN_TEST(test_matrix_int);
   RUN_TEST(test_matrix_norm);
+  RUN_TEST(test_matrix_commands);
   RUN_TEST(test_conformance);
   UNITY_END();
   return 0;

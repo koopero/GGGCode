@@ -4,7 +4,7 @@
 #include "./autogen.h"
 
 namespace ggg {
-  String FormatString( const String &string ) {
+  inline String FormatString( const String &string ) {
     String result;
     result += Quote;
     for ( auto c : string ) {
@@ -19,7 +19,7 @@ namespace ggg {
     return result;
   }
 
-  String FormatNumber( const NumberType &number ) {
+  inline String FormatNumber( const NumberType &number ) {
     std::ostringstream oss;
     oss << number;
     return oss.str();

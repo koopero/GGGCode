@@ -1,21 +1,53 @@
 #pragma once
+#include <cstdint>
 #include <vector>
 #include "./Types.h"
 #include "./Dim.h"
+#include "./List.h"
 
 namespace ggg {
-  template <typename Storage,bool Watch>
-  class MatrixStatic {
-  public :
+
+  // Type-erased, non-template base shared by every matrix. This is the handle
+  // the register table / command layer holds (it can read/write any matrix as
+  // float without knowing its Storage type), and the seam that grizzlar's
+  // buffers plug into (directly, once the header merge lands; via an adapter
+  // until then). It is a ListItem so it can live in a List<MatrixBase> register
+  // table, addressed by index (R) or name (L).
+  class MatrixBase : public ListItem {
+  public:
     DimType dim;
-    Index size;
+    Index size = 0;           // total scalar count
+    Index scalarSize = 0;     // bytes per scalar element
+    uint32_t changeIndex = 0; // bumped on every mutation; drives watch/dirty
+
+    virtual ~MatrixBase() {}
+
+    void setChanged() { changeIndex++; }
+
+    Index sizeScalar() const { return size; }
+    Index sizeBytes() const { return size * scalarSize; }
+    Index components() const { return dim.size() > 0 ? dim[0] : 1; }
+    Index sizeVec() const { Index c = components(); return c ? size / c : size; }
+
+    // Type-erased scalar access (the float "lingua franca"). Concrete Matrix
+    // overrides these against its typed storage.
+    virtual NumberType readScalarFloat( Index index, NumberType defaultValue = 0. ) const { return defaultValue; }
+    virtual void writeScalarFloat( NumberType value, Index index ) {}
+    virtual bool allocate() { return false; }
+  };
+
+  template <typename Storage,bool Watch>
+  class Matrix : public MatrixBase {
+  public :
     Storage * data = nullptr;
 
-    MatrixStatic( DimType _dim, Storage * _data = nullptr ) : dim(_dim) {
+    Matrix( DimType _dim, Storage * _data = nullptr ) {
+      dim = _dim;
       size = 1;
       for ( Index d = 0; d < dim.size(); d++ ) {
         size *= dim[d];
       }
+      scalarSize = sizeof( Storage );
       data = _data;
     }
 
@@ -28,7 +60,7 @@ namespace ggg {
       }
     }
 
-    bool allocate() {
+    bool allocate() override {
       if ( !data) {
         data = (Storage*) calloc( size, sizeof( Storage ) );
         return !!data;
@@ -37,38 +69,52 @@ namespace ggg {
       }
     }
 
-    constexpr Index index( const Index & _index ) {
+    // Type-erased overrides (MatrixBase) -- used by the register/command layer.
+    NumberType readScalarFloat( Index index, NumberType defaultValue = 0. ) const override {
+      if ( index < 0 || index >= size || !data ) return defaultValue;
+      return (NumberType) data[index];
+    }
+
+    void writeScalarFloat( NumberType value, Index index ) override {
+      if ( index < 0 || index >= size || !data ) return;
+      Storage next = value;
+      if ( Watch ) {
+        if ( !( data[index] == next ) ) setChanged();
+      }
+      data[index] = next;
+    }
+
+    Index index( const Index & _index ) {
       return _index;
     }
 
-    constexpr Index index( const DimType &_dim ) {
+    Index index( const DimType &_dim ) {
       return DimIndex( dim, _dim );
     }
 
-    constexpr Index index( const std::initializer_list<int> & index ) {
+    Index index( const std::initializer_list<int> & index ) {
       return DimIndex( dim, index );
     }
 
     template <typename Lookup>
-    constexpr NumberType readNumber( const Lookup &coord, NumberType defaultValue = 0. ) {
+    NumberType readNumber( const Lookup &coord, NumberType defaultValue = 0. ) {
       return readNumber( index(coord), defaultValue );
     }
 
-    constexpr NumberType readNumber( const Index & index, NumberType defaultValue = 0. ) {
+    NumberType readNumber( const Index & index, NumberType defaultValue = 0. ) {
       if ( index < 0 || index >= size ) return defaultValue;
       return data[index];
     }
 
-    constexpr NumberType readNumber( const DimType & coord, NumberType defaultValue = 0. ) {
+    NumberType readNumber( const DimType & coord, NumberType defaultValue = 0. ) {
       return readNumber( index(coord), defaultValue );
     }
 
     template <typename Read>
     Index read( const Index & index, Read * dest, Index count ) {
-      Index last = index + count;
       Index result = 0;
-      for ( Index i = index; i < last && i < size; i++ ) {
-        dest[i] = data[index + i];
+      for ( Index k = 0; k < count && ( index + k ) < size; k++ ) {
+        dest[k] = data[index + k];
         result++;
       }
       return result;
@@ -83,6 +129,7 @@ namespace ggg {
     Index write( const Write & value, const Index & ind = 0 ) {
       if ( ind < 0 || ind >= size ) return 0;
       data[ind] = value;
+      if ( Watch ) setChanged();
       return 1;
     }
 
@@ -100,6 +147,7 @@ namespace ggg {
         wrote++;
         ind++;
       }
+      if ( Watch && wrote ) setChanged();
       return wrote;
     };
 
@@ -114,15 +162,17 @@ namespace ggg {
       Index last = index + count;
       Index result = 0;
 
-      if ( !Watch ) {
-        for ( Index i = index; i < last && i < size; i++ ) {
-          data[index + i] = source[i];
-          result++;
-        }
-      } else {
-
+      for ( Index i = index; i < last && i < size; i++ ) {
+        data[i] = source[i - index];
+        result++;
       }
+      if ( Watch && result ) setChanged();
       return result;
     }
   };
+
+  // Backwards-compatible alias: MatrixStatic was the pre-merge name.
+  template <typename Storage, bool Watch>
+  using MatrixStatic = Matrix<Storage, Watch>;
+
 }; // namespace ggg
