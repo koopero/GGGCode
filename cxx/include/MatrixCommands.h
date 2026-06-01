@@ -18,7 +18,13 @@ namespace ggg {
     MatrixBase * reg = nullptr;
     Index offset = 0;
   public:
-    MatrixWrite() { name = "G20"; }
+    MatrixWrite() {
+      name = "G20";
+      description = "Write values into a register.";
+      addArg( Register, "register index", "(n)" );
+      addArg( Offset, "start offset", "(n)" );
+      addArg( Value, "values to write", "(n+)" );
+    }
 
     void hookCommand() override { reg = nullptr; offset = 0; okay = 1; }
 
@@ -46,7 +52,13 @@ namespace ggg {
     Index offset = 0;
     Index count = -1;
   public:
-    MatrixRead() { name = "G10"; }
+    MatrixRead() {
+      name = "G10";
+      description = "Read a region of a register (responds with a G20 write).";
+      addArg( Register, "register index", "(n)" );
+      addArg( Offset, "start offset", "(n)" );
+      addArg( Size, "scalar count", "(n)" );
+    }
 
     void hookCommand() override { reg = nullptr; offset = 0; count = -1; okay = 1; }
 

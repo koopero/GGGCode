@@ -6,6 +6,7 @@
 #include "ggg.h"
 #include "Print.h"
 #include "MatrixCommands.h"
+#include "DocCommands.h"
 #include "gen/conformance_cases.h"
 
 // Test functions
@@ -210,6 +211,18 @@ void test_matrix_commands() {
   delete mat;
 }
 
+// Self-documentation: D1 streams the command catalog (name + per-arg docs).
+void test_doc_commands() {
+  MatrixCmdMachine m;
+  m.addCommand( new ggg::MatrixWrite() );
+  m.addCommand( new ggg::CommandsList() );
+  m.run( "D1\n" );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "D-1 ; List available commands" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "; G20 : Write values into a register." ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), ";   V(n+) ; values to write" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "; D1 : List available commands." ) );
+}
+
 // Run all tests
 int main() {
   UNITY_BEGIN();
@@ -217,6 +230,7 @@ int main() {
   RUN_TEST(test_matrix_int);
   RUN_TEST(test_matrix_norm);
   RUN_TEST(test_matrix_commands);
+  RUN_TEST(test_doc_commands);
   RUN_TEST(test_conformance);
   UNITY_END();
   return 0;
