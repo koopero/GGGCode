@@ -15,3 +15,7 @@ export { Machine }
 
 import { GGG, Hooks } from "./ggg/Language"
 export { GGG, Hooks }
+
+import { Runner } from "./stream/Runner"
+export { Runner }
+export type { RunResult, RunOptions, RunnerOptions, RunStatus } from "./stream/Runner"

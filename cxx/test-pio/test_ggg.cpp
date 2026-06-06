@@ -208,6 +208,17 @@ void test_matrix_commands() {
   m.run("G10 R0 P2 S2\n");                   // sub-range read
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "G20 R0 P2 V30,40" ) );
 
+  // Address the same register by name (L) instead of index (R).
+  m.out.clear();
+  m.run("G20 L\"buf0\" P0 V7,8\n");
+  TEST_ASSERT_EQUAL_FLOAT( 7, mat->readNumber(0) );
+  TEST_ASSERT_EQUAL_FLOAT( 8, mat->readNumber(1) );
+  TEST_ASSERT_EQUAL_STRING( "OK\n", m.out.c_str() );
+
+  m.out.clear();
+  m.run("G10 L\"buf0\" P0 S2\n");            // read by name -> replayable G20 (by index)
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "G20 R0 P0 V7,8" ) );
+
   delete mat;
 }
 
@@ -223,6 +234,45 @@ void test_doc_commands() {
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "; D1 : List available commands." ) );
 }
 
+// Quoted-string arguments: an L"..." token (a quoted string under a code) must
+// reach hookString() with the buffered text, and following args must still
+// parse. Guards the parser fix in Machine.h (dataAppend(String) delivering the
+// value + quote-mode exit so trailing args parse).
+struct StringArgCmd : public ggg::CommandType {
+  std::string gotName;
+  std::vector<float> vals;
+  StringArgCmd() { name = "U20"; }
+  void hookCommand() override { gotName.clear(); vals.clear(); }
+  void hookString() override { gotName = string; }
+  void hookNumber() override { if ( code == 'V' ) vals.push_back( (float) number ); }
+};
+
+struct StringArgMachine : public ggg::Machine {
+  std::string out;
+  StringArgCmd cmd;
+  void write( const ggg::String &s ) override { out += s; }
+  void setup() override { addCommand( &cmd ); }
+};
+
+void test_string_arg() {
+  StringArgMachine m;
+  m.setup();
+
+  m.run( "U20 L\"brightness\" V0.8\n" );        // L name first, then value
+  TEST_ASSERT_EQUAL_STRING( "brightness", m.cmd.gotName.c_str() );
+  TEST_ASSERT_EQUAL_INT( 1, (int) m.cmd.vals.size() );
+  TEST_ASSERT_EQUAL_FLOAT( 0.8, m.cmd.vals[0] );
+
+  m.run( "U20 V1,0,0.5 L\"color\"\n" );          // values first, L name last
+  TEST_ASSERT_EQUAL_STRING( "color", m.cmd.gotName.c_str() );
+  TEST_ASSERT_EQUAL_INT( 3, (int) m.cmd.vals.size() );
+  TEST_ASSERT_EQUAL_FLOAT( 0.5, m.cmd.vals[2] );
+
+  m.run( "U20 L\"only\"\n" );                     // name only, no values
+  TEST_ASSERT_EQUAL_STRING( "only", m.cmd.gotName.c_str() );
+  TEST_ASSERT_EQUAL_INT( 0, (int) m.cmd.vals.size() );
+}
+
 // Run all tests
 int main() {
   UNITY_BEGIN();
@@ -231,6 +281,7 @@ int main() {
   RUN_TEST(test_matrix_norm);
   RUN_TEST(test_matrix_commands);
   RUN_TEST(test_doc_commands);
+  RUN_TEST(test_string_arg);
   RUN_TEST(test_conformance);
   UNITY_END();
   return 0;

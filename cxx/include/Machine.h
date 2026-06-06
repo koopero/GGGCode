@@ -248,6 +248,10 @@ namespace ggg {
         if ( _char == Quote ) {
           dataAppend( state.argBuffer );
           state.argBuffer.clear();
+          // Leave quote mode cleanly so the trailing separator / following args
+          // parse normally (a closing quote ends the string, not the line).
+          state.expressionMode = GGG::Code;
+          state.dataMode = GGG::Skip;
         } else if ( _char == Escape ) {
           state.dataMode = GGG::Escape;
         } else {
@@ -482,7 +486,7 @@ namespace ggg {
 
       if ( command ) {
         command->code = state.code;
-        command->string = state.string;
+        command->string = value;
         command->hookString();
       }
     }

@@ -22,6 +22,7 @@ namespace ggg {
       name = "G20";
       description = "Write values into a register.";
       addArg( Register, "register index", "(n)" );
+      addArg( Alias, "register name", "(s)" );
       addArg( Offset, "start offset", "(n)" );
       addArg( Value, "values to write", "(n+)" );
     }
@@ -40,6 +41,11 @@ namespace ggg {
       }
     }
 
+    // Resolve the register by name (Alias) as an alternative to R index.
+    void hookString() override {
+      if ( code == Alias ) reg = machine->registers->getByName( string );
+    }
+
     void hookFinish() override {
       machine->outputOK( okay );
     }
@@ -56,6 +62,7 @@ namespace ggg {
       name = "G10";
       description = "Read a region of a register (responds with a G20 write).";
       addArg( Register, "register index", "(n)" );
+      addArg( Alias, "register name", "(s)" );
       addArg( Offset, "start offset", "(n)" );
       addArg( Size, "scalar count", "(n)" );
     }
@@ -69,6 +76,11 @@ namespace ggg {
         case Size:     count = (Index) number; break;
         default: break;
       }
+    }
+
+    // Resolve the register by name (Alias) as an alternative to R index.
+    void hookString() override {
+      if ( code == Alias ) reg = machine->registers->getByName( string );
     }
 
     void hookFinish() override {

@@ -4,204 +4,191 @@ import Format from "../ggg/Format"
 import { GGG, Token } from "../ggg/Language"
 import Machine from "../ggg/Machine"
 import ParseLine from "../ggg/ParseLine"
-import { Duplex } from "stream"
 
-type RunArg = string
-type RunOptions = {
-  timeout?: number
-  addOkay?: boolean
-  expectOkay?: boolean
-  resultFilter?: LineQuery
-  endFilter?: LineQuery
+//
+// Runner: the canonical GGG request/response driver. You `run(cmd)`, it sends
+// each command line, collects the response lines that match `resultFilter`, and
+// resolves when a line matches `endFilter` (the OK terminator by default) or the
+// timeout fires. Transport-agnostic: outbound goes through a `write` callback
+// (or the "output" event); inbound is pushed in via `feed()`. `attachMachine()`
+// wires it to an in-process Machine for loopback testing.
+//
+
+type LineQuery = boolean | string | number | RegExp | (( key: string ) => boolean )
+
+export type RunStatus = "ok" | "timeout"
+
+export type RunOptions = {
+  timeout?: number              // ms; 0 disables the timeout
+  resultFilter?: LineQuery      // which response lines to collect (default: all)
+  endFilter?: LineQuery         // which response line ends the command (default: OK)
 }
-type RunResult = { stdout: string, stderr: string }
 
-type LineQuery = boolean | string | number | RegExp | (( code:string ) => boolean)
+export type RunResult = {
+  cmd: string
+  status: RunStatus
+  lines: string[]               // raw response lines (excluding the terminator)
+  tokens: Token[]               // the same lines, parsed
+}
 
-type LineStreamQueueItem = {
+export type RunnerOptions = {
+  machine?: Machine
+  write?: ( str: string ) => void
+}
+
+type QueueItem = {
+  cmd: string
   resultFilter: LineQuery
   endFilter: LineQuery
-  cmd: string
-  status?: "ok" | "timeout" | "error"
-  resolve?: ( result: LineStreamQueueItem ) => void
-  timer?: NodeJS.Timeout
-  result: Token[]
-  timeout: number
-  timeoutActual: number
+  timeout: number               // absolute deadline (ms epoch); 0 = none
+  lines: string[]
+  tokens: Token[]
+  resolve?: ( result: RunResult ) => void
+  timer?: ReturnType<typeof setTimeout>
 }
 
-const now = () => new Date().getTime()
+const now = () => Date.now()
+const soon = ( fn: () => void ) => setTimeout( fn, 0 )
 
+// Default end-of-response matcher: the GGG OK terminator is any command/code
+// beginning with GGG.Okay ("O") -- OK / O1 / O0 / ON. Mirrors the C++ outputOk()
+// and the client isOkay() helper.
+const defaultEndFilter: LineQuery = ( key: string ) => key.startsWith( GGG.Okay )
 
-
-function lineIsEndOfCommand( line: string, options: RunOptions ) {
-  return line == "ok"
-}
-
-type RunnerOptions = {
-  machine?: Machine
-
-}
-
-class RunnerStream extends Duplex {
-  _read( size ) {
-    console.log("read", size )
-  }
-
-  _write( chunk, encoding, callback ) {
-    callback()
-  }
-}
-
-function codeMatches( code: string, query: LineQuery ) {
-  if ( query === true ) {
-    return true
-  } else if ( isString( query ) ) {
-    return code.startsWith( query )
-  } else if ( isFunction( query ) ) {
-    return query( code )
-  } else if ( query instanceof RegExp ) {
-    return query.test( code )
-  }
+function codeMatches( key: string, query: LineQuery ): boolean {
+  if ( query === true ) return true
+  if ( query === false ) return false
+  if ( isString( query ) ) return key.startsWith( query )
+  if ( isFunction( query ) ) return query( key )
+  if ( query instanceof RegExp ) return query.test( key )
   return false
 }
 
-function LineIsCommand( line:string ) : boolean {
-  let [ beforeComment ] = line.split( GGG.Comment )
-  beforeComment = beforeComment.trim()
-  
-  return /^[a-zA-Z].+/.test( beforeComment )
+// A line carries a command (vs. a bare comment / blank) if its pre-comment part
+// starts with a letter.
+function lineIsCommand( line: string ): boolean {
+  const [ beforeComment ] = line.split( GGG.Comment )
+  return /^\s*[a-zA-Z]/.test( beforeComment )
+}
+
+// A response line's match key is its command (from ParseLine over the wire) or
+// its code (from a Machine emitting Token objects in loopback).
+function tokenKey( token: Token ): string {
+  return token.command || token.code || ""
 }
 
 export class Runner extends EventEmitter {
 
-  running: LineStreamQueueItem | null = null
-  queue: LineStreamQueueItem[] = []
+  running: QueueItem | null = null
+  queue: QueueItem[] = []
   accum: string = ""
-  stream = new RunnerStream()
+  private writeCb?: ( str: string ) => void
 
   constructor( options: RunnerOptions = {} ) {
     super()
-    const { machine } = options
-    if ( machine ) {
-      this.attachMachine( machine )
-    }
+    const { machine, write } = options
+    if ( write ) this.writeCb = write
+    if ( machine ) this.attachMachine( machine )
   }
 
+  // In-process loopback: feed commands into a Machine and take its output back
+  // as responses.
   attachMachine( machine: Machine ) {
-    machine.on("output", line => this.onOutput( line ) )
-    this.on("output", ( line ) => {
-      machine.run( line )
-    })
+    machine.on( "output", ( out: string | Token ) => this.feed( out ) )
+    if ( !this.writeCb ) this.writeCb = ( line ) => machine.run( line )
   }
 
-  async run( cmd: RunArg, options: RunOptions = {} ): Promise<LineStreamQueueItem[]> {
-    const { timeout = 1000 } = options
+  // Queue each non-comment line as its own command; resolve one RunResult each.
+  async run( cmd: string, options: RunOptions = {} ): Promise<RunResult[]> {
+    const { timeout = 1000, resultFilter = true, endFilter = defaultEndFilter } = options
 
-    const lines = cmd.split("\n").map( l => l.trim() ).filter( LineIsCommand )
-
-    const results = lines.map( line => {
-      const cmd = line.trim()+"\n"
-      const result = new Promise<LineStreamQueueItem>( ( resolve, reject ) => {
-        const { resultFilter = true, endFilter = "O" } = options
-
-        const item = {
+    const results = cmd
+      .split( "\n" )
+      .map( l => l.trim() )
+      .filter( lineIsCommand )
+      .map( line => new Promise<RunResult>( resolve => {
+        this.queue.push( {
+          cmd: line + "\n",
           resultFilter,
           endFilter,
-          cmd,
+          timeout: timeout ? now() + timeout : 0,
+          lines: [],
+          tokens: [],
           resolve,
-          result: [],
-          timeout: now() + timeout,
-          timeoutActual: timeout,
-        }
-        this.queue.push( item )
-      }) 
+        } )
+      } ) )
 
-      return result
-    })
-    setImmediate( () => this.tick() )
-    return await Promise.all( results )
+    soon( () => this.tick() )
+    return Promise.all( results )
   }
 
-  write( str: string ) {
-    this.emit("output", str )
-  }
-
-  onOutput( line ) {
-    if ( isObject( line ) ) {
-      this.onResponseToken( line )
-    } else if ( isString( line ) ) {
-      this.accum += line
+  // Push device output in: a raw text chunk / line(s), or a Token object (the
+  // shape a Machine emits in loopback).
+  feed( input: string | Token ) {
+    if ( isString( input ) ) {
+      this.accum += input
       for ( ;; ) {
-        const index = this.accum.indexOf( GGG.End)
-        if ( index == -1 ) {
-          break
-        }
-        const line = this.accum.substring( 0, index )
+        const index = this.accum.indexOf( GGG.End )
+        if ( index === -1 ) break
+        const raw = this.accum.substring( 0, index )
         this.accum = this.accum.substring( index + 1 )
-        const [ token ] = ParseLine( line )
-        this.onResponseToken( token )
+        const [ token ] = ParseLine( raw )
+        this.onResponse( token, raw )
       }
+    } else if ( isObject( input ) ) {
+      const token = input as Token
+      this.onResponse( token, Format( token ) )
     }
   }
 
-  onResponseToken( item:Token ) {
+  private send( str: string ) {
+    if ( this.writeCb ) this.writeCb( str )
+    this.emit( "output", str )
+  }
+
+  private onResponse( token: Token, raw: string ) {
     const { running } = this
-    const { code = "" } = item
+    if ( !running ) return
 
-    // console.log("onResponseToken", code )
+    const key = tokenKey( token )
 
-    if ( running ) {
-      const { resultFilter, endFilter } = running
+    if ( codeMatches( key, running.endFilter ) ) {
+      // Terminator: end the command without collecting it as a result line.
+      this.finish( running, "ok" )
+      return
+    }
 
-      if ( codeMatches( code, resultFilter ) ) {
-        running.result.push( item )
-      }
-
-      if ( codeMatches( code, endFilter ) ) {
-        const { resolve } = running
-        running.status = "ok"
-        delete running.resolve
-        resolve && resolve( running )
-        this.running = null
-        setImmediate( () => this.tick() )
-      }
+    if ( codeMatches( key, running.resultFilter ) ) {
+      running.lines.push( raw )
+      running.tokens.push( token )
     }
   }
 
-  tick() {
-    const { running } = this
-    if ( running ) {
-      const { timeout } = running
-      if ( timeout && timeout < now() ) {
-        const { resolve } = running
-        running.status = "timeout"
-        delete running.resolve
-
-        if ( running.timer ) {
-          clearTimeout( running.timer )
-          delete running.timer
-        }
-
-        resolve && resolve( running )
-        this.running = null
-      } else if ( timeout ) {
-        running.timer = setTimeout( ()=>this.tick(), timeout - now() )
-        return
-      } else {
-        return
-      }
+  private finish( item: QueueItem, status: RunStatus ) {
+    if ( item.timer ) {
+      clearTimeout( item.timer )
+      delete item.timer
     }
+    const { resolve } = item
+    delete item.resolve
+    this.running = null
+    resolve && resolve( { cmd: item.cmd, status, lines: item.lines, tokens: item.tokens } )
+    soon( () => this.tick() )
+  }
 
-    const { queue } = this
-    const next = queue.shift()
-    if ( next ) {
-      const { cmd, timeout } = next
-      this.write( `${cmd}\n`)
-      this.running = next
-      setTimeout( ()=>this.tick(), timeout - now() )
+  private tick() {
+    if ( this.running ) return
+
+    const next = this.queue.shift()
+    if ( !next ) return
+
+    this.running = next
+    if ( next.timeout ) {
+      next.timer = setTimeout(
+        () => { if ( this.running === next ) this.finish( next, "timeout" ) },
+        Math.max( 0, next.timeout - now() ),
+      )
     }
+    this.send( next.cmd )
   }
 }
-
-
