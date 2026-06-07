@@ -391,6 +391,22 @@ void test_references() {
   m.run( "P10 V$x\n" );                       // unknown register -> no values
   TEST_ASSERT_EQUAL_STRING( "\nOK\n", m.out.c_str() );
 
+  m.out.clear();
+  m.run( "P10 V$r[1]\n" );                     // single subscript -> one scalar
+  TEST_ASSERT_EQUAL_STRING( "V20\nOK\n", m.out.c_str() );
+
+  m.out.clear();
+  m.run( "P10 V$r[0:2]\n" );                   // range subscript (inclusive)
+  TEST_ASSERT_EQUAL_STRING( "V10,20,30\nOK\n", m.out.c_str() );
+
+  m.out.clear();
+  m.run( "P10 V$r[0,2]\n" );                   // comma list of indices
+  TEST_ASSERT_EQUAL_STRING( "V10,30\nOK\n", m.out.c_str() );
+
+  m.out.clear();
+  m.run( "P10 V$r[5]\n" );                     // out-of-range index -> dropped
+  TEST_ASSERT_EQUAL_STRING( "\nOK\n", m.out.c_str() );
+
   delete mat;
 }
 

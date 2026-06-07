@@ -88,7 +88,9 @@ export const corpus: ConformanceCase[] = [
   { name: "ref_bare",    program: "P10 V$r" },
   { name: "ref_two",     program: "P10 V$r W$r" },
   { name: "ref_unknown", program: "P10 V$x" },
-  { name: "ref_subscript", program: "P10 V$r[1]", cxxSkip: "subscript references not yet ported to C++ (bare reads whole register)" },
+  { name: "ref_subscript", program: "P10 V$r[1]" },
+  { name: "ref_sub_range", program: "P10 V$r[0:2]" },
+  { name: "ref_sub_list",  program: "P10 V$r[0,2]" },
 
   // --- flow control: T9 one-shot conditionals (A=all, O=any) ---
   { name: "cond_all_true",   program: "T9 A1\nP10 V42\nT0" },

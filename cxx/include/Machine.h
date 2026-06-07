@@ -22,8 +22,13 @@ namespace ggg {
     bool recording = true;
     bool captureLine = false;
 
-    // Reference parsing ($name): true while consuming a deferred [subscript].
-    bool refSkipSub = false;
+    // Reference parsing ($name / $name[subscript]). refInSub is true while the
+    // bracketed subscript text is being captured into refSub; refHasSub records
+    // that a subscript was present so finishReference resolves it instead of a
+    // bare whole-register read.
+    bool refInSub = false;
+    bool refHasSub = false;
+    String refSub;
 
     Index index = 0;
     Index col = 0;
@@ -87,7 +92,9 @@ namespace ggg {
       state.line.clear();
       state.recording = true;
       state.captureLine = false;
-      state.refSkipSub = false;
+      state.refInSub = false;
+      state.refHasSub = false;
+      state.refSub.clear();
     }
 
     void run( String _code ) {
@@ -233,12 +240,14 @@ namespace ggg {
       } else if ( _char == GGG::Quote ) {
         startQuotedString();
       } else if ( _char == GGG::Reference ) {
-        // Start of a $name reference. Only bare references (read whole register)
-        // are ported to C++; a following [subscript] is consumed and ignored
-        // (TS-only for now -- see ggg-cxx-port memory / offset-refs follow-up).
+        // Start of a $name reference. A bare $name reads the whole register; a
+        // following [subscript] selects specific indices (see parseRegister /
+        // resolveReferenceSubscript).
         state.expressionMode = GGG::Register;
         state.argBuffer.clear();
-        state.refSkipSub = false;
+        state.refSub.clear();
+        state.refInSub = false;
+        state.refHasSub = false;
       } else if ( isNumberStart( _char ) ) {
         startNumber();
         bufferAppend( _char );
@@ -343,16 +352,18 @@ namespace ggg {
       state.expressionMode = GGG::Encoding;
     }
 
-    // Streaming $name reference parser. Accumulates the register name; a bare
-    // reference reads the whole register (every scalar in order), emitting each
-    // value through dataAppend like any other parsed value. A '[' subscript is
-    // consumed up to its ']' and ignored (bare read), pending the offset-refs
-    // port. Mirrors the bare-reference path of Solve.solveReference in TS.
+    // Streaming $name reference parser. Accumulates the register name into
+    // argBuffer; a bare reference reads the whole register (every scalar in
+    // order). A '[' switches to capturing the subscript text into refSub up to
+    // its ']', then resolveReferenceSubscript selects the indexed scalars.
+    // Mirrors Solve.solveReference in TS.
     void parseRegister( Char _char ) {
-      if ( state.refSkipSub ) {
+      if ( state.refInSub ) {
         if ( _char == GGG::SubscriptEnd ) {
-          state.refSkipSub = false;
+          state.refInSub = false;
           finishReference();
+        } else {
+          state.refSub += _char;
         }
         return;
       }
@@ -363,8 +374,9 @@ namespace ggg {
         state.argBuffer += _char;
         return;
       }
-      if ( _char == GGG::Subscript ) {       // '[' -> defer/consume subscript
-        state.refSkipSub = true;
+      if ( _char == GGG::Subscript ) {       // '[' -> capture subscript
+        state.refHasSub = true;
+        state.refInSub = true;
         return;
       }
       finishReference();
@@ -374,9 +386,16 @@ namespace ggg {
     void finishReference() {
       state.expressionMode = GGG::Encoding;
       if ( !state.argBuffer.empty() ) {
-        resolveReference( state.argBuffer );
-        state.argBuffer.clear();
+        if ( state.refHasSub ) {
+          resolveReferenceSubscript( state.argBuffer, state.refSub );
+        } else {
+          resolveReference( state.argBuffer );
+        }
       }
+      state.argBuffer.clear();
+      state.refSub.clear();
+      state.refInSub = false;
+      state.refHasSub = false;
     }
 
     // Resolve a register by name, falling back to an index lookup for a numeric
@@ -399,6 +418,66 @@ namespace ggg {
       for ( Index i = 0; i < n; i++ ) {
         dataAppend( reg->readScalarFloat( i, 0. ) );
       }
+    }
+
+    // Read one register scalar by index, appending it as a value. Skips NaN /
+    // out-of-range reads (mirrors Solve.isUsable in the TS reference).
+    void readReferenceIndex( MatrixBase * reg, NumberType idxF ) {
+      if ( std::isnan( idxF ) ) return;
+      NumberType val = reg->readScalarFloat( (Index) idxF, NAN );
+      if ( !std::isnan( val ) ) dataAppend( val );
+    }
+
+    // Resolve $name[subscript]: the bracketed text is a comma-separated list of
+    // compound segments, each expanded against the register's scalar size into
+    // a set of indices, and every index reads one scalar. Mirrors the subscript
+    // branch of Solve.solveReference (ts/ggg/Solve.ts) for 1-D registers (the
+    // numbers/symbols split matches ParseData's compound grammar). Multi-axis
+    // subscripts against N-D registers (per-axis dimensions/strides) remain the
+    // deeper offset-ref work.
+    void resolveReferenceSubscript( const String & name, const String & sub ) {
+      MatrixBase * reg = resolveRegisterByName( name );
+      if ( !reg ) return;
+      const NumberType dim = (NumberType) reg->sizeScalar();
+
+      std::vector<NumberType> numbers;
+      std::vector<Char> symbols;
+      String num;
+
+      auto flushNumber = [&]() {
+        if ( num.empty() ) return;
+        std::stringstream ss( num );
+        NumberType v;
+        if ( ss >> v ) numbers.push_back( v );
+        num.clear();
+      };
+      auto flushSegment = [&]() {
+        flushNumber();
+        if ( numbers.empty() && symbols.empty() ) return;
+        if ( numbers.size() == 1 && symbols.empty() ) {
+          readReferenceIndex( reg, numbers[0] );
+        } else {
+          CompoundExpansion expansion( buildAxes( numbers, symbols ), dim );
+          NumberType v;
+          while ( expansion.next( v ) ) readReferenceIndex( reg, v );
+        }
+        numbers.clear();
+        symbols.clear();
+      };
+
+      for ( char c : sub ) {
+        if ( ( c >= '0' && c <= '9' ) || c == '.' || c == '+' || c == '-' ) {
+          num += c;
+        } else if ( c == GGG::Comma ) {
+          flushSegment();
+        } else if ( c == GGG::Range || c == GGG::Uninclusive || c == '<' ||
+                    c == GGG::Count || c == GGG::Multiplier || c == GGG::NextAxis ) {
+          flushNumber();
+          symbols.push_back( c );
+        }
+        // any other char (whitespace, etc.) is ignored
+      }
+      flushSegment();
     }
 
     void parseHex( Char _char ) {
@@ -479,7 +558,7 @@ namespace ggg {
       // Resolve a pending bare reference whose terminator was end-of-line (so
       // parseRegister never saw a separator).
       if ( state.expressionMode == GGG::Register ) {
-        state.refSkipSub = false;
+        state.refInSub = false;
         finishReference();
       }
       finishCompound();

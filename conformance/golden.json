@@ -192,8 +192,17 @@
   {
     "name": "ref_subscript",
     "program": "P10 V$r[1]",
-    "expected": "V20\nOK",
-    "cxxSkip": "subscript references not yet ported to C++ (bare reads whole register)"
+    "expected": "V20\nOK"
+  },
+  {
+    "name": "ref_sub_range",
+    "program": "P10 V$r[0:2]",
+    "expected": "V10,20,30\nOK"
+  },
+  {
+    "name": "ref_sub_list",
+    "program": "P10 V$r[0,2]",
+    "expected": "V10,30\nOK"
   },
   {
     "name": "cond_all_true",
