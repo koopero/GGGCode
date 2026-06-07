@@ -159,9 +159,16 @@ namespace ggg {
               state.utf8Accum = ( state.utf8Accum << 6 ) | ( byte & 0x3F );
               state.utf8Remaining--;
               if ( state.utf8Remaining == 0 ) {
-                finishCompound();
                 state.expressionMode = GGG::Encoding;
-                dataAppend( (NumberType)state.utf8Accum );
+                NumberType uval;
+                if ( unitaryValue( state.utf8Accum, uval ) ) {
+                  // Symbolic unitary (π/τ/φ/γ): a value / range bound, like K/Z/N.
+                  state.numbers.push_back( uval );
+                } else {
+                  // Any other character decodes to its code point.
+                  finishCompound();
+                  dataAppend( (NumberType)state.utf8Accum );
+                }
               }
             } else {
               state.utf8Remaining = 0;
@@ -206,6 +213,23 @@ namespace ggg {
           default:
             break;
         }
+      }
+    }
+
+    // Symbolic unitary constants — map a Unicode code point to its value (mirrors
+    // the irrational entries of UnitaryValues in ts/ggg/Language.ts). π/τ/φ/γ enter
+    // as multi-byte UTF-8 code points; e/E (Euler) arrive as ASCII. K/Z/N are the
+    // exact unitaries and are handled separately. NumberType is float, so values
+    // round to float precision and rely on the conformance value-tolerance to agree
+    // with the TS double reference.
+    static bool unitaryValue( uint32_t codepoint, NumberType &out ) {
+      switch ( codepoint ) {
+        case 0x03C0: out = (NumberType) 3.141592653589793;  return true;  // π  pi
+        case 0x03C4: out = (NumberType) 6.283185307179586;  return true;  // τ  2π
+        case 0x03C6: out = (NumberType) 1.618033988749895;  return true;  // φ  golden ratio
+        case 0x03B3: out = (NumberType) 0.5772156649;       return true;  // γ  Euler–Mascheroni
+        case 'e': case 'E': out = (NumberType) 2.718281828459045; return true; // Euler's number
+        default: return false;
       }
     }
 
@@ -254,17 +278,22 @@ namespace ggg {
       } else if ( _char == GGG::StringToEOL ) {
         startStringToEOL();
       } else {
-        // Unitary constants (K=1, Z=0, N=-1) are values like any number: push
-        // them into the compound so they can be a range/axis bound (K:5, Z>10),
-        // not emitted immediately. A following separator is handled by the
-        // parseEndOfNumber() at the top of parseEncoding().
-        _char = CasedString( _char );
-        if ( _char == GGG::EncodedOne ) {
-          state.numbers.push_back( 1. );
-        } else if ( _char == EncodedZero ) {
-          state.numbers.push_back( 0. );
-        } else if ( _char == EncodedMinusOne ) {
-          state.numbers.push_back( -1. );
+        // Unitary constants (K=1, Z=0, N=-1, and the ASCII symbolic e=Euler) are
+        // values like any number: push them into the compound so they can be a
+        // range/axis bound (K:5, Z>10), not emitted immediately. A following
+        // separator is handled by the parseEndOfNumber() at the top of parseEncoding().
+        NumberType uval;
+        if ( unitaryValue( (uint32_t)(uint8_t)_char, uval ) ) {
+          state.numbers.push_back( uval );
+        } else {
+          _char = CasedString( _char );
+          if ( _char == GGG::EncodedOne ) {
+            state.numbers.push_back( 1. );
+          } else if ( _char == EncodedZero ) {
+            state.numbers.push_back( 0. );
+          } else if ( _char == EncodedMinusOne ) {
+            state.numbers.push_back( -1. );
+          }
         }
       }
     }

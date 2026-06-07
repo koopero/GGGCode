@@ -1,0 +1,138 @@
+# Flow control (gggtx): procedures (T10 define / T0 end / T11 run), T9 one-shot
+# conditionals (A=all, O=any), and T9 V per-value iteration. Bodies print via
+# gggpx, so most cases need both subsystems. Cases that run nothing emit no
+# control response (status: "").
+
+# --- procedures ---
+- name: flow_define_only
+  description: "Defining a procedure runs nothing and emits no response."
+  needs: [ gggpx, gggtx ]
+  tags: [ flow, procedures ]
+  status: ""
+  program: |
+    T10 L"p"
+    P10 V42
+    T0
+  values: []
+
+- name: flow_define_run
+  description: "T11 runs a previously defined procedure body."
+  needs: [ gggpx, gggtx ]
+  tags: [ flow, procedures ]
+  program: |
+    T10 L"p"
+    P10 V42
+    T0
+    T11 L"p"
+  values: [ 42 ]
+
+- name: flow_unknown
+  description: "Running an undefined procedure reports failure (OZ)."
+  needs: [ gggtx ]
+  tags: [ flow, procedures ]
+  status: "OZ"
+  program: 'T11 L"nope"'
+  values: []
+
+- name: flow_nested
+  description: "Procedures may be defined and run nested."
+  needs: [ gggpx, gggtx ]
+  tags: [ flow, procedures ]
+  program: |
+    T10 L"outer"
+    T10 L"inner"
+    P10 V7
+    T0
+    T0
+    T11 L"outer"
+    T11 L"inner"
+  values: [ 7 ]
+
+# --- T9 one-shot conditionals (A = all truthy, O = any truthy) ---
+- name: cond_all_true
+  description: "T9 A runs the block when all values are truthy."
+  needs: [ gggpx, gggtx ]
+  tags: [ flow, conditionals ]
+  program: |
+    T9 A1
+    P10 V42
+    T0
+  values: [ 42 ]
+
+- name: cond_all_false
+  description: "T9 A skips the block when a value is falsy."
+  needs: [ gggpx, gggtx ]
+  tags: [ flow, conditionals ]
+  status: ""
+  program: |
+    T9 A0
+    P10 V42
+    T0
+  values: []
+
+- name: cond_all_mixed
+  description: "T9 A requires every value truthy; a mix skips."
+  needs: [ gggpx, gggtx ]
+  tags: [ flow, conditionals ]
+  status: ""
+  program: |
+    T9 A1,0
+    P10 V42
+    T0
+  values: []
+
+- name: cond_any_true
+  description: "T9 O runs the block when any value is truthy."
+  needs: [ gggpx, gggtx ]
+  tags: [ flow, conditionals ]
+  program: |
+    T9 O0,0,1
+    P10 V42
+    T0
+  values: [ 42 ]
+
+- name: cond_any_false
+  description: "T9 O skips the block when no value is truthy."
+  needs: [ gggpx, gggtx ]
+  tags: [ flow, conditionals ]
+  status: ""
+  program: |
+    T9 O0,0,0
+    P10 V42
+    T0
+  values: []
+
+- name: cond_nested_skip
+  description: "A skipped conditional skips its nested blocks too."
+  needs: [ gggpx, gggtx ]
+  tags: [ flow, conditionals ]
+  program: |
+    T9 A0
+    T9 A1
+    P10 V1
+    T0
+    T0
+    P10 V2
+  values: [ 2 ]
+
+# --- T9 V per-value iteration (value exposed as $it) ---
+- name: iter_single
+  description: "T9 V runs the body once per value, exposing it as $it."
+  needs: [ gggpx, gggtx ]
+  tags: [ flow, iteration ]
+  program: |
+    T9 V5 R"it"
+    P10 V$it
+    T0
+  values: [ 5 ]
+
+- name: iter_zero
+  description: "Iterating an empty value set runs the body zero times."
+  needs: [ gggpx, gggtx ]
+  tags: [ flow, iteration ]
+  status: ""
+  program: |
+    T9 V$x R"it"
+    P10 V$it
+    T0
+  values: []

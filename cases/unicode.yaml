@@ -1,0 +1,43 @@
+# Unicode (gggpx): a non-ASCII character decodes to its Unicode code point.
+
+- name: unicode_snowman
+  description: "A Unicode character decodes to its code point."
+  needs: [ gggpx ]
+  tags: [ unicode ]
+  program: "P10 V☃"
+  values: [ 9731 ]
+
+- name: unicode_cjk
+  description: "A CJK character decodes to its code point."
+  needs: [ gggpx ]
+  tags: [ unicode ]
+  program: "P10 V你"
+  values: [ 20320 ]
+
+- name: unicode_greek
+  description: "A Greek letter decodes to its code point."
+  needs: [ gggpx ]
+  tags: [ unicode ]
+  program: "P10 Vα"
+  values: [ 945 ]
+
+- name: unicode_euro
+  description: "The euro sign decodes to its code point."
+  needs: [ gggpx ]
+  tags: [ unicode ]
+  program: "P10 V€"
+  values: [ 8364 ]
+
+- name: unicode_emoji
+  description: "An astral-plane emoji decodes to its full code point."
+  needs: [ gggpx ]
+  tags: [ unicode ]
+  program: "P10 V😀"
+  values: [ 128512 ]
+
+- name: unicode_list
+  description: "Unicode characters list like any other values."
+  needs: [ gggpx ]
+  tags: [ unicode, lists ]
+  program: "P10 V☃,你"
+  values: [ 9731, 20320 ]

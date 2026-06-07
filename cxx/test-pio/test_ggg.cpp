@@ -1,6 +1,8 @@
 #include <unity.h>
 #include <string>
 #include <cstring>
+#include <cstdlib>
+#include <vector>
 #include "Normal.h"
 #include "Matrix.h"
 #include "ggg.h"
@@ -172,6 +174,53 @@ static std::string conformanceStrip( std::string s ) {
   return s.substr( 0, e );
 }
 
+// Decode a rendered output back into its value stream + control responses, by
+// re-parsing the text. Mirrors decodeOutput() in ts/cxx/cases.ts: a line starting
+// with the okay code (O, e.g. OK/OZ) is a status; every other line splits on
+// spaces into args, each arg's leading code char dropped and the remainder split
+// on ',' and parsed as a float. (Assumes print-style decimal output.)
+struct Decoded { std::vector<float> values; std::vector<std::string> statuses; };
+
+static Decoded decodeOutput( const std::string &text ) {
+  Decoded d;
+  size_t start = 0;
+  while ( true ) {
+    size_t nl = text.find( '\n', start );
+    std::string line = ( nl == std::string::npos ) ? text.substr( start ) : text.substr( start, nl - start );
+    if ( !line.empty() ) {
+      if ( line[0] == ggg::GGG::Okay ) {
+        d.statuses.push_back( line );
+      } else {
+        size_t a = 0;
+        while ( a < line.size() ) {
+          size_t sp = line.find( ' ', a );
+          std::string arg = ( sp == std::string::npos ) ? line.substr( a ) : line.substr( a, sp - a );
+          if ( arg.size() > 1 ) {
+            std::string data = arg.substr( 1 );          // drop the leading code char
+            size_t b = 0;
+            while ( true ) {
+              size_t comma = data.find( ',', b );
+              std::string piece = ( comma == std::string::npos ) ? data.substr( b ) : data.substr( b, comma - b );
+              if ( !piece.empty() ) {
+                char *end = nullptr;
+                float v = strtof( piece.c_str(), &end );
+                if ( end != piece.c_str() ) d.values.push_back( v );
+              }
+              if ( comma == std::string::npos ) break;
+              b = comma + 1;
+            }
+          }
+          if ( sp == std::string::npos ) break;
+          a = sp + 1;
+        }
+      }
+    }
+    if ( nl == std::string::npos ) break;
+    start = nl + 1;
+  }
+  return d;
+}
+
 void test_conformance() {
   for ( int i = 0; i < ggg_conformance::caseCount; i++ ) {
     const auto &c = ggg_conformance::cases[i];
@@ -179,7 +228,24 @@ void test_conformance() {
     machine.setup();
     machine.run( c.program );
     std::string got = conformanceStrip( machine.out );
-    TEST_ASSERT_EQUAL_STRING_MESSAGE( c.expected, got.c_str(), c.name );
+    Decoded d = decodeOutput( got );
+
+    // value-tolerance contract
+    TEST_ASSERT_EQUAL_INT_MESSAGE( c.valueCount, (int) d.values.size(), c.name );
+    for ( int k = 0; k < c.valueCount && k < (int) d.values.size(); k++ ) {
+      TEST_ASSERT_FLOAT_WITHIN_MESSAGE( (float) ggg_conformance::EPSILON, (float) c.values[k], d.values[k], c.name );
+    }
+
+    // control status: "" => no response; else every response equals status
+    if ( c.status[0] == '\0' ) {
+      TEST_ASSERT_EQUAL_INT_MESSAGE( 0, (int) d.statuses.size(), c.name );
+    } else {
+      TEST_ASSERT_TRUE_MESSAGE( d.statuses.size() > 0, c.name );
+      for ( const auto &s : d.statuses ) TEST_ASSERT_EQUAL_STRING_MESSAGE( c.status, s.c_str(), c.name );
+    }
+
+    // opt-in byte exactness, where formatting itself is the test
+    if ( c.expected ) TEST_ASSERT_EQUAL_STRING_MESSAGE( c.expected, got.c_str(), c.name );
   }
 }
 

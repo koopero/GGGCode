@@ -1,0 +1,53 @@
+# Hex encodings (gggpx): 0X integers, 0I per-nibble lists, and the normalized
+# 0H/0J forms. Hex-norm fractions are float/double-divergent, so they ride the
+# value-tolerance contract rather than byte equality (formerly cxxSkip).
+
+- name: hex_1f
+  description: "0X is a hexadecimal integer."
+  needs: [ gggpx ]
+  tags: [ hex ]
+  program: "P10 V0X1F"
+  values: [ 31 ]
+
+- name: hex_ff
+  description: "0XFF is 255."
+  needs: [ gggpx ]
+  tags: [ hex ]
+  program: "P10 V0XFF"
+  values: [ 255 ]
+
+- name: hex_zero
+  description: "0X0 is zero."
+  needs: [ gggpx ]
+  tags: [ hex ]
+  program: "P10 V0X0"
+  values: [ 0 ]
+
+- name: hex_100
+  description: "Multi-digit hex integers carry across nibbles."
+  needs: [ gggpx ]
+  tags: [ hex ]
+  program: "P10 V0X100"
+  values: [ 256 ]
+
+- name: hexlist_ff00
+  description: "0I reads one value per hex nibble."
+  needs: [ gggpx ]
+  tags: [ hex, lists ]
+  program: "P10 V0IFF00"
+  values: [ 15, 15, 0, 0 ]
+
+- name: hexnorm2_80
+  # Formerly cxxSkip: fractional hex-norm differs in float vs double precision.
+  description: "0H normalizes a two-nibble hex value to 0..1."
+  needs: [ gggpx ]
+  tags: [ hex, normalized ]
+  program: "P10 V0H80"
+  values: [ 0.5019607843137255 ]
+
+- name: hexnorm1_8
+  description: "0J normalizes a one-nibble hex value to 0..1."
+  needs: [ gggpx ]
+  tags: [ hex, normalized ]
+  program: "P10 V0J8"
+  values: [ 0.5333333333333333 ]

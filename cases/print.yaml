@@ -1,0 +1,61 @@
+# Print (gggpx): the P10 PrintNumbers command echoes resolved values back, so
+# these exercise the parser + number formatting end to end.
+
+- name: print_single
+  description: "A bare decimal value echoes back unchanged."
+  needs: [ gggpx ]
+  tags: [ decimals ]
+  program: "P10 V42"
+  values: [ 42 ]
+
+- name: print_list
+  description: "A comma-separated value list echoes each value in order."
+  needs: [ gggpx ]
+  tags: [ decimals, lists ]
+  program: "P10 V1,2,3"
+  values: [ 1, 2, 3 ]
+
+- name: print_zero
+  description: "Zero is a value like any other."
+  needs: [ gggpx ]
+  tags: [ decimals ]
+  program: "P10 V0"
+  values: [ 0 ]
+
+- name: print_negatives
+  description: "Negative decimals are preserved."
+  needs: [ gggpx ]
+  tags: [ decimals, signs ]
+  program: "P10 V-5,-10,15"
+  values: [ -5, -10, 15 ]
+
+- name: print_two_args
+  # `exact`: the argument boundary is the thing under test — values alone can't
+  # distinguish two args from one merged list.
+  description: "Two value arguments stay distinct in the output."
+  needs: [ gggpx ]
+  tags: [ lists ]
+  program: "P10 V1,2,3 V4,5,6"
+  values: [ 1, 2, 3, 4, 5, 6 ]
+  exact: true
+
+- name: print_bytes
+  description: "Byte-range decimals echo unchanged."
+  needs: [ gggpx ]
+  tags: [ decimals ]
+  program: "P10 V255,128,64"
+  values: [ 255, 128, 64 ]
+
+- name: print_decimal
+  description: "A negative fractional value is preserved."
+  needs: [ gggpx ]
+  tags: [ decimals ]
+  program: "P10 V-1.5"
+  values: [ -1.5 ]
+
+- name: print_decimal_zero
+  description: "A leading-zero fraction parses as a number, not a hex/zero prefix."
+  needs: [ gggpx ]
+  tags: [ decimals ]
+  program: "P10 V0.5"
+  values: [ 0.5 ]

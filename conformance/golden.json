@@ -1,277 +1,1008 @@
 [
   {
-    "name": "print_single",
-    "program": "P10 V42",
-    "expected": "V42\nOK"
-  },
-  {
-    "name": "print_list",
-    "program": "P10 V1,2,3",
-    "expected": "V1,2,3\nOK"
-  },
-  {
-    "name": "print_zero",
-    "program": "P10 V0",
-    "expected": "V0\nOK"
-  },
-  {
-    "name": "print_negatives",
-    "program": "P10 V-5,-10,15",
-    "expected": "V-5,-10,15\nOK"
-  },
-  {
-    "name": "print_two_args",
-    "program": "P10 V1,2,3 V4,5,6",
-    "expected": "V1,2,3 V4,5,6\nOK"
-  },
-  {
-    "name": "print_bytes",
-    "program": "P10 V255,128,64",
-    "expected": "V255,128,64\nOK"
-  },
-  {
-    "name": "print_decimal",
-    "program": "P10 V-1.5",
-    "expected": "V-1.5\nOK"
-  },
-  {
-    "name": "print_decimal_zero",
-    "program": "P10 V0.5",
-    "expected": "V0.5\nOK"
-  },
-  {
-    "name": "unitary_one",
-    "program": "P10 VK",
-    "expected": "V1\nOK"
-  },
-  {
-    "name": "unitary_zero",
-    "program": "P10 VZ",
-    "expected": "V0\nOK"
-  },
-  {
-    "name": "unitary_minusone",
-    "program": "P10 VN",
-    "expected": "V-1\nOK"
-  },
-  {
-    "name": "unicode_snowman",
-    "program": "P10 V☃",
-    "expected": "V9731\nOK"
-  },
-  {
-    "name": "unicode_cjk",
-    "program": "P10 V你",
-    "expected": "V20320\nOK"
-  },
-  {
-    "name": "unicode_greek",
-    "program": "P10 Vα",
-    "expected": "V945\nOK"
-  },
-  {
-    "name": "unicode_euro",
-    "program": "P10 V€",
-    "expected": "V8364\nOK"
-  },
-  {
-    "name": "unicode_emoji",
-    "program": "P10 V😀",
-    "expected": "V128512\nOK"
-  },
-  {
-    "name": "unicode_list",
-    "program": "P10 V☃,你",
-    "expected": "V9731,20320\nOK"
-  },
-  {
-    "name": "hex_1f",
-    "program": "P10 V0X1F",
-    "expected": "V31\nOK"
-  },
-  {
-    "name": "hex_ff",
-    "program": "P10 V0XFF",
-    "expected": "V255\nOK"
-  },
-  {
-    "name": "hex_zero",
-    "program": "P10 V0X0",
-    "expected": "V0\nOK"
-  },
-  {
-    "name": "hex_100",
-    "program": "P10 V0X100",
-    "expected": "V256\nOK"
-  },
-  {
-    "name": "hexlist_ff00",
-    "program": "P10 V0IFF00",
-    "expected": "V15,15,0,0\nOK"
-  },
-  {
-    "name": "range_incl",
-    "program": "P10 V1:5",
-    "expected": "V1,2,3,4,5\nOK"
-  },
-  {
-    "name": "range_excl",
-    "program": "P10 V1>5",
-    "expected": "V1,2,3,4\nOK"
-  },
-  {
-    "name": "range_count",
-    "program": "P10 V0:10/5",
-    "expected": "V0,2.5,5,7.5,10\nOK"
-  },
-  {
-    "name": "range_step",
-    "program": "P10 V0:10:2",
-    "expected": "V0,2,4,6,8,10\nOK"
-  },
-  {
-    "name": "range_in_list",
-    "program": "P10 V1:3,9",
-    "expected": "V1,2,3,9\nOK"
-  },
-  {
-    "name": "unitary_range",
-    "program": "P10 VK:5",
-    "expected": "V1,2,3,4,5\nOK"
-  },
-  {
-    "name": "unitary_range_excl",
-    "program": "P10 VZ>10",
-    "expected": "V0,1,2,3,4,5,6,7,8,9\nOK"
-  },
-  {
-    "name": "multiaxis",
-    "program": "P10 V1|2|3",
-    "expected": "\nOK"
-  },
-  {
-    "name": "multiaxis_range",
-    "program": "P10 V1:2|10:20/2|100:200/2",
-    "expected": "V111,112,121,122,211,212,221,222\nOK"
-  },
-  {
     "name": "flow_define_only",
+    "description": "Defining a procedure runs nothing and emits no response.",
+    "needs": [
+      "gggpx",
+      "gggtx"
+    ],
+    "tags": [
+      "flow",
+      "procedures"
+    ],
     "program": "T10 L\"p\"\nP10 V42\nT0",
+    "status": "",
+    "values": [],
+    "exact": false,
     "expected": ""
   },
   {
     "name": "flow_define_run",
+    "description": "T11 runs a previously defined procedure body.",
+    "needs": [
+      "gggpx",
+      "gggtx"
+    ],
+    "tags": [
+      "flow",
+      "procedures"
+    ],
     "program": "T10 L\"p\"\nP10 V42\nT0\nT11 L\"p\"",
+    "status": "OK",
+    "values": [
+      42
+    ],
+    "exact": false,
     "expected": "V42\nOK"
   },
   {
     "name": "flow_unknown",
+    "description": "Running an undefined procedure reports failure (OZ).",
+    "needs": [
+      "gggtx"
+    ],
+    "tags": [
+      "flow",
+      "procedures"
+    ],
     "program": "T11 L\"nope\"",
+    "status": "OZ",
+    "values": [],
+    "exact": false,
     "expected": "OZ"
   },
   {
     "name": "flow_nested",
+    "description": "Procedures may be defined and run nested.",
+    "needs": [
+      "gggpx",
+      "gggtx"
+    ],
+    "tags": [
+      "flow",
+      "procedures"
+    ],
     "program": "T10 L\"outer\"\nT10 L\"inner\"\nP10 V7\nT0\nT0\nT11 L\"outer\"\nT11 L\"inner\"",
+    "status": "OK",
+    "values": [
+      7
+    ],
+    "exact": false,
     "expected": "V7\nOK"
   },
   {
-    "name": "ref_bare",
-    "program": "P10 V$r",
-    "expected": "V10,20,30\nOK"
-  },
-  {
-    "name": "ref_two",
-    "program": "P10 V$r W$r",
-    "expected": "V10,20,30 W10,20,30\nOK"
-  },
-  {
-    "name": "ref_unknown",
-    "program": "P10 V$x",
-    "expected": "\nOK"
-  },
-  {
-    "name": "ref_subscript",
-    "program": "P10 V$r[1]",
-    "expected": "V20\nOK"
-  },
-  {
-    "name": "ref_sub_range",
-    "program": "P10 V$r[0:2]",
-    "expected": "V10,20,30\nOK"
-  },
-  {
-    "name": "ref_sub_list",
-    "program": "P10 V$r[0,2]",
-    "expected": "V10,30\nOK"
-  },
-  {
     "name": "cond_all_true",
+    "description": "T9 A runs the block when all values are truthy.",
+    "needs": [
+      "gggpx",
+      "gggtx"
+    ],
+    "tags": [
+      "flow",
+      "conditionals"
+    ],
     "program": "T9 A1\nP10 V42\nT0",
+    "status": "OK",
+    "values": [
+      42
+    ],
+    "exact": false,
     "expected": "V42\nOK"
   },
   {
     "name": "cond_all_false",
+    "description": "T9 A skips the block when a value is falsy.",
+    "needs": [
+      "gggpx",
+      "gggtx"
+    ],
+    "tags": [
+      "flow",
+      "conditionals"
+    ],
     "program": "T9 A0\nP10 V42\nT0",
+    "status": "",
+    "values": [],
+    "exact": false,
     "expected": ""
   },
   {
     "name": "cond_all_mixed",
+    "description": "T9 A requires every value truthy; a mix skips.",
+    "needs": [
+      "gggpx",
+      "gggtx"
+    ],
+    "tags": [
+      "flow",
+      "conditionals"
+    ],
     "program": "T9 A1,0\nP10 V42\nT0",
+    "status": "",
+    "values": [],
+    "exact": false,
     "expected": ""
   },
   {
     "name": "cond_any_true",
+    "description": "T9 O runs the block when any value is truthy.",
+    "needs": [
+      "gggpx",
+      "gggtx"
+    ],
+    "tags": [
+      "flow",
+      "conditionals"
+    ],
     "program": "T9 O0,0,1\nP10 V42\nT0",
+    "status": "OK",
+    "values": [
+      42
+    ],
+    "exact": false,
     "expected": "V42\nOK"
   },
   {
     "name": "cond_any_false",
+    "description": "T9 O skips the block when no value is truthy.",
+    "needs": [
+      "gggpx",
+      "gggtx"
+    ],
+    "tags": [
+      "flow",
+      "conditionals"
+    ],
     "program": "T9 O0,0,0\nP10 V42\nT0",
+    "status": "",
+    "values": [],
+    "exact": false,
     "expected": ""
   },
   {
     "name": "cond_nested_skip",
+    "description": "A skipped conditional skips its nested blocks too.",
+    "needs": [
+      "gggpx",
+      "gggtx"
+    ],
+    "tags": [
+      "flow",
+      "conditionals"
+    ],
     "program": "T9 A0\nT9 A1\nP10 V1\nT0\nT0\nP10 V2",
+    "status": "OK",
+    "values": [
+      2
+    ],
+    "exact": false,
     "expected": "V2\nOK"
   },
   {
     "name": "iter_single",
+    "description": "T9 V runs the body once per value, exposing it as $it.",
+    "needs": [
+      "gggpx",
+      "gggtx"
+    ],
+    "tags": [
+      "flow",
+      "iteration"
+    ],
     "program": "T9 V5 R\"it\"\nP10 V$it\nT0",
+    "status": "OK",
+    "values": [
+      5
+    ],
+    "exact": false,
     "expected": "V5\nOK"
   },
   {
     "name": "iter_zero",
+    "description": "Iterating an empty value set runs the body zero times.",
+    "needs": [
+      "gggpx",
+      "gggtx"
+    ],
+    "tags": [
+      "flow",
+      "iteration"
+    ],
     "program": "T9 V$x R\"it\"\nP10 V$it\nT0",
+    "status": "",
+    "values": [],
+    "exact": false,
     "expected": ""
   },
   {
-    "name": "unitary_pi",
-    "program": "P10 Vπ",
-    "expected": "V3.141592653589793\nOK",
-    "cxxSkip": "symbolic unitary constants (π τ e φ γ) decode as codepoints in C++"
+    "name": "hex_1f",
+    "description": "0X is a hexadecimal integer.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "hex"
+    ],
+    "program": "P10 V0X1F",
+    "status": "OK",
+    "values": [
+      31
+    ],
+    "exact": false,
+    "expected": "V31\nOK"
   },
   {
-    "name": "unitary_tau",
-    "program": "P10 Vτ",
-    "expected": "V6.283185307179586\nOK",
-    "cxxSkip": "symbolic unitary constants (π τ e φ γ) decode as codepoints in C++"
+    "name": "hex_ff",
+    "description": "0XFF is 255.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "hex"
+    ],
+    "program": "P10 V0XFF",
+    "status": "OK",
+    "values": [
+      255
+    ],
+    "exact": false,
+    "expected": "V255\nOK"
   },
   {
-    "name": "unitary_e",
-    "program": "P10 Ve",
-    "expected": "V2.718281828459045\nOK",
-    "cxxSkip": "symbolic unitary constants (π τ e φ γ) decode as codepoints in C++"
+    "name": "hex_zero",
+    "description": "0X0 is zero.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "hex"
+    ],
+    "program": "P10 V0X0",
+    "status": "OK",
+    "values": [
+      0
+    ],
+    "exact": false,
+    "expected": "V0\nOK"
+  },
+  {
+    "name": "hex_100",
+    "description": "Multi-digit hex integers carry across nibbles.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "hex"
+    ],
+    "program": "P10 V0X100",
+    "status": "OK",
+    "values": [
+      256
+    ],
+    "exact": false,
+    "expected": "V256\nOK"
+  },
+  {
+    "name": "hexlist_ff00",
+    "description": "0I reads one value per hex nibble.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "hex",
+      "lists"
+    ],
+    "program": "P10 V0IFF00",
+    "status": "OK",
+    "values": [
+      15,
+      15,
+      0,
+      0
+    ],
+    "exact": false,
+    "expected": "V15,15,0,0\nOK"
   },
   {
     "name": "hexnorm2_80",
+    "description": "0H normalizes a two-nibble hex value to 0..1.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "hex",
+      "normalized"
+    ],
     "program": "P10 V0H80",
-    "expected": "V0.5019607843137255\nOK",
-    "cxxSkip": "fractional hex-norm precision differs (C++ float vs TS double)"
+    "status": "OK",
+    "values": [
+      0.5019607843137255
+    ],
+    "exact": false,
+    "expected": "V0.5019607843137255\nOK"
   },
   {
     "name": "hexnorm1_8",
+    "description": "0J normalizes a one-nibble hex value to 0..1.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "hex",
+      "normalized"
+    ],
     "program": "P10 V0J8",
-    "expected": "V0.5333333333333333\nOK",
-    "cxxSkip": "fractional hex-norm precision differs (C++ float vs TS double)"
+    "status": "OK",
+    "values": [
+      0.5333333333333333
+    ],
+    "exact": false,
+    "expected": "V0.5333333333333333\nOK"
+  },
+  {
+    "name": "print_single",
+    "description": "A bare decimal value echoes back unchanged.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "decimals"
+    ],
+    "program": "P10 V42",
+    "status": "OK",
+    "values": [
+      42
+    ],
+    "exact": false,
+    "expected": "V42\nOK"
+  },
+  {
+    "name": "print_list",
+    "description": "A comma-separated value list echoes each value in order.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "decimals",
+      "lists"
+    ],
+    "program": "P10 V1,2,3",
+    "status": "OK",
+    "values": [
+      1,
+      2,
+      3
+    ],
+    "exact": false,
+    "expected": "V1,2,3\nOK"
+  },
+  {
+    "name": "print_zero",
+    "description": "Zero is a value like any other.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "decimals"
+    ],
+    "program": "P10 V0",
+    "status": "OK",
+    "values": [
+      0
+    ],
+    "exact": false,
+    "expected": "V0\nOK"
+  },
+  {
+    "name": "print_negatives",
+    "description": "Negative decimals are preserved.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "decimals",
+      "signs"
+    ],
+    "program": "P10 V-5,-10,15",
+    "status": "OK",
+    "values": [
+      -5,
+      -10,
+      15
+    ],
+    "exact": false,
+    "expected": "V-5,-10,15\nOK"
+  },
+  {
+    "name": "print_two_args",
+    "description": "Two value arguments stay distinct in the output.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "lists"
+    ],
+    "program": "P10 V1,2,3 V4,5,6",
+    "status": "OK",
+    "values": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "exact": true,
+    "expected": "V1,2,3 V4,5,6\nOK"
+  },
+  {
+    "name": "print_bytes",
+    "description": "Byte-range decimals echo unchanged.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "decimals"
+    ],
+    "program": "P10 V255,128,64",
+    "status": "OK",
+    "values": [
+      255,
+      128,
+      64
+    ],
+    "exact": false,
+    "expected": "V255,128,64\nOK"
+  },
+  {
+    "name": "print_decimal",
+    "description": "A negative fractional value is preserved.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "decimals"
+    ],
+    "program": "P10 V-1.5",
+    "status": "OK",
+    "values": [
+      -1.5
+    ],
+    "exact": false,
+    "expected": "V-1.5\nOK"
+  },
+  {
+    "name": "print_decimal_zero",
+    "description": "A leading-zero fraction parses as a number, not a hex/zero prefix.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "decimals"
+    ],
+    "program": "P10 V0.5",
+    "status": "OK",
+    "values": [
+      0.5
+    ],
+    "exact": false,
+    "expected": "V0.5\nOK"
+  },
+  {
+    "name": "range_incl",
+    "description": "a:b expands to an inclusive integer sweep.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "ranges"
+    ],
+    "program": "P10 V1:5",
+    "status": "OK",
+    "values": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "exact": false,
+    "expected": "V1,2,3,4,5\nOK"
+  },
+  {
+    "name": "range_excl",
+    "description": "a>b expands to an exclusive sweep (stops before b).",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "ranges"
+    ],
+    "program": "P10 V1>5",
+    "status": "OK",
+    "values": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "exact": false,
+    "expected": "V1,2,3,4\nOK"
+  },
+  {
+    "name": "range_count",
+    "description": "a:b/n divides the inclusive range into n points.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "ranges"
+    ],
+    "program": "P10 V0:10/5",
+    "status": "OK",
+    "values": [
+      0,
+      2.5,
+      5,
+      7.5,
+      10
+    ],
+    "exact": false,
+    "expected": "V0,2.5,5,7.5,10\nOK"
+  },
+  {
+    "name": "range_step",
+    "description": "a:b:s walks the inclusive range in steps of s.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "ranges"
+    ],
+    "program": "P10 V0:10:2",
+    "status": "OK",
+    "values": [
+      0,
+      2,
+      4,
+      6,
+      8,
+      10
+    ],
+    "exact": false,
+    "expected": "V0,2,4,6,8,10\nOK"
+  },
+  {
+    "name": "range_in_list",
+    "description": "A range may sit inside a comma list alongside plain values.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "ranges",
+      "lists"
+    ],
+    "program": "P10 V1:3,9",
+    "status": "OK",
+    "values": [
+      1,
+      2,
+      3,
+      9
+    ],
+    "exact": false,
+    "expected": "V1,2,3,9\nOK"
+  },
+  {
+    "name": "multiaxis",
+    "description": "Register-less multi-axis of lone values collapses to nothing.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "ranges",
+      "multiaxis"
+    ],
+    "program": "P10 V1|2|3",
+    "status": "OK",
+    "values": [],
+    "exact": false,
+    "expected": "\nOK"
+  },
+  {
+    "name": "multiaxis_range",
+    "description": "Multi-axis ranges add coordinate-wise (nested register-less sweep).",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "ranges",
+      "multiaxis"
+    ],
+    "program": "P10 V1:2|10:20/2|100:200/2",
+    "status": "OK",
+    "values": [
+      111,
+      112,
+      121,
+      122,
+      211,
+      212,
+      221,
+      222
+    ],
+    "exact": false,
+    "expected": "V111,112,121,122,211,212,221,222\nOK"
+  },
+  {
+    "name": "ref_bare",
+    "description": "A bare $name reads the whole register in order.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "references"
+    ],
+    "program": "P10 V$r",
+    "status": "OK",
+    "values": [
+      10,
+      20,
+      30
+    ],
+    "exact": false,
+    "expected": "V10,20,30\nOK"
+  },
+  {
+    "name": "ref_two",
+    "description": "A reference can appear mid-line, then another follows.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "references"
+    ],
+    "program": "P10 V$r W$r",
+    "status": "OK",
+    "values": [
+      10,
+      20,
+      30,
+      10,
+      20,
+      30
+    ],
+    "exact": true,
+    "expected": "V10,20,30 W10,20,30\nOK"
+  },
+  {
+    "name": "ref_unknown",
+    "description": "An unknown register reference yields no values.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "references"
+    ],
+    "program": "P10 V$x",
+    "status": "OK",
+    "values": [],
+    "exact": false,
+    "expected": "\nOK"
+  },
+  {
+    "name": "ref_subscript",
+    "description": "$name[i] reads a single indexed scalar.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "references",
+      "subscript"
+    ],
+    "program": "P10 V$r[1]",
+    "status": "OK",
+    "values": [
+      20
+    ],
+    "exact": false,
+    "expected": "V20\nOK"
+  },
+  {
+    "name": "ref_sub_range",
+    "description": "$name[a:b] reads an inclusive range of indices.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "references",
+      "subscript"
+    ],
+    "program": "P10 V$r[0:2]",
+    "status": "OK",
+    "values": [
+      10,
+      20,
+      30
+    ],
+    "exact": false,
+    "expected": "V10,20,30\nOK"
+  },
+  {
+    "name": "ref_sub_list",
+    "description": "$name[a,b] reads a comma list of indices.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "references",
+      "subscript"
+    ],
+    "program": "P10 V$r[0,2]",
+    "status": "OK",
+    "values": [
+      10,
+      30
+    ],
+    "exact": false,
+    "expected": "V10,30\nOK"
+  },
+  {
+    "name": "unicode_snowman",
+    "description": "A Unicode character decodes to its code point.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "unicode"
+    ],
+    "program": "P10 V☃",
+    "status": "OK",
+    "values": [
+      9731
+    ],
+    "exact": false,
+    "expected": "V9731\nOK"
+  },
+  {
+    "name": "unicode_cjk",
+    "description": "A CJK character decodes to its code point.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "unicode"
+    ],
+    "program": "P10 V你",
+    "status": "OK",
+    "values": [
+      20320
+    ],
+    "exact": false,
+    "expected": "V20320\nOK"
+  },
+  {
+    "name": "unicode_greek",
+    "description": "A Greek letter decodes to its code point.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "unicode"
+    ],
+    "program": "P10 Vα",
+    "status": "OK",
+    "values": [
+      945
+    ],
+    "exact": false,
+    "expected": "V945\nOK"
+  },
+  {
+    "name": "unicode_euro",
+    "description": "The euro sign decodes to its code point.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "unicode"
+    ],
+    "program": "P10 V€",
+    "status": "OK",
+    "values": [
+      8364
+    ],
+    "exact": false,
+    "expected": "V8364\nOK"
+  },
+  {
+    "name": "unicode_emoji",
+    "description": "An astral-plane emoji decodes to its full code point.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "unicode"
+    ],
+    "program": "P10 V😀",
+    "status": "OK",
+    "values": [
+      128512
+    ],
+    "exact": false,
+    "expected": "V128512\nOK"
+  },
+  {
+    "name": "unicode_list",
+    "description": "Unicode characters list like any other values.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "unicode",
+      "lists"
+    ],
+    "program": "P10 V☃,你",
+    "status": "OK",
+    "values": [
+      9731,
+      20320
+    ],
+    "exact": false,
+    "expected": "V9731,20320\nOK"
+  },
+  {
+    "name": "unitary_one",
+    "description": "K is the unitary constant one.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "unitary"
+    ],
+    "program": "P10 VK",
+    "status": "OK",
+    "values": [
+      1
+    ],
+    "exact": false,
+    "expected": "V1\nOK"
+  },
+  {
+    "name": "unitary_zero",
+    "description": "Z is the unitary constant zero.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "unitary"
+    ],
+    "program": "P10 VZ",
+    "status": "OK",
+    "values": [
+      0
+    ],
+    "exact": false,
+    "expected": "V0\nOK"
+  },
+  {
+    "name": "unitary_minusone",
+    "description": "N is the unitary constant minus one.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "unitary"
+    ],
+    "program": "P10 VN",
+    "status": "OK",
+    "values": [
+      -1
+    ],
+    "exact": false,
+    "expected": "V-1\nOK"
+  },
+  {
+    "name": "unitary_range",
+    "description": "A unitary constant acts as a range bound like any number.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "unitary",
+      "ranges"
+    ],
+    "program": "P10 VK:5",
+    "status": "OK",
+    "values": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "exact": false,
+    "expected": "V1,2,3,4,5\nOK"
+  },
+  {
+    "name": "unitary_range_excl",
+    "description": "Z as an exclusive range bound sweeps 0 up to (not including) 10.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "unitary",
+      "ranges"
+    ],
+    "program": "P10 VZ>10",
+    "status": "OK",
+    "values": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "exact": false,
+    "expected": "V0,1,2,3,4,5,6,7,8,9\nOK"
+  },
+  {
+    "name": "unitary_pi",
+    "description": "π decodes to the mathematical constant.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "unitary",
+      "irrational"
+    ],
+    "program": "P10 Vπ",
+    "status": "OK",
+    "values": [
+      3.141592653589793
+    ],
+    "exact": false,
+    "expected": "V3.141592653589793\nOK"
+  },
+  {
+    "name": "unitary_tau",
+    "description": "τ decodes to 2π.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "unitary",
+      "irrational"
+    ],
+    "program": "P10 Vτ",
+    "status": "OK",
+    "values": [
+      6.283185307179586
+    ],
+    "exact": false,
+    "expected": "V6.283185307179586\nOK"
+  },
+  {
+    "name": "unitary_e",
+    "description": "e decodes to Euler's number.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "unitary",
+      "irrational"
+    ],
+    "program": "P10 Ve",
+    "status": "OK",
+    "values": [
+      2.718281828459045
+    ],
+    "exact": false,
+    "expected": "V2.718281828459045\nOK"
   }
 ]

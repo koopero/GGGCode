@@ -1,0 +1,61 @@
+# Unitary constants (gggpx): single-character value constants. K=1, Z=0, N=-1 are
+# exact; the symbolic irrationals (π τ e) decode to math constants and rely on the
+# value-tolerance contract to agree across the C++ float / TS double divergence.
+
+- name: unitary_one
+  description: "K is the unitary constant one."
+  needs: [ gggpx ]
+  tags: [ unitary ]
+  program: "P10 VK"
+  values: [ 1 ]
+
+- name: unitary_zero
+  description: "Z is the unitary constant zero."
+  needs: [ gggpx ]
+  tags: [ unitary ]
+  program: "P10 VZ"
+  values: [ 0 ]
+
+- name: unitary_minusone
+  description: "N is the unitary constant minus one."
+  needs: [ gggpx ]
+  tags: [ unitary ]
+  program: "P10 VN"
+  values: [ -1 ]
+
+- name: unitary_range
+  description: "A unitary constant acts as a range bound like any number."
+  needs: [ gggpx ]
+  tags: [ unitary, ranges ]
+  program: "P10 VK:5"
+  values: [ 1, 2, 3, 4, 5 ]
+
+- name: unitary_range_excl
+  description: "Z as an exclusive range bound sweeps 0 up to (not including) 10."
+  needs: [ gggpx ]
+  tags: [ unitary, ranges ]
+  program: "P10 VZ>10"
+  values: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
+
+- name: unitary_pi
+  # Formerly cxxSkip: TS double "3.141592653589793" vs C++ float "3.1415927" are
+  # byte-different but agree within the global epsilon.
+  description: "π decodes to the mathematical constant."
+  needs: [ gggpx ]
+  tags: [ unitary, irrational ]
+  program: "P10 Vπ"
+  values: [ 3.141592653589793 ]
+
+- name: unitary_tau
+  description: "τ decodes to 2π."
+  needs: [ gggpx ]
+  tags: [ unitary, irrational ]
+  program: "P10 Vτ"
+  values: [ 6.283185307179586 ]
+
+- name: unitary_e
+  description: "e decodes to Euler's number."
+  needs: [ gggpx ]
+  tags: [ unitary, irrational ]
+  program: "P10 Ve"
+  values: [ 2.718281828459045 ]

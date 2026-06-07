@@ -1,0 +1,47 @@
+# References (gggpx): $name reads a register. A fixed register "r" = [10,20,30] is
+# preloaded by the conformance harness so these have data to read.
+
+- name: ref_bare
+  description: "A bare $name reads the whole register in order."
+  needs: [ gggpx ]
+  tags: [ references ]
+  program: "P10 V$r"
+  values: [ 10, 20, 30 ]
+
+- name: ref_two
+  # `exact`: the second arg keeps its own code (W), a formatting detail the value
+  # stream can't capture.
+  description: "A reference can appear mid-line, then another follows."
+  needs: [ gggpx ]
+  tags: [ references ]
+  program: "P10 V$r W$r"
+  values: [ 10, 20, 30, 10, 20, 30 ]
+  exact: true
+
+- name: ref_unknown
+  description: "An unknown register reference yields no values."
+  needs: [ gggpx ]
+  tags: [ references ]
+  program: "P10 V$x"
+  values: []
+
+- name: ref_subscript
+  description: "$name[i] reads a single indexed scalar."
+  needs: [ gggpx ]
+  tags: [ references, subscript ]
+  program: "P10 V$r[1]"
+  values: [ 20 ]
+
+- name: ref_sub_range
+  description: "$name[a:b] reads an inclusive range of indices."
+  needs: [ gggpx ]
+  tags: [ references, subscript ]
+  program: "P10 V$r[0:2]"
+  values: [ 10, 20, 30 ]
+
+- name: ref_sub_list
+  description: "$name[a,b] reads a comma list of indices."
+  needs: [ gggpx ]
+  tags: [ references, subscript ]
+  program: "P10 V$r[0,2]"
+  values: [ 10, 30 ]

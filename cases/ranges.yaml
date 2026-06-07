@@ -1,0 +1,53 @@
+# Ranges & multi-axis (gggpx): a:b sweeps, counts, steps, and |-joined axes
+# expand to concrete value lists before printing.
+
+- name: range_incl
+  description: "a:b expands to an inclusive integer sweep."
+  needs: [ gggpx ]
+  tags: [ ranges ]
+  program: "P10 V1:5"
+  values: [ 1, 2, 3, 4, 5 ]
+
+- name: range_excl
+  description: "a>b expands to an exclusive sweep (stops before b)."
+  needs: [ gggpx ]
+  tags: [ ranges ]
+  program: "P10 V1>5"
+  values: [ 1, 2, 3, 4 ]
+
+- name: range_count
+  description: "a:b/n divides the inclusive range into n points."
+  needs: [ gggpx ]
+  tags: [ ranges ]
+  program: "P10 V0:10/5"
+  values: [ 0, 2.5, 5, 7.5, 10 ]
+
+- name: range_step
+  description: "a:b:s walks the inclusive range in steps of s."
+  needs: [ gggpx ]
+  tags: [ ranges ]
+  program: "P10 V0:10:2"
+  values: [ 0, 2, 4, 6, 8, 10 ]
+
+- name: range_in_list
+  description: "A range may sit inside a comma list alongside plain values."
+  needs: [ gggpx ]
+  tags: [ ranges, lists ]
+  program: "P10 V1:3,9"
+  values: [ 1, 2, 3, 9 ]
+
+- name: multiaxis
+  # A register-less |-sweep of lone values collapses to empty (a faithful quirk):
+  # each single value resolves to count 0, so the product is empty.
+  description: "Register-less multi-axis of lone values collapses to nothing."
+  needs: [ gggpx ]
+  tags: [ ranges, multiaxis ]
+  program: "P10 V1|2|3"
+  values: []
+
+- name: multiaxis_range
+  description: "Multi-axis ranges add coordinate-wise (nested register-less sweep)."
+  needs: [ gggpx ]
+  tags: [ ranges, multiaxis ]
+  program: "P10 V1:2|10:20/2|100:200/2"
+  values: [ 111, 112, 121, 122, 211, 212, 221, 222 ]
