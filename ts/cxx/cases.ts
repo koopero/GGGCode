@@ -93,10 +93,10 @@ function validateCase( raw: any, file: string ): Case {
 // Decode a rendered output back into its value stream + control responses, by
 // re-parsing the text (the same logic ports to C++). Output lines are GGG: an
 // okay response (O-prefixed, e.g. OK/OZ) on its own line, or a sequence of
-// space-separated `‹code›‹d,d,d›` args. Only the value slots (V Value / A Data)
-// carry data — other codes are addresses/metadata (R register, P offset, S size,
-// the echoed G command, …) and are skipped. This makes the decoder correct for
-// both print output (V/A args) and ggggx read output (G20 R0 P0 V…).
+// space-separated `‹code›‹d,d,d›` args. Only the value slot (V Value) carries
+// data — other codes are addresses/metadata (R register, P offset, S size, the
+// echoed G command, …) and are skipped. This makes the decoder correct for both
+// print output (V args) and ggggx read output (G20 R0 P0 V…).
 //
 export function decodeOutput( text: string ): { values: number[], statuses: string[] } {
   const values: number[] = []
@@ -106,7 +106,7 @@ export function decodeOutput( text: string ): { values: number[], statuses: stri
     if ( line[0] === GGG.Okay ) { statuses.push( line ); continue }
     for ( const arg of line.split( " " ) ) {
       if ( arg.length < 2 ) continue
-      if ( arg[0] !== GGG.Value && arg[0] !== GGG.Data ) continue   // value slots only
+      if ( arg[0] !== GGG.Value ) continue          // value slot only
       for ( const piece of arg.slice( 1 ).split( "," ) ) {
         if ( piece === "" ) continue
         const n = parseFloat( piece )

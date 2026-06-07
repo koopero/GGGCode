@@ -78,13 +78,6 @@ describe("MatrixWrite", () => {
   describe("GGGCode", () => {
     TestGXProgramResult( "minimal init, write and display matrix", `
       ${GXCN.MatrixInit} ${GGG.Register}0 ${GGG.Size}2,3
-      ${GXCN.MatrixWrite} ${GGG.Register}0 ${GGG.Data}1,2,3,4,5,6
-      ${GXCN.MatrixDisplay} ${GGG.Register}0
-    `, [ 1,2,3,4,5,6 ] )
-
-    // V is the canonical values slot; it must write identically to the A alias.
-    TestGXProgramResult( "write via V slot (canonical)", `
-      ${GXCN.MatrixInit} ${GGG.Register}0 ${GGG.Size}2,3
       ${GXCN.MatrixWrite} ${GGG.Register}0 ${GGG.Value}1,2,3,4,5,6
       ${GXCN.MatrixDisplay} ${GGG.Register}0
     `, [ 1,2,3,4,5,6 ] )
@@ -98,13 +91,13 @@ describe("MatrixWrite", () => {
 
     TestGXProgramResult( "matrix write with offset and size", `
       ${GXCN.MatrixInit} ${GGG.Register}0 ${GGG.Size}2,3
-      ${GXCN.MatrixWrite} ${GGG.Register}0 ${GGG.Offset}1 ${GGG.Size}1,2 ${GGG.Data}20,40
+      ${GXCN.MatrixWrite} ${GGG.Register}0 ${GGG.Offset}1 ${GGG.Size}1,2 ${GGG.Value}20,40
       ${GXCN.MatrixDisplay} ${GGG.Register}0
     `, [ 0,20,0,40,0,0 ] )
 
     TestGXProgramResult( "matrix write with fill", `
       ${GXCN.MatrixInit} ${GGG.Register}0 ${GGG.Size}3,3
-      ${GXCN.MatrixWrite} ${GGG.Register}0 ${GGG.Offset}0,1 ${GGG.Repeat}K ${GGG.Size}2,2 ${GGG.Data}1
+      ${GXCN.MatrixWrite} ${GGG.Register}0 ${GGG.Offset}0,1 ${GGG.Repeat}K ${GGG.Size}2,2 ${GGG.Value}1
       ${GXCN.MatrixDisplay} ${GGG.Register}0
     `, [
       0,0,0,
@@ -114,8 +107,8 @@ describe("MatrixWrite", () => {
 
     TestGXProgramResult( "add fills", `
       ${GXCN.MatrixInit} ${GGG.Register}0 ${GGG.Size}3,3
-      ${GXCN.MatrixWrite} ${GGG.Register}0 ${GGG.Offset}0,1 ${GGG.Repeat}K ${GGG.Size}2,2 ${GGG.Data}1
-      ${GXCN.MatrixWrite} ${GGG.Register}0 ${GGG.Offset}1,0 ${GGG.Repeat}K ${GGG.Operator}"add" ${GGG.Size}2,2 ${GGG.Data}10
+      ${GXCN.MatrixWrite} ${GGG.Register}0 ${GGG.Offset}0,1 ${GGG.Repeat}K ${GGG.Size}2,2 ${GGG.Value}1
+      ${GXCN.MatrixWrite} ${GGG.Register}0 ${GGG.Offset}1,0 ${GGG.Repeat}K ${GGG.Operator}"add" ${GGG.Size}2,2 ${GGG.Value}10
       ${GXCN.MatrixDisplay} ${GGG.Register}0
     `, [
       0,10,10,
@@ -125,8 +118,8 @@ describe("MatrixWrite", () => {
 
     TestGXProgramResult( "mult fills", `
       ${GXCN.MatrixInit} ${GGG.Register}0 ${GGG.Size}3,3
-      ${GXCN.MatrixWrite} ${GGG.Register}0 ${GGG.Offset}0,1 ${GGG.Repeat}K ${GGG.Size}2,2 ${GGG.Data}1
-      ${GXCN.MatrixWrite} ${GGG.Register}0 ${GGG.Offset}1,0 ${GGG.Repeat}K ${GGG.Operator}"mult" ${GGG.Size}2,2 ${GGG.Data}2
+      ${GXCN.MatrixWrite} ${GGG.Register}0 ${GGG.Offset}0,1 ${GGG.Repeat}K ${GGG.Size}2,2 ${GGG.Value}1
+      ${GXCN.MatrixWrite} ${GGG.Register}0 ${GGG.Offset}1,0 ${GGG.Repeat}K ${GGG.Operator}"mult" ${GGG.Size}2,2 ${GGG.Value}2
       ${GXCN.MatrixDisplay} ${GGG.Register}0
     `, [
       0,0,0,
@@ -136,13 +129,13 @@ describe("MatrixWrite", () => {
 
     TestGXProgramResult( "write range", `
       ${GXCN.MatrixInit} ${GGG.Register}0 ${GGG.Size}5
-      ${GXCN.MatrixWrite} ${GGG.Register}0 ${GGG.Data}10:40/4
+      ${GXCN.MatrixWrite} ${GGG.Register}0 ${GGG.Value}10:40/4
       ${GXCN.MatrixDisplay} ${GGG.Register}0
     `, [ 10,20,30,40,0 ] )
 
     false && TestGXProgramResult( "offset abuse", `
       ${GXCN.MatrixInit} ${GGG.Register}0 ${GGG.Size}3,3
-      ${GXCN.MatrixWrite} ${GGG.Register}0 ${GGG.Offset}4 ${GGG.Data}1,2,3,4
+      ${GXCN.MatrixWrite} ${GGG.Register}0 ${GGG.Offset}4 ${GGG.Value}1,2,3,4
       ${GXCN.MatrixDisplay} ${GGG.Register}0
     `, [  0,0,0,
           0,1,2,

@@ -12,7 +12,7 @@ export function PrintNumbers( value: PrintNumbersArg ) {
 
   function printCode( code?:string ) {
     code = code || _code
-    code = code || GGG.Data
+    code = code || GGG.Value
 
     if ( code != _code ) {
       if ( _needComma ) {

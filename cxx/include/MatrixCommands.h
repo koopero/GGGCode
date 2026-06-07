@@ -33,8 +33,7 @@ namespace ggg {
       switch ( code ) {
         case Register: reg = machine->getRegister( (Index) number ); break;
         case Offset:   offset = (Index) number; break;
-        case Value:                 // 'V'
-        case Data:                  // 'A'
+        case Value:                 // 'V' -- the values slot
           if ( reg ) reg->writeScalarFloat( number, offset++ );
           break;
         default: break;

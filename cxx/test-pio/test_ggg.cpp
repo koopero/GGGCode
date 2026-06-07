@@ -197,9 +197,9 @@ static Decoded decodeOutput( const std::string &text ) {
         while ( a < line.size() ) {
           size_t sp = line.find( ' ', a );
           std::string arg = ( sp == std::string::npos ) ? line.substr( a ) : line.substr( a, sp - a );
-          // value slots only (V Value / A Data); skip addresses/metadata + the
-          // echoed G command, matching decodeOutput() in ts/cxx/cases.ts.
-          if ( arg.size() > 1 && ( arg[0] == ggg::GGG::Value || arg[0] == ggg::GGG::Data ) ) {
+          // value slot only (V Value); skip addresses/metadata + the echoed G
+          // command, matching decodeOutput() in ts/cxx/cases.ts.
+          if ( arg.size() > 1 && arg[0] == ggg::GGG::Value ) {
             std::string data = arg.substr( 1 );          // drop the leading code char
             size_t b = 0;
             while ( true ) {

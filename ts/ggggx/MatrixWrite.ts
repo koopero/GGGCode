@@ -24,9 +24,8 @@ function MatrixWriteHookCode( arg:HookArgs ) {
   TargetHookCode( arg )
 
   switch( arg.code ) {
-    // V is the canonical values slot; A (Data) is an accepted back-compat alias.
-    case GGG.Value:
-    case GGG.Data: {
+    // V is the values slot.
+    case GGG.Value: {
       TargetResolveNumbers( arg )
       const { state } = arg
       state.coord = null
@@ -51,8 +50,7 @@ function MatrixWriteHookValue( arg:HookArgs ) {
       state.repeat = !!value
       break
 
-    case GGG.Value:
-    case GGG.Data: {
+    case GGG.Value: {
       const { buffer, offset, size, operator, repeat } = state
       let { coord } = state
 
@@ -86,7 +84,6 @@ function MatrixWriteHookEndArg( arg:HookArgs ) {
   const { repeat } = state
   switch ( code ) {
     case GGG.Value:
-    case GGG.Data:
       if ( repeat ) {
         const { data, operator, buffer, offset, dim } = state
         MatrixWrite( buffer, { data, operator, offset, size: dim, fill: true } )

@@ -44,15 +44,3 @@
     G10 R0 P0 S3
   values: [ 7, 8, 9 ]
   exact: true
-
-- name: matrix_write_alias
-  # The values slot accepts both V (canonical) and A (back-compat alias) on write;
-  # the read always emits the canonical V. This pins the V/A heal as a round-trip.
-  description: "G20 accepts the A alias for the values slot; the read emits V."
-  needs: [ ggggx ]
-  tags: [ matrix, encoding ]
-  program: |
-    G20 R0 A5,6,7
-    G10 R0 P0 S3
-  values: [ 5, 6, 7 ]
-  exact: true

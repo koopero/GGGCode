@@ -434,26 +434,6 @@
     "expected": "OK\nG20 R0 P0 V7,8,9\nOK"
   },
   {
-    "name": "matrix_write_alias",
-    "description": "G20 accepts the A alias for the values slot; the read emits V.",
-    "needs": [
-      "ggggx"
-    ],
-    "tags": [
-      "matrix",
-      "encoding"
-    ],
-    "program": "G20 R0 A5,6,7\nG10 R0 P0 S3",
-    "status": "OK",
-    "values": [
-      5,
-      6,
-      7
-    ],
-    "exact": true,
-    "expected": "OK\nG20 R0 P0 V5,6,7\nOK"
-  },
-  {
     "name": "print_single",
     "description": "A bare decimal value echoes back unchanged.",
     "needs": [
@@ -769,14 +749,14 @@
   },
   {
     "name": "ref_two",
-    "description": "Two value args, in the V and A value slots, each read a register.",
+    "description": "A reference can appear mid-line, then another follows.",
     "needs": [
       "gggpx"
     ],
     "tags": [
       "references"
     ],
-    "program": "P10 V$r A$r",
+    "program": "P10 V$r V$r",
     "status": "OK",
     "values": [
       10,
@@ -787,7 +767,7 @@
       30
     ],
     "exact": true,
-    "expected": "V10,20,30 A10,20,30\nOK"
+    "expected": "V10,20,30 V10,20,30\nOK"
   },
   {
     "name": "ref_unknown",

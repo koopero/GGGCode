@@ -91,13 +91,6 @@ function GXCommandsForNamespace( namespace?: GXNamespaceArg ) {
           type: ArgType.Number,
           format: "(n+)",
         },
-        // Back-compat alias: the values slot used to be named Data (A). V is
-        // canonical now, but accept A so old replays still apply.
-        [GGG.Data]: {
-          description: "Values to write (alias of V).",
-          type: ArgType.Number,
-          format: "(n+)",
-        },
         [GGG.Operator]: {
           description: "Write operator.",
           type: ArgType.String,
