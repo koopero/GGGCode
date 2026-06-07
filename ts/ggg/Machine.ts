@@ -1,4 +1,4 @@
-import { GGG, Hooks, Token, TokenArg, Command, Commands, HookArgs, CasedString, Primitive } from "./Language"
+import { GGG, Hooks, Token, TokenArg, Command, Commands, HookArgs, CasedString, Primitive, CommandDecision } from "./Language"
 import ParseLines, { ParseLinesArgs } from "./ParseLines"
 import { EventEmitter } from "../common/events"
 import { isArray, isNumber, isString, isBoolean, isDefined } from "../common/util"
@@ -16,6 +16,8 @@ type StackItem = {
   command:Command,
   state:{ [key:string]:any },
   pointer?: QueueItem,
+  capture?: string[],
+  depth?: number,
 }
 
 type gggRegister = NamedListItem
@@ -72,7 +74,6 @@ export default class Machine extends EventEmitter  {
   registers:Map<object,NamedList<gggRegister>> = new Map<object,NamedList<gggRegister>>()
 
   timeout:ReturnType<typeof setTimeout>|null = null
-  skip:boolean = false
 
   constructor( props:MachineProps = {} ) {
     super()
@@ -107,7 +108,7 @@ export default class Machine extends EventEmitter  {
 
   outputOk( okay:number = 1, comment?:string ) {
     const code = GGG.Okay
-    this.output( { code: `${code}${FormatOkayNumber(okay)}`, comment } )
+    this.output( { code: `${code}${FormatOkayNumber(okay)}`, comment, eol: true } )
   }
 
   tick() {
@@ -142,6 +143,71 @@ export default class Machine extends EventEmitter  {
     }
   }
 
+
+  // --- Control frames ---------------------------------------------------
+  // A frame's command exposes a Hooks.Stack hook that, before each subsequent
+  // command is dispatched, returns a CommandDecision (run/capture/skip/error).
+  // Flow-control commands (gggtx T-series) push/pop frames to capture and
+  // re-run source. See execLine for the gate.
+
+  pushFrame( frame:StackItem ) {
+    this.stack.push( frame )
+  }
+
+  popFrame() : StackItem | undefined {
+    return this.stack.pop()
+  }
+
+  // Splice parsed source lines into the queue so they run immediately after the
+  // current item. Bounded by limits.maxQueue to keep recursion/queue growth in
+  // check; on overflow the lines are dropped and O0 is emitted.
+  enqueueLines( lines:string[] ) {
+    const { queue, queuePointer, limits } = this
+    const parsed = ParseLines( lines.join( GGG.End ) )
+    const items:QueueItem[] = parsed.map( line => ( { line } ) )
+    if ( limits.maxQueue && queue.length + items.length > limits.maxQueue ) {
+      this.outputOk( 0 )
+      return
+    }
+    queue.splice( queuePointer + 1, 0, ...items )
+  }
+
+  // Write a scalar into the iteration register (a single-element Matrix,
+  // addressable by name or index) so a loop body can read it as $name / $index.
+  setIterRegister( id:string|number, value:number ) {
+    const list = this.getRegisterList( Matrix )
+    let reg = ( ( typeof id === "string" ) ? list.named[id] : list.list[id] ) as Matrix | undefined
+    if ( !reg ) {
+      reg = new Matrix( { dim: [1], data: [value] } )
+      list.add( reg, ( typeof id === "string" ) ? { name: id } : { index: id } )
+    } else {
+      reg.write( [value] )
+    }
+  }
+
+  // Run a captured body once per value, writing each value into the iteration
+  // register immediately before its body copy so the body reads the current
+  // value via a reference. Writes are interleaved as callback queue items so
+  // each pass sees its own value. Bounded by limits.maxQueue.
+  enqueueLoop( values:number[], body:string[], id:string|number|undefined ) {
+    const { queue, queuePointer, limits } = this
+    const bodyLines = ParseLines( body.join( GGG.End ) )
+    const items:QueueItem[] = []
+    for ( const value of values ) {
+      if ( id !== undefined ) {
+        const regId = id
+        items.push( { callback: () => this.setIterRegister( regId, value ) } )
+      }
+      for ( const line of bodyLines ) {
+        items.push( { line } )
+      }
+    }
+    if ( limits.maxQueue && queue.length + items.length > limits.maxQueue ) {
+      this.outputOk( 0 )
+      return
+    }
+    queue.splice( queuePointer + 1, 0, ...items )
+  }
 
   getRegisterList( registerClass:object ) : NamedList<gggRegister> {
     let registers = this.registers.get( registerClass )
@@ -193,13 +259,28 @@ export default class Machine extends EventEmitter  {
       if ( isBlankCommand( command ) ) 
         return
 
+      // Command gate: ask the top control frame what to do with this
+      // now-formalized command before dispatching it.
       const { stack } = machine
       const top = stack[stack.length-1]
+      let decision = CommandDecision.Run
       if ( top ) {
         const hook = top.command[Hooks.Stack]
         if ( hook ) {
-          await hook( { machine, command, state: top.state } )
+          decision = ( await hook( { machine, command, state: top.state, frame: top } ) ) || CommandDecision.Run
         }
+      }
+
+      if ( decision === CommandDecision.Capture ) {
+        if ( top && top.capture && line.source ) top.capture.push( line.source )
+        return
+      }
+      if ( decision === CommandDecision.Skip ) {
+        return
+      }
+      if ( decision === CommandDecision.Error ) {
+        this.outputOk( 0 )
+        return
       }
 
       const impl = this.commands[command]

@@ -222,16 +222,18 @@ export default function ParseData( str:string, options:ParseOptions = {} ) : [ P
       str = str.substring( endIndex )
       break
     } else if ( ( match = str.match( referenceReg ) ) ) {
-      // Is reference
+      // Is reference. Always emit the reference; a bare $name (no subscript)
+      // reads the whole register at solve time. With a subscript, descend so
+      // the bracketed expression becomes reference.subscript.
       const register = match[1] ? match[1] : null
       const subscriptStart = match[2]
-      const subscript = subscriptStart ? [] : {}
       const reference = { register, subscript: [] }
 
+      currentList.push( reference as Reference )
+
       if ( subscriptStart ) {
-        currentList.push( reference as Reference )
         subscriptStack.push( reference )
-        currentList = reference.subscript        
+        currentList = reference.subscript
       }
     } else if ( ( match = str.match( hexNumber ) ) ) {
       // Hex number

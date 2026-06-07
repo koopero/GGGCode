@@ -4,7 +4,7 @@ import { ArgsBufferIndex, ArgsBufferRef, ArgsBufferStorage,
   ArgsDimension, ArgsName, ArgsPosition, ArgsSize, ArgsEncoding } from "./common"
 import { ArgType } from "../ggg/Language"
 
-import { MatrixListHooks } from "./MatrixList"
+import { MatrixListForNamespace } from "./MatrixList"
 import { MatrixInitHooks } from "./MatrixInit"
 import { MatrixWatchHooks } from "./MatrixWatch"
 import { MatrixReadForNamespace } from "./MatrixRead"
@@ -16,6 +16,7 @@ import { MatrixWriteHooks } from "./MatrixWrite"
 function GXCommandsForNamespace( namespace?: GXNamespaceArg ) {
   namespace = namespace || GXNamespace
   const { MatrixReadHooks } = MatrixReadForNamespace( namespace )
+  const { MatrixListHooks } = MatrixListForNamespace( namespace )
   const { code } = namespace
   const { 
     MatrixInit, 

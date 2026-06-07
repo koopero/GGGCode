@@ -82,6 +82,18 @@ export enum Hooks {
   End = "hookEnd",
 }
 
+// Decision returned by a control frame's Stack hook once a command is
+// formalized (its name is known). Run dispatches normally; Capture appends the
+// line's raw source to the frame body without dispatching; Skip consumes and
+// discards the line; Error emits O0 and consumes the line. A frame that returns
+// nothing is treated as Run. Mirrored hand-written in C++ (CommandDecision).
+export enum CommandDecision {
+  Run = "run",
+  Capture = "capture",
+  Skip = "skip",
+  Error = "error",
+}
+
 export type CommandArgDescribed = {
   description?: string,
   required?: boolean,
@@ -154,6 +166,8 @@ export type Token = {
   command?:string
   args?:Token[]
   data?:Primitive|Primitive[]
+  source?:string
+  eol?:boolean   // a complete output line; Format terminates it with a newline
 }
 
 export type ParseOptions = {
@@ -172,9 +186,10 @@ export type HookArgs = {
   code?:string,
   value?:number|string,
   arg?:TokenArg,
+  frame?:any,
 }
 
-type HookCallback = ( arg:HookArgs ) => Promise<any> | void
+type HookCallback = ( arg:HookArgs ) => Promise<any> | CommandDecision | void
 export type Commands = { [key:string]:Command }
 export enum CommandConvention {
   List = 1,

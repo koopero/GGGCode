@@ -29,7 +29,10 @@ const BufferDefaults = {
   index: -1,
   name: "",
   storage: 0,
-  dim: [1,1,1,1],
+  // Empty = an unsized matrix (size 0). Previously [1,1,1,1], which only worked
+  // because trailing-1 dims collapsed all the way to []; now that the collapse
+  // keeps the last dimension, [] is the explicit way to mean "no data yet".
+  dim: [],
 }
 
 type resizeProps = {
@@ -113,7 +116,7 @@ export default class Matrix extends EventEmitter {
       }
     }
 
-    while( dim[dim.length-1] == 1 ) {
+    while( dim.length > 1 && dim[dim.length-1] == 1 ) {
       dim.pop()
     }
 

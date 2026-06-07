@@ -9,4 +9,7 @@ export const CxxMachineLimits = {
   maxOperations: 1024,
   maxRegisters: 256,
   maxRegisterSize: 0x10000,
+  // Upper bound on queued procedure-body lines (flow control), guarding against
+  // runaway recursion / unbounded queue growth when re-running procedures.
+  maxQueue: 1024,
 }

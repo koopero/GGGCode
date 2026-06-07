@@ -1,5 +1,6 @@
 
-import { GGG, HookArgs, Hooks } from "../ggg/Language"
+import { HookArgs, Hooks } from "../ggg/Language"
+import Matrix from "../ggg/Matrix"
 import { GXCommandNumbers, GXNamespaceArg } from "./GXLanguage"
 
 export function MatrixListForNamespace( namespace?: GXNamespaceArg ) {
@@ -17,7 +18,20 @@ export function MatrixListForNamespace( namespace?: GXNamespaceArg ) {
   }
 
   function MatrixListHookEnd( arg: HookArgs ) {
-    const { machine, state } = arg
+    const { machine } = arg
+
+    machine.output( { code: commandName( MatrixListResponse ), comment: "List buffers", eol: true } )
+
+    // Enumerate the matrix registers G30 created; one comment line each (the
+    // D1 / R1 "list as comments" convention). eol marks each as a complete line.
+    const registers = machine.getRegisterList( Matrix )
+    registers.eachPair( ( buffer, key ) => {
+      const matrix = buffer as Matrix
+      const dim = matrix.getDimensions()
+      const storage = ( matrix.storage && matrix.storage.name ) || ""
+      machine.output( { comment: `${key}: [${dim}] ${storage}`, eol: true } )
+    } )
+
     machine.outputOk()
   }
 

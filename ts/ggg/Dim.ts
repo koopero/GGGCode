@@ -43,7 +43,7 @@ export function DimFrom( dim: DimArg ) : Dimensions {
     dim = dim.map( d => max( 1, ceil( d ) || 0 ) )
   }
 
-  while ( dim[dim.length-1] == 1 ) {
+  while ( dim.length > 1 && dim[dim.length-1] == 1 ) {
     dim.pop()
   }
 

@@ -155,6 +155,87 @@
     "expected": "V111,112,121,122,211,212,221,222\nOK"
   },
   {
+    "name": "flow_define_only",
+    "program": "T10 L\"p\"\nP10 V42\nT0",
+    "expected": ""
+  },
+  {
+    "name": "flow_define_run",
+    "program": "T10 L\"p\"\nP10 V42\nT0\nT11 L\"p\"",
+    "expected": "V42\nOK"
+  },
+  {
+    "name": "flow_unknown",
+    "program": "T11 L\"nope\"",
+    "expected": "OZ"
+  },
+  {
+    "name": "flow_nested",
+    "program": "T10 L\"outer\"\nT10 L\"inner\"\nP10 V7\nT0\nT0\nT11 L\"outer\"\nT11 L\"inner\"",
+    "expected": "V7\nOK"
+  },
+  {
+    "name": "ref_bare",
+    "program": "P10 V$r",
+    "expected": "V10,20,30\nOK"
+  },
+  {
+    "name": "ref_two",
+    "program": "P10 V$r W$r",
+    "expected": "V10,20,30 W10,20,30\nOK"
+  },
+  {
+    "name": "ref_unknown",
+    "program": "P10 V$x",
+    "expected": "\nOK"
+  },
+  {
+    "name": "ref_subscript",
+    "program": "P10 V$r[1]",
+    "expected": "V20\nOK",
+    "cxxSkip": "subscript references not yet ported to C++ (bare reads whole register)"
+  },
+  {
+    "name": "cond_all_true",
+    "program": "T9 A1\nP10 V42\nT0",
+    "expected": "V42\nOK"
+  },
+  {
+    "name": "cond_all_false",
+    "program": "T9 A0\nP10 V42\nT0",
+    "expected": ""
+  },
+  {
+    "name": "cond_all_mixed",
+    "program": "T9 A1,0\nP10 V42\nT0",
+    "expected": ""
+  },
+  {
+    "name": "cond_any_true",
+    "program": "T9 O0,0,1\nP10 V42\nT0",
+    "expected": "V42\nOK"
+  },
+  {
+    "name": "cond_any_false",
+    "program": "T9 O0,0,0\nP10 V42\nT0",
+    "expected": ""
+  },
+  {
+    "name": "cond_nested_skip",
+    "program": "T9 A0\nT9 A1\nP10 V1\nT0\nT0\nP10 V2",
+    "expected": "V2\nOK"
+  },
+  {
+    "name": "iter_single",
+    "program": "T9 V5 R\"it\"\nP10 V$it\nT0",
+    "expected": "V5\nOK"
+  },
+  {
+    "name": "iter_zero",
+    "program": "T9 V$x R\"it\"\nP10 V$it\nT0",
+    "expected": ""
+  },
+  {
     "name": "unitary_pi",
     "program": "P10 Vπ",
     "expected": "V3.141592653589793\nOK",

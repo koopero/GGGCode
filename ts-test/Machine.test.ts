@@ -29,7 +29,7 @@ describe("Machine", () => {
     })
 
     const result = await machine.run( "Q1 V2,3,4\n" )
-    expect( result ).toEqual( [ { code: "OK" } ] )
+    expect( result ).toEqual( [ { code: "OK", eol: true } ] )
     expect( onCommand ).toHaveBeenCalledTimes( 1 )
     expect( onCommand ).toHaveBeenCalledWith( expect.objectContaining( { machine, command: "Q1" } ) )
     expect( onCode ).toHaveBeenCalledTimes( 1 )

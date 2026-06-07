@@ -208,13 +208,14 @@ export default function Format( token : FormatProps = "" ) {
   }
 
   if ( isObject( token ) ) {
-    const { 
+    const {
       code,
       command,
-      encoding, 
-      args, 
-      data, 
+      encoding,
+      args,
+      data,
       comment,
+      eol,
     } = token
 
 
@@ -236,6 +237,12 @@ export default function Format( token : FormatProps = "" ) {
     if ( comment ) {
       if ( !comment.startsWith(";") ) result += "; "
       result += comment
+    }
+
+    // A complete-line token terminates with a newline. String fragments and
+    // nested arg sub-tokens (which never set eol) are unaffected.
+    if ( eol && result.length && !result.endsWith( GGG.End ) ) {
+      result += GGG.End
     }
 
     return result

@@ -15,5 +15,7 @@
     "ts/ggggx/LoadPNG.ts",
     "ts/gggpx/PrintCommands.ts",
     "ts/ggggx/GXCommands.ts",
+    "ts/gggtx/gggtxCommands.ts",
+    "ts/gggdx/DocCommands.ts",
   ]
 }

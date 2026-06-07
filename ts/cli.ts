@@ -36,6 +36,11 @@ export function addStandardOptions( parser ) {
       describe: "Load builtin extension",
       type: "string",
     },
+    "all": {
+      alias: "a",
+      describe: "Load all builtin extensions",
+      type: "boolean",
+    },
     "module": {
       alias: "m",
       describe: "Load commands from module",
@@ -65,6 +70,10 @@ export function addStandardOptions( parser ) {
   })
 }
 
+
+// Canonical names of every built-in extension, in load order. Used by the
+// `--all` / `-a` option to load them all.
+const builtinExtensions = [ "gggpx", "ggggx", "gggtx", "gggdx" ]
 
 function loadCommandsFromBuiltinExtension( name:string ) {
   switch( name ) {
@@ -108,6 +117,12 @@ export function runCLI() {
 
   let commands = {}
 
+  if ( options.all ) {
+    builtinExtensions.forEach( name => {
+      commands = { ...commands, ...loadCommandsFromBuiltinExtension( name ) }
+    })
+  }
+
   if ( options.extension ) {
     const extension = isArray( options.extension ) ? options.extension : [ options.extension ]
     extension.forEach( name => {
@@ -144,17 +159,14 @@ export function runCLI() {
     return machine
   }
 
-  function output( line ) {
-    if ( options.quiet )
-      return
-    console.log( line )
-  }
-
   const machine = machineGenerator()
 
-  machine.on( "output", line => {
-    line = Format( line )
-    process.stdout.write( line )
+  machine.on( "output", token => {
+    if ( options.quiet )
+      return
+    // Newline termination is intrinsic to the token (eol flag, handled by
+    // Format) — complete-line tokens self-terminate, string fragments don't.
+    process.stdout.write( Format( token ) )
   })
 
   const files = options._

@@ -34,14 +34,14 @@ export enum gggdxCodes {
 function hookD1End( arg ) {
   const { machine } = arg
 
-  machine.output( { code:gggdxCodes.ListCommandsResponse, comment: description } )
+  machine.output( { code:gggdxCodes.ListCommandsResponse, comment: description, eol: true } )
 
   const { commands } = machine
 
   for ( const command in commands ) {
     const impl = commands[command]
     const { description = "", args } = impl
-    machine.output( { comment: `${command} : ${description}` } )
+    machine.output( { comment: `${command} : ${description}`, eol: true } )
     
     if ( args )
       for ( const key in args ) {
@@ -52,12 +52,12 @@ function hookD1End( arg ) {
           options
         } = arg
 
-        machine.output( { comment: `  ${key}${format} ; ${description}` } )
+        machine.output( { comment: `  ${key}${format} ; ${description}`, eol: true } )
 
         if ( options ) {
           options.eachPair( ( option, key ) => {
             const { description = "" } = option
-            machine.output( { comment: `    ${key} ; ${description}` } )
+            machine.output( { comment: `    ${key} ; ${description}`, eol: true } )
           })
         }
       }

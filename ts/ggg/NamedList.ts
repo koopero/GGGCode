@@ -85,13 +85,20 @@ export default class NamedList<T extends NamedListItem> {
       return list[0]
     }
 
-    if ( isString( key ) && key in named ) {
-      return named[key]
+    if ( isString( key ) ) {
+      // Name match wins; a numeric string falls back to an index lookup; an
+      // unknown name returns undefined (NOT list[0] — that silent fallback was
+      // a footgun that resolved unknown registers/procedures to index 0).
+      if ( key in named ) return named[key]
+      const index = parseInt( key )
+      return isNaN( index ) ? undefined : list[index]
     }
 
-    key = parseInt( key as string ) || 0
+    if ( isNumber( key ) ) {
+      return list[key]
+    }
 
-    return this.list[key]
+    return undefined
   }
 
   eachPair( callback:( item:T, key:string ) => any ) {

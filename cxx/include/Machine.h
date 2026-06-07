@@ -5,6 +5,7 @@
 #include "./Command.h"
 #include "./Matrix.h"
 #include "./Solve.h"
+#include "./Flow.h"
 #include "./ggg/Limits.h"
 
 namespace ggg {
@@ -15,6 +16,14 @@ namespace ggg {
 
     bool skipData = false;
     bool skipLine = false;
+
+    // Flow control: record the raw line source (comments excluded) so a capture
+    // frame can store a procedure body verbatim; captureLine commits it on EOL.
+    bool recording = true;
+    bool captureLine = false;
+
+    // Reference parsing ($name): true while consuming a deferred [subscript].
+    bool refSkipSub = false;
 
     Index index = 0;
     Index col = 0;
@@ -50,6 +59,14 @@ namespace ggg {
     List<MatrixBase> *registers = new List<MatrixBase>();
     List<CommandType> *commands = new List<CommandType>();
 
+    // Flow control: active control frames (the command gate consults the top
+    // one), procedure bodies (T registers), and a pending-lines queue that T11
+    // drains after the current line so re-running a body is not re-entrant.
+    std::vector<ControlFrame*> frames;
+    List<TProcedure> *procedures = new List<TProcedure>();
+    std::vector<PendingItem> pending;
+    bool draining = false;
+
     Machine() {
       resetLine();
     }
@@ -67,6 +84,10 @@ namespace ggg {
       state.lineMode = GGG::Command;
       state.expressionMode = GGG::Code;
       state.argBuffer.clear();
+      state.line.clear();
+      state.recording = true;
+      state.captureLine = false;
+      state.refSkipSub = false;
     }
 
     void run( String _code ) {
@@ -87,6 +108,13 @@ namespace ggg {
       if ( _char == End ) {
         finishLine();
         return;
+      }
+
+      // Record raw line source for flow-control capture. Stops at a comment so
+      // captured procedure bodies exclude comments (matches TS ParseLine).
+      if ( state.recording ) {
+        if ( _char == GGG::Comment ) state.recording = false;
+        else state.line += _char;
       }
 
       if ( state.expressionMode == GGG::Data && state.dataMode == GGG::StringToEOL ) {
@@ -161,7 +189,7 @@ namespace ggg {
             break;
 
           case GGG::Register:
-            // parseRegister( _char );
+            parseRegister( _char );
             break;
 
           case GGG::Data:
@@ -204,6 +232,13 @@ namespace ggg {
         state.dataMode = GGG::Zero;
       } else if ( _char == GGG::Quote ) {
         startQuotedString();
+      } else if ( _char == GGG::Reference ) {
+        // Start of a $name reference. Only bare references (read whole register)
+        // are ported to C++; a following [subscript] is consumed and ignored
+        // (TS-only for now -- see ggg-cxx-port memory / offset-refs follow-up).
+        state.expressionMode = GGG::Register;
+        state.argBuffer.clear();
+        state.refSkipSub = false;
       } else if ( isNumberStart( _char ) ) {
         startNumber();
         bufferAppend( _char );
@@ -308,6 +343,58 @@ namespace ggg {
       state.expressionMode = GGG::Encoding;
     }
 
+    // Streaming $name reference parser. Accumulates the register name; a bare
+    // reference reads the whole register (every scalar in order), emitting each
+    // value through dataAppend like any other parsed value. A '[' subscript is
+    // consumed up to its ']' and ignored (bare read), pending the offset-refs
+    // port. Mirrors the bare-reference path of Solve.solveReference in TS.
+    void parseRegister( Char _char ) {
+      if ( state.refSkipSub ) {
+        if ( _char == GGG::SubscriptEnd ) {
+          state.refSkipSub = false;
+          finishReference();
+        }
+        return;
+      }
+      bool isNameChar =
+        ( _char >= 'a' && _char <= 'z' ) || ( _char >= 'A' && _char <= 'Z' ) ||
+        ( _char >= '0' && _char <= '9' ) || _char == '_';
+      if ( isNameChar ) {
+        state.argBuffer += _char;
+        return;
+      }
+      if ( _char == GGG::Subscript ) {       // '[' -> defer/consume subscript
+        state.refSkipSub = true;
+        return;
+      }
+      finishReference();
+      parseEndOfNumber( _char );             // handle space/comma/range terminator
+    }
+
+    void finishReference() {
+      state.expressionMode = GGG::Encoding;
+      if ( !state.argBuffer.empty() ) {
+        resolveReference( state.argBuffer );
+        state.argBuffer.clear();
+      }
+    }
+
+    void resolveReference( const String & name ) {
+      MatrixBase * reg = registers->getByName( name );
+      if ( !reg && !name.empty() ) {
+        // Numeric name falls back to an index lookup (matches TS NamedList.get),
+        // so $0 reads register index 0.
+        bool numeric = true;
+        for ( char c : name ) if ( c < '0' || c > '9' ) { numeric = false; break; }
+        if ( numeric ) reg = registers->getByIndex( std::stoi( name ) );
+      }
+      if ( !reg ) return;                    // unknown register -> no values
+      Index n = reg->sizeScalar();
+      for ( Index i = 0; i < n; i++ ) {
+        dataAppend( reg->readScalarFloat( i, 0. ) );
+      }
+    }
+
     void parseHex( Char _char ) {
       bool wasHex = false;
       int digit = 0;
@@ -376,6 +463,12 @@ namespace ggg {
     }
 
     void finishArg() {
+      // Resolve a pending bare reference whose terminator was end-of-line (so
+      // parseRegister never saw a separator).
+      if ( state.expressionMode == GGG::Register ) {
+        state.refSkipSub = false;
+        finishReference();
+      }
       finishCompound();
       switch ( state.expressionMode ) {
         case GGG::Data:
@@ -419,7 +512,12 @@ namespace ggg {
       if ( command ) {
         command->hookFinish();
       }
+      // Commit a captured body line to the top frame (gate decided Capture).
+      if ( state.captureLine && !frames.empty() ) {
+        frames.back()->captureLine( trimSource( state.line ) );
+      }
       resetLine();
+      drainPending();
     }
 
 
@@ -503,6 +601,23 @@ namespace ggg {
         std::ostringstream oss;
         oss << state.code  << commandNumber;
         String commandName = oss.str();
+
+        // Command gate: before dispatching a now-formalized command, let the top
+        // control frame decide run/capture/skip/error. On capture/skip the rest
+        // of the line is consumed (Skip mode) without dispatching command hooks;
+        // source recording continues so the line can be committed at EOL.
+        if ( !frames.empty() ) {
+          CommandView view{ commandName, state.code, number };
+          CommandDecision decision = frames.back()->beforeCommand( *this, view );
+          if ( decision != CommandDecision::Run ) {
+            if ( decision == CommandDecision::Capture ) state.captureLine = true;
+            else if ( decision == CommandDecision::Error ) outputOK( 0 );
+            command = nullptr;
+            state.lineMode = GGG::Skip;
+            return;
+          }
+        }
+
         CommandType *commandNext = commands->getByName( commandName );
 
         if ( commandNext ) {
@@ -539,6 +654,99 @@ namespace ggg {
 
     MatrixBase * getRegister( Index index ) {
       return registers->getByIndex( index );
+    }
+
+    // --- Control frames + procedures --------------------------------------
+
+    void pushFrame( ControlFrame * frame ) {
+      frames.push_back( frame );
+    }
+
+    void popFrame() {
+      if ( !frames.empty() ) {
+        delete frames.back();
+        frames.pop_back();
+      }
+    }
+
+    // Resolve a procedure body by name, optionally creating it. Bodies live in
+    // the T-owned `procedures` list, addressable by name (L) or index (R).
+    TProcedure * getProcedure( const String & name, bool create ) {
+      TProcedure * reg = procedures->getByName( name );
+      if ( !reg && create ) {
+        reg = new TProcedure();
+        reg->name = name;
+        procedures->append( reg );
+      }
+      return reg;
+    }
+
+    // Queue procedure source lines to run after the current line. Inserting at
+    // the front keeps nested calls (a body that runs another procedure) in the
+    // right order, mirroring the TS splice-after-current. Bounded by maxQueue.
+    void enqueueLines( const std::vector<String> & lines ) {
+      if ( limits.maxQueue && (Int)( pending.size() + lines.size() ) > limits.maxQueue ) {
+        outputOK( 0 );
+        return;
+      }
+      std::vector<PendingItem> items;
+      for ( const String & l : lines ) items.push_back( { false, l, {} } );
+      pending.insert( pending.begin(), items.begin(), items.end() );
+    }
+
+    // Run a captured body once per value, writing each value into the iteration
+    // register (callback) immediately before its body copy so the body reads the
+    // current value via a reference ($name / $index). Bounded by maxQueue.
+    void enqueueLoop( const std::vector<NumberType> & values, const std::vector<String> & body,
+                      bool hasReg, bool regByName, const String & regName, Index regIndex ) {
+      std::vector<PendingItem> items;
+      for ( NumberType v : values ) {
+        if ( hasReg ) {
+          items.push_back( { true, "", [this, v, hasReg, regByName, regName, regIndex]() {
+            this->setIterRegister( regByName, regName, regIndex, v );
+          } } );
+        }
+        for ( const String & l : body ) items.push_back( { false, l, {} } );
+      }
+      if ( limits.maxQueue && (Int)( pending.size() + items.size() ) > limits.maxQueue ) {
+        outputOK( 0 );
+        return;
+      }
+      pending.insert( pending.begin(), items.begin(), items.end() );
+    }
+
+    // Write a scalar into the iteration register (a single-element Matrix,
+    // addressable by name or index), creating it if missing, so a loop body can
+    // read it as $name / $index.
+    void setIterRegister( bool byName, const String & name, Index index, NumberType value ) {
+      MatrixBase * reg = byName ? registers->getByName( name ) : registers->getByIndex( index );
+      if ( !reg ) {
+        auto * m = new Matrix<float, false>( { 1 } );   // single scalar
+        m->allocate();
+        if ( byName ) m->name = name;
+        addRegister( m );
+        reg = m;
+      }
+      reg->writeScalarFloat( value, 0 );
+    }
+
+    // Drain queued procedure/loop items by feeding lines back through the parser
+    // and running callbacks. The re-entrancy guard lets a nested enqueue (from a
+    // body line) push onto the front while this outer loop keeps draining in order.
+    void drainPending() {
+      if ( draining ) return;
+      draining = true;
+      while ( !pending.empty() ) {
+        PendingItem item = pending.front();
+        pending.erase( pending.begin() );
+        if ( item.isCallback ) {
+          if ( item.callback ) item.callback();
+        } else {
+          String line = item.line + (char) GGG::End;
+          for ( Char c : line ) parse( c );
+        }
+      }
+      draining = false;
     }
 
     // All command output funnels through write(). Override it to redirect

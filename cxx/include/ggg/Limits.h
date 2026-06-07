@@ -9,5 +9,6 @@ namespace ggg {
     Index maxOperations = 1024;
     Index maxRegisters = 256;
     Index maxRegisterSize = 65536;
+    Index maxQueue = 1024;
   };
 }

@@ -112,7 +112,7 @@ export function MatrixReadForNamespace( namespace?: GXNamespaceArg ) {
 
     const { index, dim, size:bufferSize } = buffer
     for ( const line of MatrixReadCode( buffer, { header: false, encoding, region: [ offset, offset + size ] } ) ) {
-      machine.output( line )
+      machine.output( { ...line, eol: true } )
     }
 
     machine.outputOk()

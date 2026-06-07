@@ -56,6 +56,18 @@ export function* Solve( arg:SolveArgument, options:SolveOptions = {
     const { register, subscript } = value
     const reg = MatrixResolve && MatrixResolve( register )
     if ( reg ) {
+      // Bare $name (no subscript) reads the whole register in order; $name[...]
+      // resolves the subscript against the register's dimensions.
+      if ( !subscript || ( isArray( subscript ) && subscript.length === 0 ) ) {
+        const size = reg.getSize()
+        for ( let i = 0; i < size; i++ ) {
+          const val = reg.readNumber( i )
+          if ( isUsable( val ) ) {
+            yield val
+          }
+        }
+        return
+      }
       for ( const index of solve( subscript, reg ) ) {
         if ( isNumber( index ) ) {
           const val = reg.readNumber( index )

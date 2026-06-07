@@ -7,6 +7,7 @@
 #include "Print.h"
 #include "MatrixCommands.h"
 #include "DocCommands.h"
+#include "FlowCommands.h"
 #include "gen/conformance_cases.h"
 
 // Test functions
@@ -150,6 +151,18 @@ struct ConformanceMachine : public ggg::Machine {
   void setup() override {
     addCommand( new ggg::PrintNumbers() );
     addCommand( new ggg::PrintString() );
+    addCommand( new ggg::ProcedureInit() );
+    addCommand( new ggg::BlockEnd() );
+    addCommand( new ggg::ProcedureRun() );
+    addCommand( new ggg::Conditional() );
+    // A fixed register "r" = [10,20,30] so reference cases ($r) have data.
+    auto *reg = new ggg::Matrix<float,false>( {1,3} );
+    reg->allocate();
+    reg->name = "r";
+    reg->writeScalarFloat( 10, 0 );
+    reg->writeScalarFloat( 20, 1 );
+    reg->writeScalarFloat( 30, 2 );
+    addRegister( reg );
   }
 };
 
@@ -273,6 +286,176 @@ void test_string_arg() {
   TEST_ASSERT_EQUAL_INT( 0, (int) m.cmd.vals.size() );
 }
 
+// Flow control: procedures via the command gate (T10 define / T0 end / T11 run).
+struct FlowMachine : public ggg::Machine {
+  std::string out;
+  void write( const ggg::String &s ) override { out += s; }
+  void setup() override {
+    addCommand( new ggg::PrintNumbers() );
+    addCommand( new ggg::ProcedureInit() );
+    addCommand( new ggg::BlockEnd() );
+    addCommand( new ggg::ProcedureRun() );
+    addCommand( new ggg::Conditional() );
+  }
+};
+
+void test_flow_procedures() {
+  // Defining a procedure does not execute its body.
+  {
+    FlowMachine m; m.setup();
+    m.run( "T10 L\"p\"\nP10 V42\nT0\n" );
+    TEST_ASSERT_EQUAL_STRING( "", m.out.c_str() );
+    ggg::TProcedure *p = m.getProcedure( "p", false );
+    TEST_ASSERT_NOT_NULL( p );
+    TEST_ASSERT_EQUAL_INT( 1, (int) p->lines.size() );
+    TEST_ASSERT_EQUAL_STRING( "P10 V42", p->lines[0].c_str() );
+  }
+
+  // Running a procedure executes its body in order.
+  {
+    FlowMachine m; m.setup();
+    m.run( "T10 L\"p\"\nP10 V1\nP10 V2\nT0\nT11 L\"p\"\n" );
+    TEST_ASSERT_EQUAL_STRING( "V1\nOK\nV2\nOK\n", m.out.c_str() );
+  }
+
+  // Redefining a procedure overwrites the previous body.
+  {
+    FlowMachine m; m.setup();
+    m.run( "T10 L\"p\"\nP10 V1\nT0\nT10 L\"p\"\nP10 V2\nT0\nT11 L\"p\"\n" );
+    TEST_ASSERT_EQUAL_STRING( "V2\nOK\n", m.out.c_str() );
+  }
+
+  // Running an unknown procedure returns O0 (rendered OZ).
+  {
+    FlowMachine m; m.setup();
+    m.run( "T11 L\"nope\"\n" );
+    TEST_ASSERT_EQUAL_STRING( "OZ\n", m.out.c_str() );
+  }
+
+  // Nested definition is captured as source; inner defined only when outer runs.
+  {
+    FlowMachine m; m.setup();
+    m.run( "T10 L\"outer\"\nT10 L\"inner\"\nP10 V7\nT0\nT0\n" );
+    TEST_ASSERT_NULL( m.getProcedure( "inner", false ) );  // not defined yet
+    m.run( "T11 L\"outer\"\n" );                            // defines inner
+    TEST_ASSERT_EQUAL_STRING( "", m.out.c_str() );
+    TEST_ASSERT_NOT_NULL( m.getProcedure( "inner", false ) );
+    m.run( "T11 L\"inner\"\n" );                            // now runs inner
+    TEST_ASSERT_EQUAL_STRING( "V7\nOK\n", m.out.c_str() );
+  }
+
+  // A procedure can call another procedure (ordering via front-insert).
+  {
+    FlowMachine m; m.setup();
+    m.run( "T10 L\"a\"\nP10 V1\nT0\nT10 L\"b\"\nT11 L\"a\"\nP10 V2\nT0\nT11 L\"b\"\n" );
+    TEST_ASSERT_EQUAL_STRING( "V1\nOK\nV2\nOK\n", m.out.c_str() );
+  }
+}
+
+// References: a bare $name reads the whole register; unknown -> no values.
+struct RefMachine : public ggg::Machine {
+  std::string out;
+  void write( const ggg::String &s ) override { out += s; }
+  void setup() override { addCommand( new ggg::PrintNumbers() ); }
+};
+
+void test_references() {
+  RefMachine m; m.setup();
+  auto mat = new ggg::Matrix<float,false>( {1,3} );   // 1 component x 3 = size 3
+  mat->allocate();
+  mat->name = "r";
+  mat->writeScalarFloat( 10, 0 );
+  mat->writeScalarFloat( 20, 1 );
+  mat->writeScalarFloat( 30, 2 );
+  m.addRegister( mat );
+
+  m.run( "P10 V$r\n" );                       // bare ref -> whole register
+  TEST_ASSERT_EQUAL_STRING( "V10,20,30\nOK\n", m.out.c_str() );
+
+  m.out.clear();
+  m.run( "P10 V$r W$r\n" );                   // ref mid-line, then another
+  TEST_ASSERT_EQUAL_STRING( "V10,20,30 W10,20,30\nOK\n", m.out.c_str() );
+
+  m.out.clear();
+  m.run( "P10 V$x\n" );                       // unknown register -> no values
+  TEST_ASSERT_EQUAL_STRING( "\nOK\n", m.out.c_str() );
+
+  delete mat;
+}
+
+// Flow control: T9 one-shot conditionals (A=all truthy, O=any truthy).
+void test_flow_conditionals() {
+  // A1 runs; A0 skips.
+  {
+    FlowMachine m; m.setup();
+    m.run( "T9 A1\nP10 V42\nT0\n" );
+    TEST_ASSERT_EQUAL_STRING( "V42\nOK\n", m.out.c_str() );
+  }
+  {
+    FlowMachine m; m.setup();
+    m.run( "T9 A0\nP10 V42\nT0\n" );
+    TEST_ASSERT_EQUAL_STRING( "", m.out.c_str() );
+  }
+  // A requires all truthy; O requires any truthy.
+  {
+    FlowMachine m; m.setup();
+    m.run( "T9 A1,0\nP10 V42\nT0\n" );
+    TEST_ASSERT_EQUAL_STRING( "", m.out.c_str() );
+  }
+  {
+    FlowMachine m; m.setup();
+    m.run( "T9 O0,0,1\nP10 V42\nT0\n" );
+    TEST_ASSERT_EQUAL_STRING( "V42\nOK\n", m.out.c_str() );
+  }
+  // A skipped conditional swallows a nested block; execution resumes after.
+  {
+    FlowMachine m; m.setup();
+    m.run( "T9 A0\nT9 A1\nP10 V1\nT0\nT0\nP10 V2\n" );
+    TEST_ASSERT_EQUAL_STRING( "V2\nOK\n", m.out.c_str() );
+  }
+  // A true conditional runs a nested conditional.
+  {
+    FlowMachine m; m.setup();
+    m.run( "T9 A1\nT9 A1\nP10 V1\nT0\nT0\n" );
+    TEST_ASSERT_EQUAL_STRING( "V1\nOK\n", m.out.c_str() );
+  }
+  // A procedure body may contain conditionals.
+  {
+    FlowMachine m; m.setup();
+    m.run( "T10 L\"p\"\nT9 A1\nP10 V1\nT0\nT9 A0\nP10 V2\nT0\nT0\nT11 L\"p\"\n" );
+    TEST_ASSERT_EQUAL_STRING( "V1\nOK\n", m.out.c_str() );
+  }
+}
+
+// Flow control: T9 V per-value iteration with a name/index iteration register.
+// The register name is given as a string under code R (R"it"), matching TS.
+void test_flow_iteration() {
+  // Iterate explicit values, exposing the value as $it.
+  {
+    FlowMachine m; m.setup();
+    m.run( "T9 V10,20,30 R\"it\"\nP10 V$it\nT0\n" );
+    TEST_ASSERT_EQUAL_STRING( "V10\nOK\nV20\nOK\nV30\nOK\n", m.out.c_str() );
+  }
+  // Iterate a range.
+  {
+    FlowMachine m; m.setup();
+    m.run( "T9 V0:3 R\"it\"\nP10 V$it\nT0\n" );
+    TEST_ASSERT_EQUAL_STRING( "V0\nOK\nV1\nOK\nV2\nOK\nV3\nOK\n", m.out.c_str() );
+  }
+  // Iteration register addressable by index (R0 -> read $0).
+  {
+    FlowMachine m; m.setup();
+    m.run( "T9 V7,8 R0\nP10 V$0\nT0\n" );
+    TEST_ASSERT_EQUAL_STRING( "V7\nOK\nV8\nOK\n", m.out.c_str() );
+  }
+  // Iteration inside a procedure body.
+  {
+    FlowMachine m; m.setup();
+    m.run( "T10 L\"p\"\nT9 V1,2 R\"i\"\nP10 V$i\nT0\nT0\nT11 L\"p\"\n" );
+    TEST_ASSERT_EQUAL_STRING( "V1\nOK\nV2\nOK\n", m.out.c_str() );
+  }
+}
+
 // Run all tests
 int main() {
   UNITY_BEGIN();
@@ -282,6 +465,10 @@ int main() {
   RUN_TEST(test_matrix_commands);
   RUN_TEST(test_doc_commands);
   RUN_TEST(test_string_arg);
+  RUN_TEST(test_references);
+  RUN_TEST(test_flow_procedures);
+  RUN_TEST(test_flow_conditionals);
+  RUN_TEST(test_flow_iteration);
   RUN_TEST(test_conformance);
   UNITY_END();
   return 0;

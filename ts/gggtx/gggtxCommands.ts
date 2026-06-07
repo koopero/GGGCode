@@ -1,198 +1,193 @@
 
 import { isString } from "../common/util"
-import { FormatData } from "../ggg/Format"
-import { GGG, CommandConvention, Hooks } from "../ggg/Language"
-const gggtxRegisterPrefix = "R"
+import { GGG, Hooks, Command, Commands, CommandDecision, ArgType, HookArgs } from "../ggg/Language"
 
 const gggtxFlowPrefix = "T"
 
 export enum gggtxCodes {
-  RegisterIndex = gggtxRegisterPrefix,
-  Value = GGG.Data,
-
-  ListRegisters = `${gggtxRegisterPrefix}${CommandConvention.List}`,
-  ListRegistersResponse = `${gggtxRegisterPrefix}${CommandConvention.ListResponse}`,
-  OutputRegisters = `${gggtxRegisterPrefix}${CommandConvention.Output}`,
-  WriteRegisters = `${gggtxRegisterPrefix}${CommandConvention.Write}`,
-
-  BlockEnd = `${gggtxFlowPrefix}1`,
+  BlockEnd = `${gggtxFlowPrefix}0`,
+  Conditional = `${gggtxFlowPrefix}9`,
   ProcedureInit = `${gggtxFlowPrefix}10`,
   ProcedureRun = `${gggtxFlowPrefix}11`,
-  Loop = `${gggtxFlowPrefix}30`,
 }
 
-const RegisterIndexArg = {
-  type: "*",
-  description: "Register index",
+// --- Flow control: procedures via the command gate ---------------------
+//
+// T10 L"name" opens a capture frame; every following command is stored as raw
+// source until the matching T0; T11 L"name" re-enqueues that source to run.
+// The frame carries a depth counter so a nested T10/T0 pair is captured as text
+// rather than terminating the outer definition. The machine appends captured
+// source to frame.capture (see Machine.execLine); this hook decides run vs
+// capture vs skip and commits the body on close.
+
+// Marker object used as the register-class key for procedure bodies. Bodies are
+// addressable by both R index and L name through the shared NamedList.
+export const TProcedure = { name: "TProcedure" }
+
+type ProcedureRegister = {
+  name?: string
+  index?: number
+  lines: string[]
 }
 
-const ListRegistersDescription = "List registers"
-
-const gggtxRegisterCommands : Commands = {
-  [gggtxCodes.ListRegisters]: {
-    description: ListRegistersDescription,
-    [Hooks.Command]: ( args ) => {
-      const { machine, state } = args
-      state.hasListed = false
-      machine.output( { code: gggtxCodes.ListRegistersResponse, comment: ListRegistersDescription } )
-    },
-    [Hooks.Value]: ( arg ) => {
-      const { machine, state, value } = arg
-      const { registers } = machine
-
-      const register = registers.get( value )
-      if ( register ) {
-        state.hasListed = true
-        machine.output( { value: register } )
-      }
-    },
-    [Hooks.End]: ( arg ) => {
-      const { machine, state } = arg
-      if ( !state.hasListed ) {
-        const { registers } = machine
-        registers.eachPair( ( register, key ) => { 
-          const { data } = register
-          const description = FormatData( data )
-          const comment = `;  ${key}: ${description}`
-          machine.output( { comment } )
-        })
-      }
-    }
-  },
-  [gggtxCodes.WriteRegisters]: {
-    description: "Write registers",
-    args: {
-      [gggtxRegisterPrefix]: RegisterIndexArg,
-    },
-    [Hooks.Command]: ( args ) => {
-      const { machine, state } = args
-      state.register = null
-      state.writeIndex = 0
-    },
-    [Hooks.Value]: ( args ) => {
-      const { machine, state, code, value } = args
-      const { registers } = machine
-      switch ( code ) {
-        case gggtxCodes.RegisterIndex: {
-          const register = registers.get( value ) || registers.add( { data: [] }, value )
-          state.register = register
-          state.writeIndex = 0
-          break
-        }
-
-        case GGG.Register:
-          if ( isString( value ) ) {
-            if ( state.register ) {
-              state.register.name = value
-            } else {
-              state.register = registers.add( { data: [] }, value )
-            }
-          }
-          break
-
-        case GGG.Data:
-          if ( state.register ) {
-            state.register.data[state.writeIndex] = value
-            state.writeIndex++
-          }
-          break
-      }
-    },
-  },
-  [gggtxCodes.OutputRegisters]: {
-    description: "Output registers",
-    args: {
-      [gggtxRegisterPrefix]: RegisterIndexArg,
-    }
-  },
-}
-
-const BooleanCommandHookCommand = ( args ) => {
-  const { machine, state } = args
-  state.bool = false
-}
-
-const BooleanCommandHookValue = ( args ) => {
+const procedureNameHookValue = ( args:HookArgs ) => {
   const { state, code, value } = args
-  switch ( code ) {
-    case GGG.Data:
-      if ( value ) {
-        state.bool = true
-      }
-      break
+  if ( code === GGG.Alias && isString( value ) ) {
+    state.procName = value
   }
 }
 
-const LoopArgs = {
-  "E": {
-    description: "Loop each"
+// Commands that open a T0-terminated block. During capture, a nested opener
+// bumps the frame depth so its matching T0 is captured rather than closing the
+// outer frame.
+const isBlockOpener = ( command:string ) =>
+  command === gggtxCodes.ProcedureInit || command === gggtxCodes.Conditional
+
+// Shared capture-frame gate (the T10/T9 Hooks.Stack brain). Captures every
+// command into the frame body, tracking nested block depth; at the matching T0
+// (depth 0) it runs onClose, pops the frame, and consumes the T0.
+const captureGate = ( args:HookArgs, onClose:( machine:any, frame:any ) => void ) => {
+  const { machine, command, frame } = args
+  if ( command === gggtxCodes.BlockEnd ) {
+    if ( ( frame.depth || 0 ) === 0 ) {
+      onClose( machine, frame )
+      machine.popFrame()
+      return CommandDecision.Skip
+    }
+    frame.depth--
+    return CommandDecision.Capture
+  }
+  if ( isBlockOpener( command ) ) {
+    frame.depth = ( frame.depth || 0 ) + 1
+  }
+  return CommandDecision.Capture
+}
+
+const ProcedureInitCommand : Command = {
+  description: "Define a procedure; capture following lines until T0",
+  args: {
+    [GGG.Alias]: { description: "procedure name", type: ArgType.String },
   },
-  "W": {
-    description: "Loop while"
+  [Hooks.Command]: ( args ) => { args.state.procName = null },
+  [Hooks.Value]: procedureNameHookValue,
+  [Hooks.End]: ( args ) => {
+    const { machine, state } = args
+    const list = machine.getRegisterList( TProcedure )
+    const name = state.procName
+    // NB: NamedList.get() falls back to list[0] for an unknown string key, so
+    // look bodies up by name directly to tell "missing" apart from index 0.
+    let reg = name != null ? list.named[name] : null
+    if ( !reg ) {
+      reg = { lines: [] } as ProcedureRegister
+      list.add( reg, name != null ? { name } : undefined )
+    } else {
+      reg.lines = []   // redefine overwrites silently
+    }
+    machine.pushFrame( {
+      command: ProcedureInitCommand,
+      state: { reg },
+      capture: [],
+      depth: 0,
+    } )
   },
-  "I": {
-    description: "Loop if"
+  // Command gate: capture the body, commit it to the register at the close.
+  [Hooks.Stack]: ( args ) => captureGate( args, ( _machine, frame ) => {
+    frame.state.reg.lines = frame.capture.slice()
+  } ),
+}
+
+// T9: the block combinator. With V it iterates the body once per value (writing
+// each into the R register so the body can read it as $name/$index); otherwise
+// it is a one-shot conditional (A = all values truthy, O = any). The body is
+// always captured first (so nested blocks compose). Re-evaluatable looping (G)
+// is a deliberate follow-up, not built here.
+const ConditionalCommand : Command = {
+  description: "Block combinator: V iterates, A/O run once if a condition holds",
+  args: {
+    "A": { description: "run if all values are truthy", type: ArgType.Number },
+    "O": { description: "run if any value is truthy", type: ArgType.Number },
+    [GGG.Value]: { description: "iterate the body once per value", type: ArgType.Number },
+    [GGG.Register]: { description: "iteration register (name or index)", type: ArgType.Any },
+  },
+  [Hooks.Command]: ( args ) => {
+    const { state } = args
+    state.condA = null
+    state.condO = null
+    state.iterValues = []
+    state.iterReg = undefined
+  },
+  [Hooks.Value]: ( args ) => {
+    const { state, code, value } = args
+    const truthy = ( typeof value === "number" ) && value !== 0
+    if ( code === "A" ) state.condA = ( state.condA === null ? true : state.condA ) && truthy
+    else if ( code === "O" ) state.condO = ( state.condO === null ? false : state.condO ) || truthy
+    else if ( code === GGG.Value && typeof value === "number" ) state.iterValues.push( value )
+    else if ( code === GGG.Register ) state.iterReg = value
+  },
+  [Hooks.End]: ( args ) => {
+    const { machine, state } = args
+    if ( state.iterValues.length ) {
+      // Iteration mode.
+      machine.pushFrame( {
+        command: ConditionalCommand,
+        state: { iter: true, values: state.iterValues.slice(), reg: state.iterReg },
+        capture: [],
+        depth: 0,
+      } )
+      return
+    }
+    // Conditional mode.
+    let bool = true
+    if ( state.condA !== null ) bool = bool && state.condA
+    if ( state.condO !== null ) bool = bool && state.condO
+    if ( state.condA === null && state.condO === null ) bool = false  // no condition → skip
+    machine.pushFrame( {
+      command: ConditionalCommand,
+      state: { iter: false, bool },
+      capture: [],
+      depth: 0,
+    } )
+  },
+  [Hooks.Stack]: ( args ) => captureGate( args, ( machine, frame ) => {
+    const { state } = frame
+    if ( state.iter ) {
+      machine.enqueueLoop( state.values, frame.capture, state.reg )
+    } else if ( state.bool ) {
+      machine.enqueueLines( frame.capture )
+    }
+  } ),
+}
+
+const ProcedureRunCommand : Command = {
+  description: "Run a procedure by name",
+  args: {
+    [GGG.Alias]: { description: "procedure name", type: ArgType.String },
+  },
+  [Hooks.Command]: ( args ) => { args.state.procName = null },
+  [Hooks.Value]: procedureNameHookValue,
+  [Hooks.End]: ( args ) => {
+    const { machine, state } = args
+    const list = machine.getRegisterList( TProcedure )
+    const reg = state.procName != null ? list.named[state.procName] : null
+    if ( reg && reg.lines ) {
+      machine.enqueueLines( reg.lines )
+    } else {
+      machine.outputOk( 0 )
+    }
   },
 }
 
-const gggtxFlowCommands : Commands = {
+export const gggtxFlowCommands : Commands = {
   [gggtxCodes.BlockEnd]: {
     description: "End of block",
   },
-  [gggtxCodes.LoopWhile]: {
-    description: "Loop while condition is met",
-    [Hooks.Command]: BooleanCommandHookCommand,
-    [Hooks.Value]: BooleanCommandHookValue,
-    [Hooks.End]: ( args ) => {
-      const { machine, state } = args
-      const { bool } = state
-
-      const ref = bool ? machine.addQueueReference() : null
-      const stackState = {
-        ref, bool
-      }
-      machine.pushStack( stackState )
-      machine.setSkip( !bool )
-    }, 
-    [Hooks.Stack]: ( args ) => { 
-      const { machine, state, command } = args
-      if ( command == gggtxCodes.BlockEnd ) {
-        machine.popStack()
-        const { ref } = state
-        if ( ref ) {
-          machine.jumpQueue( ref )
-        }
-        machine.removeQueueReference( ref )
-        machine.setSkip( false )
-      }
-    }
-  },
-  [gggtxCodes.LoopIf]: {
-    description: "Run if condition is met",
-    [Hooks.Command]: BooleanCommandHookCommand,
-    [Hooks.Value]: BooleanCommandHookValue,
-    [Hooks.End]: ( args ) => {
-      const { machine, state } = args
-      const { bool } = state
-      const stackState = {
-        bool
-      }
-      machine.pushStack( stackState )
-      machine.setSkip( !bool )
-    }, 
-    [Hooks.Stack]: ( args ) => { 
-      const { machine, state, command } = args
-      if ( command == gggtxCodes.BlockEnd ) {
-        machine.popStack()
-        machine.setSkip( false )
-      }
-    }
-  },
+  [gggtxCodes.Conditional]: ConditionalCommand,
+  [gggtxCodes.ProcedureInit]: ProcedureInitCommand,
+  [gggtxCodes.ProcedureRun]: ProcedureRunCommand,
 }
 
 const gggtxCommands = {
-  ...gggtxRegisterCommands,
   ...gggtxFlowCommands,
-} 
+}
 
 export default gggtxCommands

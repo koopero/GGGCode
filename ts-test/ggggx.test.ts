@@ -3,6 +3,7 @@ import Matrix from "../ts/ggg/Matrix"
 import { GGG } from "../ts/ggg/Language"
 import { GXCommandNames, MatrixEvents } from "../ts/ggggx/GXLanguage"
 import Machine from "../ts/ggg/Machine"
+import Format from "../ts/ggg/Format"
 import { GXCommands } from "../ts/ggggx/GXCommands"
 
 
@@ -155,5 +156,24 @@ describe(GXCommandNames.MatrixWatch, () => {
   //   expect( Format( result ) ).toEqual( `G1 ${TestBufferIndexToken} O1 V0Hff\nOK\n` )
 
   // })
+})
+
+describe(GXCommandNames.MatrixList, () => {
+  test("lists buffers created by Init", async () => {
+    const machine = ggggxMachine()
+    const out = await machine.run( 'G30 R0 S4\nG30 L"buf" S2,2\nG1\n' )
+    const text = out.map( t => Format( t ) ).join( "" )
+    expect( text ).toContain( "G-1" )             // list-response header
+    expect( text ).toContain( "0: [4]" )          // index-addressed buffer
+    expect( text ).toContain( '1|"buf": [2,2]' )  // name-addressed buffer
+  })
+
+  test("emits only the header when there are no buffers", async () => {
+    const machine = ggggxMachine()
+    const out = await machine.run( "G1\n" )
+    const text = out.map( t => Format( t ) ).join( "" )
+    expect( text ).toContain( "G-1" )
+    expect( text ).not.toContain( ": [" )         // no buffer lines
+  })
 })
 

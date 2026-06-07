@@ -37,6 +37,11 @@ export default function ParseLine( str:string, options:ParseOptions = {} ) : [ T
     str = str.substring(0,commentIndex)
   }
 
+  // Raw command source (comments and the trailing newline already stripped),
+  // kept verbatim so flow-control frames can re-enqueue a captured body as
+  // authoritative source. See Machine.enqueueLines / gggtx procedures.
+  const source = str.trim()
+
   let col = 1
 
   while ( str ) {
@@ -59,7 +64,8 @@ export default function ParseLine( str:string, options:ParseOptions = {} ) : [ T
   const line:Token = {
     command,
     args,
-    comment
+    comment,
+    source
   }
 
   return [ line, remain ]
