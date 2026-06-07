@@ -1,0 +1,58 @@
+# Matrix commands (ggggx): G20 writes values into a register at an offset, G10
+# reads a range back as a replayable G20 write. These run against the preloaded
+# register "r" = [10,20,30] (index 0). The replay byte format (G20 R‹idx› P‹off›
+# V‹data›) is itself part of the contract, so the read cases opt into `exact`.
+
+- name: matrix_read
+  description: "G10 reads a buffer back as a replayable G20 write."
+  needs: [ ggggx ]
+  tags: [ matrix ]
+  program: "G10 R0 P0 S3"
+  values: [ 10, 20, 30 ]
+  exact: true
+
+- name: matrix_read_offset
+  description: "G10 reads a sub-range starting at an offset (P)."
+  needs: [ ggggx ]
+  tags: [ matrix ]
+  program: "G10 R0 P1 S2"
+  values: [ 20, 30 ]
+  exact: true
+
+- name: matrix_read_by_name
+  description: "A register is addressable by name via L; the read replays by index."
+  needs: [ ggggx ]
+  tags: [ matrix ]
+  program: 'G10 L"r" P0 S3'
+  values: [ 10, 20, 30 ]
+  exact: true
+
+- name: matrix_read_by_ref
+  description: "R is the universal selector: a string R resolves by name."
+  needs: [ ggggx ]
+  tags: [ matrix ]
+  program: 'G10 R"r" P0 S3'
+  values: [ 10, 20, 30 ]
+  exact: true
+
+- name: matrix_write_read
+  description: "G20 writes values into the register; G10 reads them back."
+  needs: [ ggggx ]
+  tags: [ matrix ]
+  program: |
+    G20 R0 P0 V7,8,9
+    G10 R0 P0 S3
+  values: [ 7, 8, 9 ]
+  exact: true
+
+- name: matrix_write_alias
+  # The values slot accepts both V (canonical) and A (back-compat alias) on write;
+  # the read always emits the canonical V. This pins the V/A heal as a round-trip.
+  description: "G20 accepts the A alias for the values slot; the read emits V."
+  needs: [ ggggx ]
+  tags: [ matrix, encoding ]
+  program: |
+    G20 R0 A5,6,7
+    G10 R0 P0 S3
+  values: [ 5, 6, 7 ]
+  exact: true

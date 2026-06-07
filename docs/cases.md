@@ -4,17 +4,19 @@
 
 Each case is one artifact wearing four hats: a behavioural **spec**, a piece of **documentation**, a runnable **example**, and a cross-engine conformance **test**. The contract is the decoded `values` stream within a global epsilon; `status` is the control response. Cases are grouped below by `tag` (a case appears under each tag it carries).
 
-54 cases across 16 tags.
+60 cases across 18 tags.
 
 ## Tags
 
 - [conditionals](#conditionals) (6)
 - [decimals](#decimals) (7)
+- [encoding](#encoding) (1)
 - [flow](#flow) (12)
 - [hex](#hex) (7)
 - [irrational](#irrational) (3)
 - [iteration](#iteration) (2)
 - [lists](#lists) (5)
+- [matrix](#matrix) (6)
 - [multiaxis](#multiaxis) (2)
 - [normalized](#normalized) (2)
 - [procedures](#procedures) (4)
@@ -189,6 +191,21 @@ P10 V0.5
 
 - values: `[0.5]`
 - needs: `gggpx`
+
+## encoding
+
+### matrix_write_alias
+
+G20 accepts the A alias for the values slot; the read emits V.
+
+```
+G20 R0 A5,6,7
+G10 R0 P0 S3
+```
+
+- values: `[5,6,7]`
+- needs: `ggggx`
+- byte-exact (formatting is part of the contract)
 
 ## flow
 
@@ -561,6 +578,82 @@ P10 V☃,你
 - values: `[9731,20320]`
 - needs: `gggpx`
 
+## matrix
+
+### matrix_read
+
+G10 reads a buffer back as a replayable G20 write.
+
+```
+G10 R0 P0 S3
+```
+
+- values: `[10,20,30]`
+- needs: `ggggx`
+- byte-exact (formatting is part of the contract)
+
+### matrix_read_offset
+
+G10 reads a sub-range starting at an offset (P).
+
+```
+G10 R0 P1 S2
+```
+
+- values: `[20,30]`
+- needs: `ggggx`
+- byte-exact (formatting is part of the contract)
+
+### matrix_read_by_name
+
+A register is addressable by name via L; the read replays by index.
+
+```
+G10 L"r" P0 S3
+```
+
+- values: `[10,20,30]`
+- needs: `ggggx`
+- byte-exact (formatting is part of the contract)
+
+### matrix_read_by_ref
+
+R is the universal selector: a string R resolves by name.
+
+```
+G10 R"r" P0 S3
+```
+
+- values: `[10,20,30]`
+- needs: `ggggx`
+- byte-exact (formatting is part of the contract)
+
+### matrix_write_read
+
+G20 writes values into the register; G10 reads them back.
+
+```
+G20 R0 P0 V7,8,9
+G10 R0 P0 S3
+```
+
+- values: `[7,8,9]`
+- needs: `ggggx`
+- byte-exact (formatting is part of the contract)
+
+### matrix_write_alias
+
+G20 accepts the A alias for the values slot; the read emits V.
+
+```
+G20 R0 A5,6,7
+G10 R0 P0 S3
+```
+
+- values: `[5,6,7]`
+- needs: `ggggx`
+- byte-exact (formatting is part of the contract)
+
 ## multiaxis
 
 ### multiaxis
@@ -784,10 +877,10 @@ P10 V$r
 
 ### ref_two
 
-A reference can appear mid-line, then another follows.
+Two value args, in the V and A value slots, each read a register.
 
 ```
-P10 V$r W$r
+P10 V$r A$r
 ```
 
 - values: `[10,20,30,10,20,30]`

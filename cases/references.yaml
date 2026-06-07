@@ -9,12 +9,12 @@
   values: [ 10, 20, 30 ]
 
 - name: ref_two
-  # `exact`: the second arg keeps its own code (W), a formatting detail the value
-  # stream can't capture.
-  description: "A reference can appear mid-line, then another follows."
+  # Exercises both value slots: V (canonical) and A (back-compat alias). `exact`
+  # pins the per-arg code echo, which the decoded value stream can't capture.
+  description: "Two value args, in the V and A value slots, each read a register."
   needs: [ gggpx ]
   tags: [ references ]
-  program: "P10 V$r W$r"
+  program: "P10 V$r A$r"
   values: [ 10, 20, 30, 10, 20, 30 ]
   exact: true
 

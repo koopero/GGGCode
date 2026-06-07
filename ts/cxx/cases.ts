@@ -45,7 +45,7 @@ export const SUBSYSTEMS: Record<Subsystem, Commands> = {
 // ConformanceMachine). A case compiles into conformance_cases.h iff its `needs`
 // are all satisfied here — a genuine capability gap is the only reason a case is
 // C++-excluded (replacing hand-typed `cxxSkip`).
-export const CXX_SUBSYSTEMS: Subsystem[] = [ "gggpx", "gggtx" ]
+export const CXX_SUBSYSTEMS: Subsystem[] = [ "gggpx", "gggtx", "ggggx" ]
 
 export function cxxSupported( c: Case ): boolean {
   return c.needs.every( n => CXX_SUBSYSTEMS.includes( n ) )
@@ -91,13 +91,12 @@ function validateCase( raw: any, file: string ): Case {
 
 //
 // Decode a rendered output back into its value stream + control responses, by
-// re-parsing the text (the same logic ports to C++). Output is always a decimal
-// value-list: space-separated args, each `‹code›‹d,d,d›`, with the okay response
-// (O-prefixed, e.g. OK/OZ) on its own line.
-//
-// Assumes print-style output (every arg carries decimal values). ggggx read-style
-// output (G20 R0 P0 V…, where R/P are addresses) would need slot-awareness — not
-// in this corpus and ggggx is C++-excluded, so deferred.
+// re-parsing the text (the same logic ports to C++). Output lines are GGG: an
+// okay response (O-prefixed, e.g. OK/OZ) on its own line, or a sequence of
+// space-separated `‹code›‹d,d,d›` args. Only the value slots (V Value / A Data)
+// carry data — other codes are addresses/metadata (R register, P offset, S size,
+// the echoed G command, …) and are skipped. This makes the decoder correct for
+// both print output (V/A args) and ggggx read output (G20 R0 P0 V…).
 //
 export function decodeOutput( text: string ): { values: number[], statuses: string[] } {
   const values: number[] = []
@@ -106,9 +105,9 @@ export function decodeOutput( text: string ): { values: number[], statuses: stri
     if ( line === "" ) continue
     if ( line[0] === GGG.Okay ) { statuses.push( line ); continue }
     for ( const arg of line.split( " " ) ) {
-      if ( !arg ) continue
-      const data = arg.slice( 1 )                 // drop the leading code char
-      for ( const piece of data.split( "," ) ) {
+      if ( arg.length < 2 ) continue
+      if ( arg[0] !== GGG.Value && arg[0] !== GGG.Data ) continue   // value slots only
+      for ( const piece of arg.slice( 1 ).split( "," ) ) {
         if ( piece === "" ) continue
         const n = parseFloat( piece )
         if ( !Number.isNaN( n ) ) values.push( n )

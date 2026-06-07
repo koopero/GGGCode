@@ -19,6 +19,12 @@ namespace ggg_conformance {
   static const double values_hexlist_ff00[] = { 15.0, 15.0, 0.0, 0.0 };
   static const double values_hexnorm2_80[] = { 0.50196078431372548 };
   static const double values_hexnorm1_8[] = { 0.53333333333333333 };
+  static const double values_matrix_read[] = { 10.0, 20.0, 30.0 };
+  static const double values_matrix_read_offset[] = { 20.0, 30.0 };
+  static const double values_matrix_read_by_name[] = { 10.0, 20.0, 30.0 };
+  static const double values_matrix_read_by_ref[] = { 10.0, 20.0, 30.0 };
+  static const double values_matrix_write_read[] = { 7.0, 8.0, 9.0 };
+  static const double values_matrix_write_alias[] = { 5.0, 6.0, 7.0 };
   static const double values_print_single[] = { 42.0 };
   static const double values_print_list[] = { 1.0, 2.0, 3.0 };
   static const double values_print_zero[] = { 0.0 };
@@ -76,6 +82,12 @@ namespace ggg_conformance {
     { "hexlist_ff00", "P10 V0IFF00\n", "OK", values_hexlist_ff00, 4, nullptr },
     { "hexnorm2_80", "P10 V0H80\n", "OK", values_hexnorm2_80, 1, nullptr },
     { "hexnorm1_8", "P10 V0J8\n", "OK", values_hexnorm1_8, 1, nullptr },
+    { "matrix_read", "G10 R0 P0 S3\n", "OK", values_matrix_read, 3, "G20 R0 P0 V10,20,30\nOK" },
+    { "matrix_read_offset", "G10 R0 P1 S2\n", "OK", values_matrix_read_offset, 2, "G20 R0 P1 V20,30\nOK" },
+    { "matrix_read_by_name", "G10 L\"r\" P0 S3\n", "OK", values_matrix_read_by_name, 3, "G20 R0 P0 V10,20,30\nOK" },
+    { "matrix_read_by_ref", "G10 R\"r\" P0 S3\n", "OK", values_matrix_read_by_ref, 3, "G20 R0 P0 V10,20,30\nOK" },
+    { "matrix_write_read", "G20 R0 P0 V7,8,9\nG10 R0 P0 S3\n", "OK", values_matrix_write_read, 3, "OK\nG20 R0 P0 V7,8,9\nOK" },
+    { "matrix_write_alias", "G20 R0 A5,6,7\nG10 R0 P0 S3\n", "OK", values_matrix_write_alias, 3, "OK\nG20 R0 P0 V5,6,7\nOK" },
     { "print_single", "P10 V42\n", "OK", values_print_single, 1, nullptr },
     { "print_list", "P10 V1,2,3\n", "OK", values_print_list, 3, nullptr },
     { "print_zero", "P10 V0\n", "OK", values_print_zero, 1, nullptr },
@@ -92,7 +104,7 @@ namespace ggg_conformance {
     { "multiaxis", "P10 V1|2|3\n", "OK", nullptr, 0, nullptr },
     { "multiaxis_range", "P10 V1:2|10:20/2|100:200/2\n", "OK", values_multiaxis_range, 8, nullptr },
     { "ref_bare", "P10 V$r\n", "OK", values_ref_bare, 3, nullptr },
-    { "ref_two", "P10 V$r W$r\n", "OK", values_ref_two, 6, "V10,20,30 W10,20,30\nOK" },
+    { "ref_two", "P10 V$r A$r\n", "OK", values_ref_two, 6, "V10,20,30 A10,20,30\nOK" },
     { "ref_unknown", "P10 V$x\n", "OK", nullptr, 0, nullptr },
     { "ref_subscript", "P10 V$r[1]\n", "OK", values_ref_subscript, 1, nullptr },
     { "ref_sub_range", "P10 V$r[0:2]\n", "OK", values_ref_sub_range, 3, nullptr },

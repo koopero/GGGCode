@@ -157,6 +157,8 @@ struct ConformanceMachine : public ggg::Machine {
     addCommand( new ggg::BlockEnd() );
     addCommand( new ggg::ProcedureRun() );
     addCommand( new ggg::Conditional() );
+    addCommand( new ggg::MatrixWrite() );   // ggggx G20
+    addCommand( new ggg::MatrixRead() );    // ggggx G10
     // A fixed register "r" = [10,20,30] so reference cases ($r) have data.
     auto *reg = new ggg::Matrix<float,false>( {1,3} );
     reg->allocate();
@@ -195,7 +197,9 @@ static Decoded decodeOutput( const std::string &text ) {
         while ( a < line.size() ) {
           size_t sp = line.find( ' ', a );
           std::string arg = ( sp == std::string::npos ) ? line.substr( a ) : line.substr( a, sp - a );
-          if ( arg.size() > 1 ) {
+          // value slots only (V Value / A Data); skip addresses/metadata + the
+          // echoed G command, matching decodeOutput() in ts/cxx/cases.ts.
+          if ( arg.size() > 1 && ( arg[0] == ggg::GGG::Value || arg[0] == ggg::GGG::Data ) ) {
             std::string data = arg.substr( 1 );          // drop the leading code char
             size_t b = 0;
             while ( true ) {
