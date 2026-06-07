@@ -21,7 +21,7 @@ namespace ggg {
     MatrixWrite() {
       name = "G20";
       description = "Write values into a register.";
-      addArg( Register, "register index", "(n)" );
+      addArg( Register, "register index or name", "(n|s)" );
       addArg( Alias, "register name", "(s)" );
       addArg( Offset, "start offset", "(n)" );
       addArg( Value, "values to write", "(n+)" );
@@ -41,9 +41,11 @@ namespace ggg {
       }
     }
 
-    // Resolve the register by name (Alias) as an alternative to R index.
+    // R is the universal register selector: numeric -> by index (hookNumber),
+    // string -> by name here. Alias (L) stays as a back-compat name selector.
     void hookString() override {
-      if ( code == Alias ) reg = machine->registers->getByName( string );
+      if ( code == Register || code == Alias )
+        reg = machine->resolveRegisterByName( string );
     }
 
     void hookFinish() override {
@@ -61,7 +63,7 @@ namespace ggg {
     MatrixRead() {
       name = "G10";
       description = "Read a region of a register (responds with a G20 write).";
-      addArg( Register, "register index", "(n)" );
+      addArg( Register, "register index or name", "(n|s)" );
       addArg( Alias, "register name", "(s)" );
       addArg( Offset, "start offset", "(n)" );
       addArg( Size, "scalar count", "(n)" );
@@ -78,9 +80,11 @@ namespace ggg {
       }
     }
 
-    // Resolve the register by name (Alias) as an alternative to R index.
+    // R is the universal register selector: numeric -> by index (hookNumber),
+    // string -> by name here. Alias (L) stays as a back-compat name selector.
     void hookString() override {
-      if ( code == Alias ) reg = machine->registers->getByName( string );
+      if ( code == Register || code == Alias )
+        reg = machine->resolveRegisterByName( string );
     }
 
     void hookFinish() override {

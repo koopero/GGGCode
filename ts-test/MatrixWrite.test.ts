@@ -82,6 +82,20 @@ describe("MatrixWrite", () => {
       ${GXCN.MatrixDisplay} ${GGG.Register}0
     `, [ 1,2,3,4,5,6 ] )
 
+    // V is the canonical values slot; it must write identically to the A alias.
+    TestGXProgramResult( "write via V slot (canonical)", `
+      ${GXCN.MatrixInit} ${GGG.Register}0 ${GGG.Size}2,3
+      ${GXCN.MatrixWrite} ${GGG.Register}0 ${GGG.Value}1,2,3,4,5,6
+      ${GXCN.MatrixDisplay} ${GGG.Register}0
+    `, [ 1,2,3,4,5,6 ] )
+
+    // Reference a buffer by name (L) for the write, with the V slot.
+    TestGXProgramResult( "write by name via V slot", `
+      ${GXCN.MatrixInit} ${GGG.Register}0 ${GGG.Alias}"foo" ${GGG.Size}5
+      ${GXCN.MatrixWrite} ${GGG.Alias}"foo" ${GGG.Value}10:40/4
+      ${GXCN.MatrixDisplay} ${GGG.Register}0
+    `, [ 10,20,30,40,0 ] )
+
     TestGXProgramResult( "matrix write with offset and size", `
       ${GXCN.MatrixInit} ${GGG.Register}0 ${GGG.Size}2,3
       ${GXCN.MatrixWrite} ${GGG.Register}0 ${GGG.Offset}1 ${GGG.Size}1,2 ${GGG.Data}20,40

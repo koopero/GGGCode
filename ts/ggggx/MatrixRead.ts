@@ -5,7 +5,6 @@ import { RegionsAdd } from "./Regions"
 import { DimOffset, DimSize } from "../ggg/Dim"
 import { Matrix } from "../ggggx"
 import { ceil, min } from "../common/math"
-import { Ops } from "./Operators"
 
 type MatrixReadCodeOptions = {
   header?: boolean,
@@ -68,10 +67,14 @@ export function MatrixReadForNamespace( namespace?: GXNamespaceArg ) {
             command: commandName( MatrixWrite ),
             args: [
               { code: GGG.Register, data: index },
-              { code: GGG.Operator, data: Ops.set },
+              // No operator emitted: a read replay is always a "set", and an
+              // omitted Q defaults to set on write. Keeps the G10 return terse
+              // and byte-aligned with the C++ peer (G20 R# P# V...).
               { code: GGG.Offset, data: [ chunkStart ] },
-              { 
-                code: GGG.Data, 
+              {
+                // V is the canonical values slot; the representation is carried
+                // separately in `encoding`. A G10 response is a replayable G20.
+                code: GGG.Value,
                 data,
                 encoding
               },
@@ -102,16 +105,25 @@ export function MatrixReadForNamespace( namespace?: GXNamespaceArg ) {
 
   function MatrixReadHookEnd( arg:HookArgs) {
     const { machine, state } = arg
-    const { buffer, offset, encoding, size } = TargetResolveNumbers( arg )
+    const { buffer } = TargetResolveNumbers( arg )
 
     if ( !buffer )
       return machine.outputOk( 0, GXFails.BufferNotFound )
 
-    if ( !encoding )
-      return machine.outputOk( 0, GXFails.BufferNotFound )
+    // Encoding is a representation concern, defaulted from the buffer's storage
+    // (the C++ peer needs none); it never gates locating the buffer.
+    const encoding = state.encoding || ( buffer.storage && buffer.storage.encoding )
 
-    const { index, dim, size:bufferSize } = buffer
-    for ( const line of MatrixReadCode( buffer, { header: false, encoding, region: [ offset, offset + size ] } ) ) {
+    // Region defaults mirror the C++ MatrixRead: start at the requested offset
+    // (P), span the rest of the buffer unless an explicit count (S) was given.
+    const total = DimSize( buffer.dim )
+    let start = state.offset?.[0] || 0
+    if ( start < 0 || start > total ) start = 0
+    let count = state.dim?.[0]
+    if ( count === undefined || count === null ) count = total - start
+    if ( count > total - start ) count = total - start
+
+    for ( const line of MatrixReadCode( buffer, { header: false, encoding, region: [ start, start + count ] } ) ) {
       machine.output( { ...line, eol: true } )
     }
 

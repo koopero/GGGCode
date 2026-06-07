@@ -16,6 +16,10 @@ export function TargetHookCommand( arg, target ) {
   state.dimIndex = 0
   state.offset = []
   state.offsetIndex = 0
+  // Reset the resolved target each command; command state persists across
+  // invocations, so a write with no values must not reuse a prior buffer.
+  state.buffer = null
+  state.name = undefined
 
   switch( code ) {
     case GGG.Register: {

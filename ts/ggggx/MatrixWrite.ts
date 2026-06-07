@@ -8,14 +8,24 @@ import { DimNext, DimOffset } from "../ggg/Dim"
 function MatrixWriteHookCommand( arg:HookArgs ) {
   const { state } = arg
   TargetHookCommand( arg, { create: true } )
-  state.operator = state.operator || Ops.set
+  // Command state persists across invocations, so every transient of a write
+  // must start clean -- otherwise a later write inherits a previous command's
+  // operator (a stale Q), size, or partial coordinate. Q/size args, processed
+  // after this hook, override the defaults.
+  state.operator = Ops.set
   state.repeat = false
+  state.size = undefined
+  state.coord = null
+  state.data = []
+  state.writingData = false
 }
 
 function MatrixWriteHookCode( arg:HookArgs ) {
   TargetHookCode( arg )
 
   switch( arg.code ) {
+    // V is the canonical values slot; A (Data) is an accepted back-compat alias.
+    case GGG.Value:
     case GGG.Data: {
       TargetResolveNumbers( arg )
       const { state } = arg
@@ -41,6 +51,7 @@ function MatrixWriteHookValue( arg:HookArgs ) {
       state.repeat = !!value
       break
 
+    case GGG.Value:
     case GGG.Data: {
       const { buffer, offset, size, operator, repeat } = state
       let { coord } = state
@@ -74,6 +85,7 @@ function MatrixWriteHookEndArg( arg:HookArgs ) {
   const { code, state, value, machine } = arg
   const { repeat } = state
   switch ( code ) {
+    case GGG.Value:
     case GGG.Data:
       if ( repeat ) {
         const { data, operator, buffer, offset, dim } = state
@@ -90,7 +102,7 @@ function MatrixWriteHookEnd( arg:HookArgs ) {
   if ( buffer ) {
     machine.outputOk()
   } else {
-    machine.outputOkay(0)
+    machine.outputOk(0)
   }
 }
 

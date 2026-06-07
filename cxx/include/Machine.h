@@ -379,15 +379,21 @@ namespace ggg {
       }
     }
 
-    void resolveReference( const String & name ) {
+    // Resolve a register by name, falling back to an index lookup for a numeric
+    // name (matches TS NamedList.get, so "0" resolves to register index 0). This
+    // is the universal name-or-index resolution the R selector arg uses.
+    MatrixBase * resolveRegisterByName( const String & name ) {
       MatrixBase * reg = registers->getByName( name );
       if ( !reg && !name.empty() ) {
-        // Numeric name falls back to an index lookup (matches TS NamedList.get),
-        // so $0 reads register index 0.
         bool numeric = true;
         for ( char c : name ) if ( c < '0' || c > '9' ) { numeric = false; break; }
         if ( numeric ) reg = registers->getByIndex( std::stoi( name ) );
       }
+      return reg;
+    }
+
+    void resolveReference( const String & name ) {
+      MatrixBase * reg = resolveRegisterByName( name );
       if ( !reg ) return;                    // unknown register -> no values
       Index n = reg->sizeScalar();
       for ( Index i = 0; i < n; i++ ) {
@@ -453,9 +459,16 @@ namespace ggg {
         dataAppend( state.numbers[0] );
       } else {
         // Range or multi-axis expression: fold numbers + symbols into axes and
-        // expand them (mirrors ParseData.parseExpression + Solve in the TS reference).
-        for ( NumberType value : solveCompound( state.numbers, state.symbols ) ) {
+        // stream them (mirrors ParseData.parseExpression + Solve in the TS
+        // reference). CompoundExpansion is a lazy pull iterator -- one value at
+        // a time, O(axes) memory, and cancellable mid-flight: we stop pulling
+        // the moment skipData is set, since every further value would be
+        // discarded by dataAppend anyway.
+        CompoundExpansion expansion( buildAxes( state.numbers, state.symbols ) );
+        NumberType value;
+        while ( expansion.next( value ) ) {
           dataAppend( value );
+          if ( state.skipData ) break;
         }
       }
       state.numbers.clear();

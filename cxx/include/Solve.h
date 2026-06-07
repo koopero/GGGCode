@@ -10,10 +10,10 @@ namespace ggg {
   // Range / multi-axis expansion, ported from the TypeScript reference so the
   // streaming C++ parser produces the same values the TS Machine does.
   //
-  //   - buildAxes()      mirrors ParseData.parseExpression (ts/ggg/ParseData.ts)
-  //   - solveRangeAxis() mirrors Solve.solveRangeAxis        (ts/ggg/Solve.ts)
-  //   - solveCompound()  mirrors the register-less paths of Solve.solve /
-  //                      Solve.solveRangeAxes
+  //   - buildAxes()        mirrors ParseData.parseExpression (ts/ggg/ParseData.ts)
+  //   - resolveAxis()      mirrors Solve.solveRangeAxis        (ts/ggg/Solve.ts)
+  //   - CompoundExpansion  streams the register-less paths of Solve.solve /
+  //                        Solve.solveRangeAxes, lazily (see below)
   //
   // The parser hands us a flat list of `numbers` plus the `symbols` it saw
   // between them ( : / > < * | ). symbols[i] is the separator that appeared
@@ -84,10 +84,18 @@ namespace ggg {
     return axes;
   }
 
-  inline void solveRangeAxis( const RangeAxis &in, NumberType dimension, NumberType stride, std::vector<NumberType> &out ) {
+  // Resolve a single axis into the concrete (first value, step, count) the
+  // expansion will walk. This is a faithful port of Solve.solveRangeAxis's
+  // start/end/step/count derivation (ts/ggg/Solve.ts); the register-less
+  // compound path always passes dimension = stride = 1.
+  //
+  // solveRangeAxis yields ( start + i*step ) * multiplier, so we fold the
+  // multiplier into the cached first/step values:
+  //   first = start * multiplier,  delta = step * multiplier.
+  inline void resolveAxis( const RangeAxis &in, NumberType dimension, NumberType stride, NumberType &first, NumberType &delta, long &count ) {
     NumberType start = in.start;
     NumberType end = in.end;
-    NumberType count = in.count;
+    NumberType c = in.count;
     NumberType step = in.step;
     NumberType multiplier = in.multiplier;
     const bool inclusive = in.inclusive;
@@ -101,51 +109,87 @@ namespace ggg {
     }
 
     if ( std::isnan( step ) || step == 0 ) {                    // !step
-      if ( !std::isnan( count ) && count != 0 ) {              // count (truthy)
-        step = ( end - start ) / ( count - ( inclusive ? 1 : 0 ) );
+      if ( !std::isnan( c ) && c != 0 ) {                      // count (truthy)
+        step = ( end - start ) / ( c - ( inclusive ? 1 : 0 ) );
       } else {
         step = 1;
       }
     }
 
-    if ( std::isnan( count ) ) {                                // isBlank( count )
+    if ( std::isnan( c ) ) {                                    // isBlank( count )
       if ( !std::isnan( step ) && step != 0 ) {                // step (truthy)
-        count = std::floor( ( end - start ) / step );
-        if ( inclusive ) count += 1;
+        c = std::floor( ( end - start ) / step );
+        if ( inclusive ) c += 1;
       } else {
-        count = 1;
+        c = 1;
       }
     }
 
-    NumberType val = start;
-    for ( long i = 0; (NumberType) i < count; i++ ) {
-      out.push_back( val * multiplier );
-      val += step;
-    }
+    first = start * multiplier;
+    delta = step * multiplier;
+    count = c < 0 ? 0 : (long) c;
   }
 
-  // Nested expansion for multi-axis values ( a|b|c ), register-less: every
-  // dimension defaults to 1 and every stride to 1 (Solve.solveRangeAxes).
-  inline void solveAxes( const std::vector<RangeAxis> &axes, int index, NumberType offset, std::vector<NumberType> &out ) {
-    std::vector<NumberType> vals;
-    solveRangeAxis( axes[index], 1, 1, vals );
-    for ( NumberType val : vals ) {
-      if ( index == 0 ) {
-        out.push_back( val + offset );
-      } else {
-        solveAxes( axes, index - 1, val + offset, out );
+  //
+  // Lazy, cancellable expansion of a compound (range / multi-axis) value.
+  //
+  // Replaces the eager solveCompound vector: instead of materializing every
+  // value up front (O(values) heap), CompoundExpansion holds only the small
+  // per-axis state (O(axes), stack) and streams one value per next() call,
+  // mirroring the TS Solve generator. The nested recursion of Solve's
+  // solveRangeAxes is reified into an odometer: idx[0] is the fastest-changing
+  // (innermost) axis, matching solveAxes' index-0-innermost recursion. Each
+  // value is the coordinate-wise sum over axes ( solveAxes' val + offset ).
+  //
+  // Cancellation: a consumer simply stops calling next() (e.g. `break`s the
+  // loop) -- no further values are computed.
+  //
+  struct CompoundExpansion {
+    std::vector<NumberType> first;   // resolved start*mult per axis
+    std::vector<NumberType> delta;   // resolved step*mult per axis
+    std::vector<long>       count;   // resolved count per axis
+    std::vector<long>       idx;     // odometer: current step per axis
+    bool done = false;
+
+    // `dimension` is the size an open/blank axis bound resolves against (e.g.
+    // an open range `0:` ends at the dimension). The register-less compound
+    // path passes 1; a $name[subscript] passes the register's scalar size so
+    // subscript ranges resolve against it (mirrors Solve.solveRangeAxes).
+    explicit CompoundExpansion( const std::vector<RangeAxis> &axes, NumberType dimension = 1 ) {
+      const size_t n = axes.size();
+      first.resize( n );
+      delta.resize( n );
+      count.resize( n );
+      idx.assign( n, 0 );
+      for ( size_t k = 0; k < n; k++ ) {
+        resolveAxis( axes[k], dimension, 1, first[k], delta[k], count[k] );
+        // Product semantics: any empty axis means the whole expansion is empty
+        // (mirrors solveAxes looping zero times at that level). This also yields
+        // the "a|b|c collapses to empty" quirk, since each lone value resolves
+        // to count 0.
+        if ( count[k] == 0 ) done = true;
       }
+      if ( n == 0 ) done = true;
     }
-  }
 
-  inline std::vector<NumberType> solveCompound( const std::vector<NumberType> &numbers, const std::vector<Char> &symbols ) {
-    std::vector<NumberType> out;
-    std::vector<RangeAxis> axes = buildAxes( numbers, symbols );
-    if ( axes.size() == 1 ) {
-      solveRangeAxis( axes[0], 1, 1, out );
-    } else {
-      solveAxes( axes, (int) axes.size() - 1, 0, out );
+    bool next( NumberType &out ) {
+      if ( done ) return false;
+
+      NumberType value = 0;
+      for ( size_t k = 0; k < idx.size(); k++ ) {
+        value += first[k] + (NumberType) idx[k] * delta[k];
+      }
+      out = value;
+
+      // Advance the odometer: bump the innermost axis, carrying outward.
+      for ( size_t k = 0; k < idx.size(); k++ ) {
+        if ( ++idx[k] < count[k] ) {
+          return true;
+        }
+        idx[k] = 0;                  // overflow this axis, carry to the next
+      }
+      done = true;                   // outermost axis overflowed: exhausted
+      return true;
     }
-    return out;
-  }
+  };
 }; // namespace ggg
