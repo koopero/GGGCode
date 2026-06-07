@@ -151,18 +151,18 @@ namespace ggg {
     std::vector<long>       idx;     // odometer: current step per axis
     bool done = false;
 
-    // `dimension` is the size an open/blank axis bound resolves against (e.g.
-    // an open range `0:` ends at the dimension). The register-less compound
-    // path passes 1; a $name[subscript] passes the register's scalar size so
-    // subscript ranges resolve against it (mirrors Solve.solveRangeAxes).
-    explicit CompoundExpansion( const std::vector<RangeAxis> &axes, NumberType dimension = 1 ) {
+    // Register-less expansion: every axis resolves against dimension 1 and stride
+    // 1, matching Solve's register-less paths (the print compound and, faithfully,
+    // $name[subscript] -- Solve drops the register inside the subscript array, so
+    // the register's shape never sizes subscript ranges).
+    explicit CompoundExpansion( const std::vector<RangeAxis> &axes ) {
       const size_t n = axes.size();
       first.resize( n );
       delta.resize( n );
       count.resize( n );
       idx.assign( n, 0 );
       for ( size_t k = 0; k < n; k++ ) {
-        resolveAxis( axes[k], dimension, 1, first[k], delta[k], count[k] );
+        resolveAxis( axes[k], 1, 1, first[k], delta[k], count[k] );
         // Product semantics: any empty axis means the whole expansion is empty
         // (mirrors solveAxes looping zero times at that level). This also yields
         // the "a|b|c collapses to empty" quirk, since each lone value resolves

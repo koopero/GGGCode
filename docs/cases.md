@@ -4,7 +4,7 @@
 
 Each case is one artifact wearing four hats: a behavioural **spec**, a piece of **documentation**, a runnable **example**, and a cross-engine conformance **test**. The contract is the decoded `values` stream within a global epsilon; `status` is the control response. Cases are grouped below by `tag` (a case appears under each tag it carries).
 
-59 cases across 17 tags.
+62 cases across 17 tags.
 
 ## Tags
 
@@ -20,9 +20,9 @@ Each case is one artifact wearing four hats: a behavioural **spec**, a piece of 
 - [normalized](#normalized) (2)
 - [procedures](#procedures) (4)
 - [ranges](#ranges) (9)
-- [references](#references) (6)
+- [references](#references) (9)
 - [signs](#signs) (1)
-- [subscript](#subscript) (3)
+- [subscript](#subscript) (6)
 - [unicode](#unicode) (6)
 - [unitary](#unitary) (8)
 
@@ -902,6 +902,39 @@ P10 V$r[0,2]
 - values: `[10,30]`
 - needs: `gggpx`
 
+### ref_sub_open
+
+$name[a:] reads a single index (subscripts resolve register-less).
+
+```
+P10 V$r[1:]
+```
+
+- values: `[20]`
+- needs: `gggpx`
+
+### ref_sub_multi
+
+$name[a:b|c:d] expands axes coordinate-wise into flat indices.
+
+```
+P10 V$r[0:1|0:1]
+```
+
+- values: `[10,20,20,30]`
+- needs: `gggpx`
+
+### ref_sub_multi_lone
+
+Lone-value multi-axis subscript collapses to nothing.
+
+```
+P10 V$r[1|1]
+```
+
+- values: `[]`
+- needs: `gggpx`
+
 ## signs
 
 ### print_negatives
@@ -948,6 +981,39 @@ P10 V$r[0,2]
 ```
 
 - values: `[10,30]`
+- needs: `gggpx`
+
+### ref_sub_open
+
+$name[a:] reads a single index (subscripts resolve register-less).
+
+```
+P10 V$r[1:]
+```
+
+- values: `[20]`
+- needs: `gggpx`
+
+### ref_sub_multi
+
+$name[a:b|c:d] expands axes coordinate-wise into flat indices.
+
+```
+P10 V$r[0:1|0:1]
+```
+
+- values: `[10,20,20,30]`
+- needs: `gggpx`
+
+### ref_sub_multi_lone
+
+Lone-value multi-axis subscript collapses to nothing.
+
+```
+P10 V$r[1|1]
+```
+
+- values: `[]`
 - needs: `gggpx`
 
 ## unicode

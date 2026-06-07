@@ -43,6 +43,8 @@ namespace ggg_conformance {
   static const double values_ref_subscript[] = { 20.0 };
   static const double values_ref_sub_range[] = { 10.0, 20.0, 30.0 };
   static const double values_ref_sub_list[] = { 10.0, 30.0 };
+  static const double values_ref_sub_open[] = { 20.0 };
+  static const double values_ref_sub_multi[] = { 10.0, 20.0, 20.0, 30.0 };
   static const double values_unicode_snowman[] = { 9731.0 };
   static const double values_unicode_cjk[] = { 20320.0 };
   static const double values_unicode_greek[] = { 945.0 };
@@ -107,6 +109,9 @@ namespace ggg_conformance {
     { "ref_subscript", "P10 V$r[1]\n", "OK", values_ref_subscript, 1, nullptr },
     { "ref_sub_range", "P10 V$r[0:2]\n", "OK", values_ref_sub_range, 3, nullptr },
     { "ref_sub_list", "P10 V$r[0,2]\n", "OK", values_ref_sub_list, 2, nullptr },
+    { "ref_sub_open", "P10 V$r[1:]\n", "OK", values_ref_sub_open, 1, nullptr },
+    { "ref_sub_multi", "P10 V$r[0:1|0:1]\n", "OK", values_ref_sub_multi, 4, nullptr },
+    { "ref_sub_multi_lone", "P10 V$r[1|1]\n", "OK", nullptr, 0, nullptr },
     { "unicode_snowman", "P10 V☃\n", "OK", values_unicode_snowman, 1, nullptr },
     { "unicode_cjk", "P10 V你\n", "OK", values_unicode_cjk, 1, nullptr },
     { "unicode_greek", "P10 Vα\n", "OK", values_unicode_greek, 1, nullptr },

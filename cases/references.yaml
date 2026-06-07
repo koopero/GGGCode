@@ -45,3 +45,30 @@
   tags: [ references, subscript ]
   program: "P10 V$r[0,2]"
   values: [ 10, 30 ]
+
+- name: ref_sub_open
+  # Subscripts resolve register-less (dimension 1), so an open `a:` is an
+  # inclusive single-point range -- it reads just index a, not "a to the end".
+  description: "$name[a:] reads a single index (subscripts resolve register-less)."
+  needs: [ gggpx ]
+  tags: [ references, subscript ]
+  program: "P10 V$r[1:]"
+  values: [ 20 ]
+
+- name: ref_sub_multi
+  # Multi-axis subscript: a|b expands coordinate-wise into flat indices
+  # (register-less, stride 1 per axis), each reading one scalar.
+  description: "$name[a:b|c:d] expands axes coordinate-wise into flat indices."
+  needs: [ gggpx ]
+  tags: [ references, subscript ]
+  program: "P10 V$r[0:1|0:1]"
+  values: [ 10, 20, 20, 30 ]
+
+- name: ref_sub_multi_lone
+  # A lone value on an axis resolves to count 0 register-less, so a lone-value
+  # multi-axis collapses to nothing (the same quirk as register-less V1|2|3).
+  description: "Lone-value multi-axis subscript collapses to nothing."
+  needs: [ gggpx ]
+  tags: [ references, subscript ]
+  program: "P10 V$r[1|1]"
+  values: []

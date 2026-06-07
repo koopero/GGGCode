@@ -477,6 +477,18 @@ void test_references() {
   m.run( "P10 V$r[5]\n" );                     // out-of-range index -> dropped
   TEST_ASSERT_EQUAL_STRING( "\nOK\n", m.out.c_str() );
 
+  m.out.clear();
+  m.run( "P10 V$r[1:]\n" );                     // open range -> register-less single point
+  TEST_ASSERT_EQUAL_STRING( "V20\nOK\n", m.out.c_str() );
+
+  m.out.clear();
+  m.run( "P10 V$r[0:1|0:1]\n" );                // multi-axis -> flat indices 0,1,1,2
+  TEST_ASSERT_EQUAL_STRING( "V10,20,20,30\nOK\n", m.out.c_str() );
+
+  m.out.clear();
+  m.run( "P10 V$r[1|1]\n" );                     // lone-value multi-axis collapses
+  TEST_ASSERT_EQUAL_STRING( "\nOK\n", m.out.c_str() );
+
   delete mat;
 }
 

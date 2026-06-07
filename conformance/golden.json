@@ -842,6 +842,61 @@
     "expected": "V10,30\nOK"
   },
   {
+    "name": "ref_sub_open",
+    "description": "$name[a:] reads a single index (subscripts resolve register-less).",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "references",
+      "subscript"
+    ],
+    "program": "P10 V$r[1:]",
+    "status": "OK",
+    "values": [
+      20
+    ],
+    "exact": false,
+    "expected": "V20\nOK"
+  },
+  {
+    "name": "ref_sub_multi",
+    "description": "$name[a:b|c:d] expands axes coordinate-wise into flat indices.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "references",
+      "subscript"
+    ],
+    "program": "P10 V$r[0:1|0:1]",
+    "status": "OK",
+    "values": [
+      10,
+      20,
+      20,
+      30
+    ],
+    "exact": false,
+    "expected": "V10,20,20,30\nOK"
+  },
+  {
+    "name": "ref_sub_multi_lone",
+    "description": "Lone-value multi-axis subscript collapses to nothing.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "references",
+      "subscript"
+    ],
+    "program": "P10 V$r[1|1]",
+    "status": "OK",
+    "values": [],
+    "exact": false,
+    "expected": "\nOK"
+  },
+  {
     "name": "unicode_snowman",
     "description": "A Unicode character decodes to its code point.",
     "needs": [

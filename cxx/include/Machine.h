@@ -458,16 +458,16 @@ namespace ggg {
     }
 
     // Resolve $name[subscript]: the bracketed text is a comma-separated list of
-    // compound segments, each expanded against the register's scalar size into
-    // a set of indices, and every index reads one scalar. Mirrors the subscript
-    // branch of Solve.solveReference (ts/ggg/Solve.ts) for 1-D registers (the
-    // numbers/symbols split matches ParseData's compound grammar). Multi-axis
-    // subscripts against N-D registers (per-axis dimensions/strides) remain the
-    // deeper offset-ref work.
+    // compound segments; each is solved into a set of flat indices, and every
+    // index reads one scalar. Mirrors Solve.solveReference (ts/ggg/Solve.ts):
+    // the subscript is solved REGISTER-LESS (dimension 1, stride 1 per axis) --
+    // Solve.solve drops the register when recursing into the subscript array, so
+    // the register's shape never sizes the ranges; it only supplies the values
+    // read by the resolved indices. Multi-axis (a|b) thus expands coordinate-wise
+    // into flat indices exactly like the register-less print compound.
     void resolveReferenceSubscript( const String & name, const String & sub ) {
       MatrixBase * reg = resolveRegisterByName( name );
       if ( !reg ) return;
-      const NumberType dim = (NumberType) reg->sizeScalar();
 
       std::vector<NumberType> numbers;
       std::vector<Char> symbols;
@@ -486,7 +486,7 @@ namespace ggg {
         if ( numbers.size() == 1 && symbols.empty() ) {
           readReferenceIndex( reg, numbers[0] );
         } else {
-          CompoundExpansion expansion( buildAxes( numbers, symbols ), dim );
+          CompoundExpansion expansion( buildAxes( numbers, symbols ) );   // register-less
           NumberType v;
           while ( expansion.next( v ) ) readReferenceIndex( reg, v );
         }
