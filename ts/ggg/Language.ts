@@ -38,6 +38,8 @@ export enum GGG {
   SubscriptEnd = "]",
   NextAxis = "|",
   At = "@",
+  Target = "W",
+  Transform = "M",
 }
 
 export type EncodingName = string
@@ -205,6 +207,7 @@ export enum CommandConvention {
   ListResponse = -CommandConvention.List,
   Output = 15,
   Watch = 25,
+  Blit = 40,
   Display = 13,
   DisplayResponse = -CommandConvention.Display,
 }

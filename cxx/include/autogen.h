@@ -37,7 +37,9 @@ namespace ggg { typedef enum {
   Subscript = '[',
   SubscriptEnd = ']',
   NextAxis = '|',
-  At = '@'
+  At = '@',
+  Target = 'W',
+  Transform = 'M'
 } GGG; };
 
 namespace ggg { typedef enum {

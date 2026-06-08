@@ -59,6 +59,7 @@ export enum GXCommandNumbers {
   MatrixInit = CC.Init,
   MatrixRead = CC.Read,
   MatrixWrite = CC.Write,
+  MatrixBlit = CC.Blit,
   MatrixDisplay = CC.Display,
   MatrixWatch = CC.Watch,
 }
@@ -68,6 +69,7 @@ export type NamespaceIndexes = {
   MatrixInit?: number,
   MatrixRead?: number,
   MatrixWrite?: number,
+  MatrixBlit?: number,
   MatrixDisplay?: number,
   MatrixWatch?: number,
   MatrixListResponse?: number,
@@ -97,6 +99,7 @@ export enum GXCommandNames {
   MatrixInit = `${GXCode}${GXCommandNumbers.MatrixInit}`,
   MatrixRead = `${GXCode}${GXCommandNumbers.MatrixRead}`,
   MatrixWrite = `${GXCode}${GXCommandNumbers.MatrixWrite}`,
+  MatrixBlit = `${GXCode}${GXCommandNumbers.MatrixBlit}`,
   MatrixDisplay = `${GXCode}${GXCommandNumbers.MatrixDisplay}`,
   MatrixWatch = `${GXCode}${GXCommandNumbers.MatrixWatch}`,
 }

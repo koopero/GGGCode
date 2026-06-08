@@ -11,6 +11,7 @@ import { MatrixReadForNamespace } from "./MatrixRead"
 import { MatrixDisplayHooks } from "./MatrixDisplay"
 import { GXCommandNumbers, GXNamespace, GXNamespaceArg } from "./GXLanguage"
 import { MatrixWriteHooks } from "./MatrixWrite"
+import { MatrixBlitHooks } from "./MatrixBlit"
 
 
 function GXCommandsForNamespace( namespace?: GXNamespaceArg ) {
@@ -18,14 +19,15 @@ function GXCommandsForNamespace( namespace?: GXNamespaceArg ) {
   const { MatrixReadHooks } = MatrixReadForNamespace( namespace )
   const { MatrixListHooks } = MatrixListForNamespace( namespace )
   const { code } = namespace
-  const { 
-    MatrixInit, 
+  const {
+    MatrixInit,
     MatrixList,
     MatrixListResponse,
-    MatrixRead, 
-    MatrixWrite, 
-    MatrixDisplay, 
-    MatrixWatch 
+    MatrixRead,
+    MatrixWrite,
+    MatrixBlit,
+    MatrixDisplay,
+    MatrixWatch
   } = namespace.index || GXCommandNumbers
   const commands : Record<string, Command> = {}
 
@@ -104,6 +106,41 @@ function GXCommandsForNamespace( namespace?: GXNamespaceArg ) {
       ...MatrixWriteHooks
     }
     
+  }
+
+  if ( MatrixBlit ) {
+    commands[ `${code}${MatrixBlit}` ] = {
+      description: "Blit (transform-copy) between buffers.",
+      args: {
+        [GGG.Register]: ArgsBufferRef,
+        [GGG.Target]: {
+          description: "Destination buffer (index or name).",
+          type: ArgType.Any,
+        },
+        [GGG.Transform]: {
+          description: "Transform coefficients (per mode).",
+          type: ArgType.Number,
+          format: "(n+)",
+        },
+        [GGG.Storage]: {
+          description: "Transform mode: identity / affine / scale+translate (index or name).",
+          type: ArgType.Any,
+        },
+        [GGG.Offset]: ArgsPosition,
+        [GGG.Size]: ArgsSize,
+        [GGG.Dimension]: ArgsDimension,
+        [GGG.Operator]: {
+          description: "Combine operator into the destination cell.",
+          type: ArgType.String,
+        },
+        [GGG.Encoding]: {
+          description: "Sampler options, positional: filter, edge, coord (index or name).",
+          type: ArgType.Any,
+          format: "(*)",
+        },
+      },
+      ...MatrixBlitHooks,
+    }
   }
 
   if ( MatrixWatch ) {

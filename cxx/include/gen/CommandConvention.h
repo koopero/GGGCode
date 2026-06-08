@@ -10,6 +10,7 @@ namespace ggg {
     ListResponse = -1,
     Output = 15,
     Watch = 25,
+    Blit = 40,
     Display = 13,
     DisplayResponse = -13
   };
