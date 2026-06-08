@@ -118,12 +118,12 @@ function GXCommandsForNamespace( namespace?: GXNamespaceArg ) {
           type: ArgType.Any,
         },
         [GGG.Transform]: {
-          description: "Transform coefficients (per mode): box = source min,max pairs; affine = matrix.",
+          description: "Transform coefficients (per mode): box = source min,max pairs; map = (axis,min,max) triples; affine = matrix.",
           type: ArgType.Number,
           format: "(n+)",
         },
         [GGG.Storage]: {
-          description: "Transform mode: box (default) / identity / affine (index or name).",
+          description: "Transform mode: box (default) / identity / affine / map (index or name).",
           type: ArgType.Any,
         },
         [GGG.Offset]: ArgsPosition,

@@ -47,6 +47,11 @@ describe( "MatrixBlit (G40)", () => {
       .toEqual( [ 2, 2, 3, 5, 5, 6, 8, 8, 9 ] )
   } )
 
+  test( "map mode remaps one axis by (axis,min,max), leaving the rest identity", async () => {
+    expect( await blit( 'G40 R0 W1 T"map" M1,1,3 E"nearest"' ) )
+      .toEqual( [ 4, 5, 6, 4, 5, 6, 7, 8, 9 ] )
+  } )
+
   test( "half-extent box [0,1.5] nearest magnifies the top-left (filter by name)", async () => {
     // E positional: [ filter, edge, coord ]; nearest filter.
     expect( await blit( 'G40 R0 W1 T"box" M0,1.5,0,1.5 E"nearest"' ) )

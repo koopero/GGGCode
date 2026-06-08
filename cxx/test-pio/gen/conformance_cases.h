@@ -9,6 +9,9 @@ namespace ggg_conformance {
   static const double values_blit_box_default[] = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0 };
   static const double values_blit_box_full[] = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0 };
   static const double values_blit_box_subregion[] = { 2.0, 2.0, 3.0, 5.0, 5.0, 6.0, 8.0, 8.0, 9.0 };
+  static const double values_blit_map_axis[] = { 4.0, 5.0, 6.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0 };
+  static const double values_blit_map_default[] = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0 };
+  static const double values_blit_map_by_index[] = { 2.0, 2.0, 3.0, 5.0, 5.0, 6.0, 8.0, 8.0, 9.0 };
   static const double values_blit_identity[] = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0 };
   static const double values_blit_affine_identity[] = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0 };
   static const double values_blit_mode_by_index[] = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0 };
@@ -91,6 +94,9 @@ namespace ggg_conformance {
     { "blit_box_default", "G40 R\"bs\" W\"bd\"\nG10 R\"bd\"\n", "OK", values_blit_box_default, 9, nullptr },
     { "blit_box_full", "G40 R\"bs\" W\"bd\" T\"box\" M0,3,0,3\nG10 R\"bd\"\n", "OK", values_blit_box_full, 9, nullptr },
     { "blit_box_subregion", "G40 R\"bs\" W\"bd\" T\"box\" M1,3,0,3 E\"nearest\"\nG10 R\"bd\"\n", "OK", values_blit_box_subregion, 9, nullptr },
+    { "blit_map_axis", "G40 R\"bs\" W\"bd\" T\"map\" M1,1,3 E\"nearest\"\nG10 R\"bd\"\n", "OK", values_blit_map_axis, 9, nullptr },
+    { "blit_map_default", "G40 R\"bs\" W\"bd\" T\"map\"\nG10 R\"bd\"\n", "OK", values_blit_map_default, 9, nullptr },
+    { "blit_map_by_index", "G40 R\"bs\" W\"bd\" T3 M0,1,3 E\"nearest\"\nG10 R\"bd\"\n", "OK", values_blit_map_by_index, 9, nullptr },
     { "blit_identity", "G40 R\"bs\" W\"bd\" T\"identity\"\nG10 R\"bd\"\n", "OK", values_blit_identity, 9, nullptr },
     { "blit_affine_identity", "G40 R\"bs\" W\"bd\" T\"affine\" M1,0,0,0,1,0\nG10 R\"bd\"\n", "OK", values_blit_affine_identity, 9, nullptr },
     { "blit_mode_by_index", "G40 R\"bs\" W\"bd\" T2 M1,0,0,0,1,0\nG10 R\"bd\"\n", "OK", values_blit_mode_by_index, 9, nullptr },

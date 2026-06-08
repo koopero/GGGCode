@@ -7,8 +7,9 @@
 #
 # Transform modes (the T arg; M reused per mode): box (default) = a source min,max
 # rectangle in PIXEL coords stretched to fill the dest (omitted -> full source
-# [0,dim], i.e. an identity copy); identity = explicit no-op; affine = the general
-# rank x (rank+1) matrix. Box subsumes the old scale+translate parameterization.
+# [0,dim], i.e. an identity copy); map = box with (axis,min,max) triples so one
+# axis can be remapped while the rest stay identity; identity = explicit no-op;
+# affine = the general rank x (rank+1) matrix. Box subsumes the old scale+translate.
 
 - name: blit_box_default
   description: "With no mode/coeffs the default box is the full source [0,dim] per axis -- an identity copy."
@@ -34,6 +35,33 @@
   tags: [ blit ]
   program: |
     G40 R"bs" W"bd" T"box" M1,3,0,3 E"nearest"
+    G10 R"bd"
+  values: [ 2, 2, 3, 5, 5, 6, 8, 8, 9 ]
+
+- name: blit_map_axis
+  description: "map mode takes (axis,min,max) triples: remap only axis 1 to source rows 1..3, leaving axis 0 identity. nearest filter."
+  needs: [ ggggx ]
+  tags: [ blit ]
+  program: |
+    G40 R"bs" W"bd" T"map" M1,1,3 E"nearest"
+    G10 R"bd"
+  values: [ 4, 5, 6, 4, 5, 6, 7, 8, 9 ]
+
+- name: blit_map_default
+  description: "map with no triples names no axes, so every axis stays full-source -- an identity copy."
+  needs: [ ggggx ]
+  tags: [ blit ]
+  program: |
+    G40 R"bs" W"bd" T"map"
+    G10 R"bd"
+  values: [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
+
+- name: blit_map_by_index
+  description: "Mode by index T3 == map; the (0,1,3) triple remaps axis 0 (== box [1,3] on axis 0). nearest filter."
+  needs: [ ggggx ]
+  tags: [ blit ]
+  program: |
+    G40 R"bs" W"bd" T3 M0,1,3 E"nearest"
     G10 R"bd"
   values: [ 2, 2, 3, 5, 5, 6, 8, 8, 9 ]
 

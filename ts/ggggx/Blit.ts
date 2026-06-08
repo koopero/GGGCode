@@ -33,6 +33,9 @@ function resolveOption( value: string | number | undefined, list: string[] ): st
 //                    PIXEL coords; the rect is stretched to fill the dest.
 //                    Omitted pair/value defaults to the full source [0,dim], so
 //                    the default box is an identity copy. Subsumes scale+translate.
+//   map           -- like box, but M is (axis, min, max) triples -- each names the
+//                    axis it sets, so you can remap one axis and leave the rest
+//                    identity. Unnamed axes stay full-source.
 //   identity      -- explicit no-op (== box with default args).
 //   affine        -- M = the general rank x (rank+1) matrix (rotation/shear/...).
 //
@@ -40,7 +43,7 @@ function resolveOption( value: string | number | undefined, list: string[] ): st
 // form here leaves room for a projective mode later.
 //
 
-export const BlitModes = [ "box", "identity", "affine" ] as const
+export const BlitModes = [ "box", "identity", "affine", "map" ] as const
 export type BlitMode = typeof BlitModes[number]
 
 export function resolveMode( mode: string | number | undefined ): BlitMode {
@@ -98,6 +101,22 @@ export function buildTransform( mode: BlitMode, M: number[], rank: number, srcDi
       const hi = M[ 2 * i + 1 ] ?? dim
       H[i][i]    = ( hi - lo ) / dim
       H[i][rank] = lo / dim
+    }
+    return H
+  }
+
+  if ( mode === "map" ) {
+    // M = [ axis, min, max, axis, min, max, ... ] -- each triple sets one named
+    // axis's source rect (pixel coords), like box but axis-addressed. Axes not
+    // named stay identity (full source); incomplete trailing triples are ignored.
+    for ( let i = 0; i + 3 <= M.length; i += 3 ) {
+      const axis = Math.floor( M[i] )
+      if ( axis < 0 || axis >= rank ) continue
+      const dim = srcDims[axis] || 1
+      const lo = M[ i + 1 ]
+      const hi = M[ i + 2 ]
+      H[axis][axis] = ( hi - lo ) / dim
+      H[axis][rank] = lo / dim
     }
     return H
   }

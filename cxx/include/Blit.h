@@ -20,7 +20,8 @@
 // is the destination's spatial rank ( dim.size() - dimension ). Modes (M reused
 // per mode): box (default) = a source min,max rectangle in pixel coords stretched
 // to fill the dest (omitted -> full source [0,dim] = identity); identity = no-op;
-// affine = the general matrix. Box subsumes the old scale+translate.
+// affine = the general matrix; map = box with (axis,min,max) triples (remap one
+// axis, leave the rest identity). Box subsumes the old scale+translate.
 //
 
 namespace ggg {
@@ -32,7 +33,7 @@ namespace ggg {
     return "";
   }
   inline const std::vector<String> & blitModes() {
-    static const std::vector<String> v = { "box", "identity", "affine" };
+    static const std::vector<String> v = { "box", "identity", "affine", "map" };
     return v;
   }
   inline const std::vector<String> & blitFilters() {
@@ -78,6 +79,22 @@ namespace ggg {
         double hi = ( 2 * i + 1 < (int) M.size() ) ? M[ 2 * i + 1 ] : dim;
         H[ (size_t) i * n + i ]    = ( hi - lo ) / dim;
         H[ (size_t) i * n + rank ] = lo / dim;
+      }
+      return H;
+    }
+
+    if ( mode == "map" ) {
+      // M = [ axis, min, max, axis, min, max, ... ] -- each triple sets one named
+      // axis's source rect (pixel coords), like box but axis-addressed. Axes not
+      // named stay identity; incomplete trailing triples are ignored.
+      for ( int i = 0; i + 3 <= (int) M.size(); i += 3 ) {
+        int axis = (int) std::floor( M[i] );
+        if ( axis < 0 || axis >= rank ) continue;
+        double dim = ( axis < (int) srcDims.size() && srcDims[axis] > 0 ) ? (double) srcDims[axis] : 1.;
+        double lo = M[ i + 1 ];
+        double hi = M[ i + 2 ];
+        H[ (size_t) axis * n + axis ] = ( hi - lo ) / dim;
+        H[ (size_t) axis * n + rank ] = lo / dim;
       }
       return H;
     }
@@ -223,8 +240,8 @@ namespace ggg {
       addArg( Register, "source register index or name", "(n|s)" );
       addArg( Alias, "source register name", "(s)" );
       addArg( Target, "destination register index or name", "(n|s)" );
-      addArg( Transform, "transform coeffs (per mode): box = source min,max pairs; affine = matrix", "(n+)" );
-      addArg( Storage, "transform mode: box (default) / identity / affine", "(n|s)" );
+      addArg( Transform, "transform coeffs (per mode): box = source min,max pairs; map = (axis,min,max) triples; affine = matrix", "(n+)" );
+      addArg( Storage, "transform mode: box (default) / identity / affine / map", "(n|s)" );
       addArg( Offset, "dest region offset", "(n+)" );
       addArg( Size, "dest region size", "(n+)" );
       addArg( Dimension, "channel dimension count", "(n)" );

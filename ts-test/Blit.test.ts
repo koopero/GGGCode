@@ -53,6 +53,16 @@ describe( "Blit", () => {
     expect( d.data ).toEqual( [ 2, 2, 3, 5, 5, 6, 8, 8, 9 ] )
   } )
 
+  test( "map remaps a single named axis (axis,min,max), leaving the rest identity", () => {
+    // map (axis 0, 1, 3) == box [1,3,0,3]; map (axis 1, 1, 3) remaps the outer axis.
+    const a = mk( [ 3, 3 ] )
+    Blit( a, mk( [ 3, 3 ], srcData ), { mode: "map", matrix: [ 0, 1, 3 ], filter: "nearest" } )
+    expect( a.data ).toEqual( [ 2, 2, 3, 5, 5, 6, 8, 8, 9 ] )
+    const b = mk( [ 3, 3 ] )
+    Blit( b, mk( [ 3, 3 ], srcData ), { mode: "map", matrix: [ 1, 1, 3 ], filter: "nearest" } )
+    expect( b.data ).toEqual( [ 4, 5, 6, 4, 5, 6, 7, 8, 9 ] )
+  } )
+
   test( "axis-0 shifted box (nearest, hold) shifts along the innermost axis", () => {
     const d = mk( [ 3, 3 ] )
     // box [1.2,4.2] on axis 0 == old scale 1 + translate 0.4 (1.2/3); held at edge.

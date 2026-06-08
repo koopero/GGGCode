@@ -4,11 +4,11 @@
 
 Each case is one artifact wearing four hats: a behavioural **spec**, a piece of **documentation**, a runnable **example**, and a cross-engine conformance **test**. The contract is the decoded `values` stream within a global epsilon; `status` is the control response. Cases are grouped below by `tag` (a case appears under each tag it carries).
 
-86 cases across 20 tags.
+89 cases across 20 tags.
 
 ## Tags
 
-- [blit](#blit) (13)
+- [blit](#blit) (16)
 - [conditionals](#conditionals) (6)
 - [decimals](#decimals) (7)
 - [flow](#flow) (12)
@@ -61,6 +61,42 @@ A box selects a source sub-rectangle (x columns 1..3) and stretches it to fill t
 
 ```
 G40 R"bs" W"bd" T"box" M1,3,0,3 E"nearest"
+G10 R"bd"
+```
+
+- values: `[2,2,3,5,5,6,8,8,9]`
+- needs: `ggggx`
+
+### blit_map_axis
+
+map mode takes (axis,min,max) triples: remap only axis 1 to source rows 1..3, leaving axis 0 identity. nearest filter.
+
+```
+G40 R"bs" W"bd" T"map" M1,1,3 E"nearest"
+G10 R"bd"
+```
+
+- values: `[4,5,6,4,5,6,7,8,9]`
+- needs: `ggggx`
+
+### blit_map_default
+
+map with no triples names no axes, so every axis stays full-source -- an identity copy.
+
+```
+G40 R"bs" W"bd" T"map"
+G10 R"bd"
+```
+
+- values: `[1,2,3,4,5,6,7,8,9]`
+- needs: `ggggx`
+
+### blit_map_by_index
+
+Mode by index T3 == map; the (0,1,3) triple remaps axis 0 (== box [1,3] on axis 0). nearest filter.
+
+```
+G40 R"bs" W"bd" T3 M0,1,3 E"nearest"
 G10 R"bd"
 ```
 

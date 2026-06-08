@@ -655,6 +655,7 @@ void test_blit() {
   };
   const float ident[9]     = { 1,2,3,4,5,6,7,8,9 };
   const float subregion[9] = { 2,2,3,5,5,6,8,8,9 };
+  const float mapped[9]    = { 4,5,6,4,5,6,7,8,9 };
   const float magnify[9]   = { 1,1,2,1,1,2,4,4,5 };
   const float added[9]     = { 11,12,13,14,15,16,17,18,19 };
 
@@ -666,6 +667,11 @@ void test_blit() {
   m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
   m.run( "G40 R0 W1 T\"box\" M1,3,0,3 E\"nearest\"\n" );
   expect( subregion );
+
+  // map: (axis 1, 1, 3) remaps only the outer axis, leaving axis 0 identity
+  m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
+  m.run( "G40 R0 W1 T\"map\" M1,1,3 E\"nearest\"\n" );
+  expect( mapped );
 
   // half-extent box [0,1.5] nearest magnify (filter by name)
   m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
