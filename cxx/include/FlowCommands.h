@@ -68,17 +68,13 @@ namespace ggg {
   public:
     bool iter = false;
     bool cond = false;
-    bool loop = false;
-    long loopMax = 0;
-    String source;      // opener source ("T9 G… A…"), for re-evaluating the loop condition
     std::vector<NumberType> values;
     bool hasReg = false;
     bool regByName = false;
     String regName;
     Index regIndex = 0;
     void onClose( Machine & m ) override {
-      if ( loop ) m.runLoop( source, body, loopMax );
-      else if ( iter ) m.enqueueLoop( values, body, hasReg, regByName, regName, regIndex );
+      if ( iter ) m.enqueueLoop( values, body, hasReg, regByName, regName, regIndex );
       else if ( cond ) m.enqueueLines( body );
     }
   };
@@ -111,40 +107,34 @@ namespace ggg {
     }
   };
 
-  // T9: the block combinator. With G it is a bounded while-loop (T9 G<max>):
-  // re-check the A/O condition each pass and run the body while it holds. With V
-  // it iterates the body once per value (writing each into the R register so the
-  // body reads it as $name/$index). Otherwise it is a one-shot conditional (A =
-  // all truthy, O = any). The body is always captured first (so nested blocks
-  // compose). Loop mode mirrors the re-evaluatable G path in TS gggtxCommands.ts.
+  // T9: the block combinator. With V it iterates the body once per value
+  // (writing each into the R register so the body reads it as $name/$index);
+  // otherwise it is a one-shot conditional (A = all truthy, O = any). The body
+  // is always captured first (so nested blocks compose). Re-evaluatable looping
+  // (G) is a deliberate follow-up, not built here.
   class Conditional : public CommandType {
   public:
     bool hasA, hasO, allTruthy, anyTruthy;
-    bool loop;
-    long loopMax;
     std::vector<NumberType> iterValues;
     bool hasReg, regByName;
     String regName;
     Index regIndex;
     Conditional() {
       name = FlowConditional;
-      description = "Block combinator: G loops, V iterates, A/O run once if a condition holds";
+      description = "Block combinator: V iterates, A/O run once if a condition holds";
       addArg( 'A', "run if all values are truthy", "(n+)" );
       addArg( 'O', "run if any value is truthy", "(n+)" );
-      addArg( GGG::Repeat, "loop: max iterations, re-checking A/O each pass", "(n)" );
       addArg( GGG::Value, "iterate the body once per value", "(n+)" );
       addArg( GGG::Register, "iteration register (name or index)", "" );
     }
     void hookCommand() override {
       hasA = false; hasO = false; allTruthy = true; anyTruthy = false;
-      loop = false; loopMax = 0;
       iterValues.clear(); hasReg = false; regByName = false; regName.clear(); regIndex = 0;
     }
     void hookNumber() override {
       bool truthy = number != 0;
       if ( code == 'A' ) { hasA = true; allTruthy = allTruthy && truthy; }
       else if ( code == 'O' ) { hasO = true; anyTruthy = anyTruthy || truthy; }
-      else if ( code == GGG::Repeat ) { loop = true; loopMax = (long) number; }
       else if ( code == GGG::Value ) { iterValues.push_back( number ); }
       else if ( code == GGG::Register ) { hasReg = true; regByName = false; regIndex = (Index) number; }
     }
@@ -153,13 +143,7 @@ namespace ggg {
     }
     void hookFinish() override {
       auto * frame = new ConditionalCaptureFrame();
-      if ( loop ) {
-        // Loop mode (T9 G<max>): capture the body; store the opener source so the
-        // A/O condition can be re-evaluated against current state each pass.
-        frame->loop = true;
-        frame->loopMax = loopMax;
-        frame->source = trimSource( machine->state.line );
-      } else if ( !iterValues.empty() ) {
+      if ( !iterValues.empty() ) {
         frame->iter = true;
         frame->values = iterValues;
         frame->hasReg = hasReg;
