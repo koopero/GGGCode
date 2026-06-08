@@ -2,10 +2,11 @@ type FloatT = number
 type IntT = number
 type BufferIndexT = number
 
-import { floor, mod, max, min, fract, toVector } from "../common/math"
+import { floor, ceil, mod, max, min, fract, toVector } from "../common/math"
 import { isArray, isUndefined } from "../common/util"
 import Matrix from "../ggg/Matrix"
 import { VecArg } from "../ggg/Language"
+import { DimIterate } from "../ggg/Dim"
 import { Filter, Edge, Coord } from "./GXLanguage"
 
 
@@ -65,6 +66,61 @@ export default function Sample( buffer:Matrix, position:VecArg = 0, options:Samp
   return isArray( value ) ? result : result[0]
 }
 
+
+// Reduce (minification) operators for SampleReduce's footprint fold. Index order
+// is the contract for the E sampler-options slot 3 (mirrored in C++).
+export const ReduceList: string[] = [ "mid", "min", "max", "add" ]
+
+// Cap on taps per spatial axis, so a huge footprint stays deterministic + bounded.
+const MAX_TAPS = 8
+
+//
+// Minification: integrate the source over a footprint box around `position`
+// (extent in source texels, per spatial axis) and fold the covered samples with
+// a reduce operator -- mid (arithmetic mean), min, max, add (sum). Walks a
+// taps-per-axis grid (taps = clamp(ceil(footprint),1,MAX_TAPS)); footprint <= 1
+// degrades to a single point sample (== Sample). Sampling each tap reuses Sample
+// (so filter/edge/coord still apply).
+//
+export function SampleReduce( buffer:Matrix, position:number[], footprint:number[], reduce:string, options:SampleOptions = {} ):number[] {
+  const { dim } = buffer
+  const { dimension = 0 } = options
+
+  let channels = 1
+  for ( let d = 0; d < dimension; d++ ) channels *= dim[d]
+  const rank = position.length - dimension
+
+  const taps:number[] = []
+  for ( let a = 0; a < rank; a++ )
+    taps[a] = max( 1, min( MAX_TAPS, ceil( footprint[a] || 1 ) ) )
+
+  const init = reduce === "min" ? Infinity : reduce === "max" ? -Infinity : 0
+  const acc = new Array( channels ).fill( init )
+  let count = 0
+
+  for ( const combo of DimIterate( taps ) ) {
+    const pos = position.slice()
+    for ( let a = 0; a < rank; a++ ) {
+      const srcSize = dim[ dimension + a ] || 1
+      const fpNorm = ( footprint[a] || 0 ) / srcSize           // footprint in normalized coords
+      const t = taps[a] > 1 ? ( combo[a] + 0.5 ) / taps[a] - 0.5 : 0
+      pos[ dimension + a ] += fpNorm * t
+    }
+    const s = Sample( buffer, pos, options ) as number[]
+    for ( let ch = 0; ch < channels; ch++ ) {
+      const v = s[ch]
+      if ( reduce === "min" ) acc[ch] = min( acc[ch], v )
+      else if ( reduce === "max" ) acc[ch] = max( acc[ch], v )
+      else acc[ch] += v                                        // add + mid both sum
+    }
+    count++
+  }
+
+  if ( reduce === "mid" && count > 0 )
+    for ( let ch = 0; ch < channels; ch++ ) acc[ch] /= count
+
+  return acc
+}
 
 function resolveAxis(val: FloatT, size: BufferIndexT, filter: string = Filter.Linear, edge: string = Edge.Repeat, coord: string = Coord.Normalized ): ResolvedAxis {
   const axis: ResolvedAxis = { index0: 0, index1: 0, fraction: 0 }

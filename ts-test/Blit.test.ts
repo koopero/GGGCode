@@ -1,6 +1,7 @@
 import { describe, test, expect } from "@jest/globals"
 import Matrix from "../ts/ggg/Matrix"
 import { Blit, buildTransform, applyHomogeneous } from "../ts/ggggx/Blit"
+import { SampleReduce } from "../ts/ggggx/Sample"
 
 function mk( dim: number[], data?: number[] ) {
   return new Matrix( { dim, data: data ?? new Array( dim.reduce( ( a, b ) => a * b, 1 ) ).fill( 0 ) } )
@@ -46,6 +47,32 @@ describe( "Blit", () => {
     // it: cell x samples src floor((x/3+0.4)*3) = x+1 (held at the edge).
     Blit( d, mk( [ 3, 3 ], srcData ), { mode: "scale+translate", matrix: [ 1, 1, 0.4, 0 ], filter: "nearest", edge: "hold" } )
     expect( d.data ).toEqual( [ 2, 3, 3, 5, 6, 6, 8, 9, 9 ] )
+  } )
+
+  test( "scale 2 + mid reduce minifies (box mean over a 2-texel footprint)", () => {
+    const d = mk( [ 3, 3 ] )
+    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "scale+translate", matrix: [ 2, 2, 0, 0 ], edge: "hold", reduce: "mid" } )
+    expect( d.data.map( ( v: number ) => +v.toFixed( 4 ) ) )
+      .toEqual( [ 2.1875, 3.5625, 3.75, 6.6875, 8.0625, 8.25, 7.25, 8.75, 9 ] )
+  } )
+
+  describe( "SampleReduce", () => {
+    // taps cover the whole image (footprint [3,3], nearest) -> the 9 cells exactly.
+    const src = mk( [ 3, 3 ], srcData )
+    const opt = { dimension: 0, filter: "nearest", edge: "repeat", coord: "normalized" }
+    test( "add sums the footprint", () => {
+      expect( SampleReduce( src, [ 0.5, 0.5 ], [ 3, 3 ], "add", opt ) ).toEqual( [ 45 ] )
+    } )
+    test( "mid is the arithmetic mean", () => {
+      expect( SampleReduce( src, [ 0.5, 0.5 ], [ 3, 3 ], "mid", opt ) ).toEqual( [ 5 ] )
+    } )
+    test( "max / min are the extrema", () => {
+      expect( SampleReduce( src, [ 0.5, 0.5 ], [ 3, 3 ], "max", opt ) ).toEqual( [ 9 ] )
+      expect( SampleReduce( src, [ 0.5, 0.5 ], [ 3, 3 ], "min", opt ) ).toEqual( [ 1 ] )
+    } )
+    test( "footprint <= 1 degrades to a point sample", () => {
+      expect( SampleReduce( src, [ 0.5, 0.5 ], [ 1, 1 ], "mid", opt ) ).toEqual( [ 5 ] )
+    } )
   } )
 
   test( "buildTransform / applyHomogeneous: scale+translate maps coordinates", () => {

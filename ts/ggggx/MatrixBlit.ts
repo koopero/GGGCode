@@ -17,7 +17,8 @@ import { Blit, BlitOptions } from "./Blit"
 //   P / S   -- dest region offset / size (default whole dest spatial extent)
 //   D       -- channel-dimension count (default 0 = all axes spatial)
 //   Q       -- operator combining the sampled value into the dest cell (default set)
-//   E       -- sampler options, positional: [ filter, edge, coord ] (each index | name)
+//   E       -- sampler options, positional: [ filter, edge, coord, reduce ]
+//             ( each index | name; reduce = minification fold mid/min/max/add )
 //
 
 function reset( state: { [key: string]: any } ) {
@@ -83,7 +84,7 @@ function MatrixBlitHookEnd( arg: HookArgs ) {
     return
   }
 
-  const [ filter, edge, coord ] = state.eopts
+  const [ filter, edge, coord, reduce ] = state.eopts
   const options: BlitOptions = {
     dimension: state.dimension,
     mode: state.mode,
@@ -94,6 +95,7 @@ function MatrixBlitHookEnd( arg: HookArgs ) {
     filter,
     edge,
     coord,
+    reduce,
   }
 
   Blit( dest, source, options )

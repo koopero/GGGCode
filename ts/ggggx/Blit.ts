@@ -1,5 +1,5 @@
 import Matrix from "../ggg/Matrix"
-import Sample from "./Sample"
+import Sample, { SampleReduce, ReduceList } from "./Sample"
 import { OperatorApply } from "./Operators"
 import { DimIterate } from "../ggg/Dim"
 import { isString } from "../common/util"
@@ -51,6 +51,7 @@ export interface BlitOptions {
   filter?: string | number
   edge?: string | number
   coord?: string | number
+  reduce?: string | number        // minification fold (mid/min/max/add); off = point sample
 }
 
 // Row-major (rank+1) x (rank+1) identity.
@@ -102,11 +103,31 @@ export function applyHomogeneous( H: number[][], c: number[], rank: number ): nu
   return out
 }
 
+// Footprint (in source texels, per spatial axis) covered by one destination
+// texel, via a numerical Jacobian: step one dest texel along each dest axis and
+// measure the resulting source displacement (max over dest-axis directions).
+// Drives minification reduction; <= 1 means no aliasing (point sample suffices).
+function footprintOf( H: number[][], c: number[], destSpatial: number[], srcSpatial: number[], rank: number ): number[] {
+  const src = applyHomogeneous( H, c, rank )
+  const fp = new Array( rank ).fill( 0 )
+  for ( let a = 0; a < rank; a++ ) {
+    const cc = c.slice()
+    cc[a] += 1 / ( destSpatial[a] || 1 )
+    const src2 = applyHomogeneous( H, cc, rank )
+    for ( let b = 0; b < rank; b++ ) {
+      const d = Math.abs( src2[b] - src[b] ) * ( srcSpatial[b] || 1 )
+      if ( d > fp[b] ) fp[b] = d
+    }
+  }
+  return fp
+}
+
 export function Blit( dest: Matrix, source: Matrix, options: BlitOptions = {} ): void {
   const dimension = options.dimension ?? 0
   const mode = resolveMode( options.mode )
   const M = options.matrix ?? []
   const operator = options.operator ?? "set"
+  const reduce = resolveOption( options.reduce, ReduceList )
   const sampleOpts = {
     dimension,
     filter: resolveOption( options.filter, FilterList ),
@@ -116,6 +137,7 @@ export function Blit( dest: Matrix, source: Matrix, options: BlitOptions = {} ):
 
   const rank = dest.dim.length - dimension
   const destSpatial = dest.dim.slice( dimension )
+  const srcSpatial = source.dim.slice( dimension )
   const H = buildTransform( mode, M, rank )
 
   const size = options.size && options.size.length ? options.size : destSpatial
@@ -131,7 +153,12 @@ export function Blit( dest: Matrix, source: Matrix, options: BlitOptions = {} ):
     // Inverse-map to a normalized source coordinate.
     const src = applyHomogeneous( H, c, rank )
 
-    const sampled = Sample( source, channelPrefix.concat( src ), sampleOpts ) as number[]
+    // With a reduce op, integrate the transform-derived footprint (minification);
+    // otherwise point/interpolated sample. SampleReduce degrades to a point
+    // sample when the footprint is <= 1 texel, so no separate branch is needed.
+    const sampled = reduce
+      ? SampleReduce( source, channelPrefix.concat( src ), footprintOf( H, c, destSpatial, srcSpatial, rank ), reduce, sampleOpts )
+      : Sample( source, channelPrefix.concat( src ), sampleOpts ) as number[]
 
     const destPos = channelPrefix.concat( destCoord )
     for ( let ch = 0; ch < sampled.length; ch++ ) {

@@ -67,6 +67,13 @@ describe( "MatrixBlit (G40)", () => {
     expect( [ ...dest.data ] ).toEqual( [ 11, 12, 13, 14, 15, 16, 17, 18, 19 ] )
   } )
 
+  test( "scale 2 + mid reduce minifies (E slot 3 = reduce, by index)", async () => {
+    // E0,0,0,0 = linear, hold, normalized, reduce=mid (ReduceList index 0).
+    expect( await blit( 'G40 R0 W1 T"scale+translate" M2,2,0,0 E0,0,0,0' )
+      .then( d => d.map( v => +v.toFixed( 4 ) ) ) )
+      .toEqual( [ 2.1875, 3.5625, 3.75, 6.6875, 8.0625, 8.25, 7.25, 8.75, 9 ] )
+  } )
+
   test( "missing source register reports OZ", async () => {
     const machine = ggggxMachine()
     await machine.run( "G30 R1 S3,3\n" )
