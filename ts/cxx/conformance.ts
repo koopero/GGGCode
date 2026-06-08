@@ -33,6 +33,10 @@ export async function golden( program: string, needs: Subsystem[] ): Promise<str
   const registers = machine.getRegisterList( Matrix )
   registers.add( new Matrix( { dim: [3], data: [10, 20, 30] } ), { name: "r" } )
   registers.add( new Matrix( { dim: [2, 3], data: [10, 11, 12, 13, 14, 15] } ), { name: "m" } )
+  // Blit (G40) fixtures: source "bs" = 3x3 [1..9], destination "bd" = 3x3 zeroed
+  // (read back via G10 to compare the transform result).
+  registers.add( new Matrix( { dim: [3, 3], data: [1, 2, 3, 4, 5, 6, 7, 8, 9] } ), { name: "bs" } )
+  registers.add( new Matrix( { dim: [3, 3], data: [0, 0, 0, 0, 0, 0, 0, 0, 0] } ), { name: "bd" } )
   let out = ""
   const onOutput = ( line: any ) => { out += Format( line ) }
   machine.on( "output", onOutput )

@@ -4,10 +4,11 @@
 
 Each case is one artifact wearing four hats: a behavioural **spec**, a piece of **documentation**, a runnable **example**, and a cross-engine conformance **test**. The contract is the decoded `values` stream within a global epsilon; `status` is the control response. Cases are grouped below by `tag` (a case appears under each tag it carries).
 
-73 cases across 19 tags.
+82 cases across 20 tags.
 
 ## Tags
 
+- [blit](#blit) (9)
 - [conditionals](#conditionals) (6)
 - [decimals](#decimals) (7)
 - [flow](#flow) (12)
@@ -27,6 +28,117 @@ Each case is one artifact wearing four hats: a behavioural **spec**, a piece of 
 - [subscript](#subscript) (6)
 - [unicode](#unicode) (6)
 - [unitary](#unitary) (8)
+
+## blit
+
+### blit_identity
+
+G40 identity mode copies the source into the destination unchanged.
+
+```
+G40 R"bs" W"bd" T"identity"
+G10 R"bd"
+```
+
+- values: `[1,2,3,4,5,6,7,8,9]`
+- needs: `ggggx`
+
+### blit_affine_identity
+
+Affine mode with the identity matrix (linear part + zero translation) copies the source.
+
+```
+G40 R"bs" W"bd" T"affine" M1,0,0,0,1,0
+G10 R"bd"
+```
+
+- values: `[1,2,3,4,5,6,7,8,9]`
+- needs: `ggggx`
+
+### blit_scale_identity
+
+scale+translate mode with unit scale and zero translation copies the source.
+
+```
+G40 R"bs" W"bd" T"scale+translate" M1,1,0,0
+G10 R"bd"
+```
+
+- values: `[1,2,3,4,5,6,7,8,9]`
+- needs: `ggggx`
+
+### blit_mode_by_index
+
+The transform mode accepts an index: T2 == scale+translate.
+
+```
+G40 R"bs" W"bd" T2 M1,1,0,0
+G10 R"bd"
+```
+
+- values: `[1,2,3,4,5,6,7,8,9]`
+- needs: `ggggx`
+
+### blit_magnify_nearest
+
+0.5 scale + nearest filter magnifies the top-left 2x2 of the source.
+
+```
+G40 R"bs" W"bd" T"scale+translate" M0.5,0.5,0,0 E"nearest"
+G10 R"bd"
+```
+
+- values: `[1,1,2,1,1,2,4,4,5]`
+- needs: `ggggx`
+
+### blit_filter_by_index
+
+Sampler options accept an index: E1 == nearest (slot 0 = filter).
+
+```
+G40 R"bs" W"bd" T2 M0.5,0.5,0,0 E1
+G10 R"bd"
+```
+
+- values: `[1,1,2,1,1,2,4,4,5]`
+- needs: `ggggx`
+
+### blit_magnify_linear
+
+0.5 scale with the default linear filter interpolates between source texels (fractional result).
+
+```
+G40 R"bs" W"bd" T"scale+translate" M0.5,0.5,0,0
+G10 R"bd"
+```
+
+- values: `[1,1.5,2,2.5,2.75,3,4,4.5,5]`
+- needs: `ggggx`
+
+### blit_translate_hold
+
+A +0.4 normalized translate on axis 0 with nearest+hold shifts and clamps at the edge; E is positional [filter, edge] by index (E1,0).
+
+```
+G40 R"bs" W"bd" T"scale+translate" M1,1,0.4,0 E1,0
+G10 R"bd"
+```
+
+- values: `[2,3,3,5,6,6,8,9,9]`
+- needs: `ggggx`
+
+### blit_operator_add
+
+Q combines the sampled value into the destination cell: an identity blit with add onto a dest pre-filled with 10.
+
+```
+G20 R"bd" V10,10,10,10,10,10,10,10,10
+G40 R"bs" W"bd" T"identity" Q"add"
+G10 R"bd"
+```
+
+- values: `[11,12,13,14,15,16,17,18,19]`
+- needs: `ggggx`
 
 ## conditionals
 

@@ -161,6 +161,7 @@ struct ConformanceMachine : public ggg::Machine {
     addCommand( new ggg::Conditional() );
     addCommand( new ggg::MatrixWrite() );   // ggggx G20
     addCommand( new ggg::MatrixRead() );    // ggggx G10
+    addCommand( new ggg::MatrixBlit() );    // ggggx G40
     // A fixed register "r" = [10,20,30] so reference cases ($r) have data.
     auto *reg = new ggg::Matrix<float,false>( {1,3} );
     reg->allocate();
@@ -176,6 +177,17 @@ struct ConformanceMachine : public ggg::Machine {
     mat->name = "m";
     for ( int i = 0; i < 6; i++ ) mat->writeScalarFloat( 10 + i, i );
     addRegister( mat );
+    // Blit (G40) fixtures: source "bs" = 3x3 [1..9], destination "bd" = 3x3
+    // zeroed (read back via G10 to compare the transform result).
+    auto *bs = new ggg::Matrix<float,false>( {3,3} );
+    bs->allocate();
+    bs->name = "bs";
+    for ( int i = 0; i < 9; i++ ) bs->writeScalarFloat( i + 1, i );
+    addRegister( bs );
+    auto *bd = new ggg::Matrix<float,false>( {3,3} );
+    bd->allocate();
+    bd->name = "bd";
+    addRegister( bd );
   }
 };
 
