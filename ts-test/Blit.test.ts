@@ -53,14 +53,20 @@ describe( "Blit", () => {
     expect( d.data ).toEqual( [ 2, 2, 3, 5, 5, 6, 8, 8, 9 ] )
   } )
 
-  test( "map remaps a single named axis (axis,min,max), leaving the rest identity", () => {
-    // map (axis 0, 1, 3) == box [1,3,0,3]; map (axis 1, 1, 3) remaps the outer axis.
+  test( "map points each dest axis at a source axis (srcAxis,min,max) -- generalizes box", () => {
+    // dest0<-src0 full, dest1<-src1 [1,3]  ==  box [0,3,1,3]
     const a = mk( [ 3, 3 ] )
-    Blit( a, mk( [ 3, 3 ], srcData ), { mode: "map", matrix: [ 0, 1, 3 ], filter: "nearest" } )
-    expect( a.data ).toEqual( [ 2, 2, 3, 5, 5, 6, 8, 8, 9 ] )
-    const b = mk( [ 3, 3 ] )
-    Blit( b, mk( [ 3, 3 ], srcData ), { mode: "map", matrix: [ 1, 1, 3 ], filter: "nearest" } )
-    expect( b.data ).toEqual( [ 4, 5, 6, 4, 5, 6, 7, 8, 9 ] )
+    Blit( a, mk( [ 3, 3 ], srcData ), { mode: "map", matrix: [ 0, 0, 3, 1, 1, 3 ], filter: "nearest" } )
+    expect( a.data ).toEqual( [ 4, 5, 6, 4, 5, 6, 7, 8, 9 ] )
+  } )
+
+  test( "map swaps axes -> transpose, and swap+reverse -> a quarter-turn rotation", () => {
+    const t = mk( [ 3, 3 ] )           // dest0<-src1, dest1<-src0 = transpose
+    Blit( t, mk( [ 3, 3 ], srcData ), { mode: "map", matrix: [ 1, 0, 3, 0, 0, 3 ], filter: "nearest" } )
+    expect( t.data ).toEqual( [ 1, 4, 7, 2, 5, 8, 3, 6, 9 ] )
+    const r = mk( [ 3, 3 ] )           // dest0<-src1 reversed, dest1<-src0 = 90 deg CW
+    Blit( r, mk( [ 3, 3 ], srcData ), { mode: "map", matrix: [ 1, 2.5, -0.5, 0, 0, 3 ], filter: "nearest" } )
+    expect( r.data ).toEqual( [ 7, 4, 1, 8, 5, 2, 9, 6, 3 ] )
   } )
 
   test( "axis-0 shifted box (nearest, hold) shifts along the innermost axis", () => {

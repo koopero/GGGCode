@@ -118,7 +118,7 @@ function GXCommandsForNamespace( namespace?: GXNamespaceArg ) {
           type: ArgType.Any,
         },
         [GGG.Transform]: {
-          description: "Transform coefficients (per mode): box = source min,max pairs; map = (axis,min,max) triples; affine = matrix.",
+          description: "Transform coefficients (per mode): box = source min,max pairs; map = (srcAxis,min,max) triples per dest axis; affine = matrix.",
           type: ArgType.Number,
           format: "(n+)",
         },

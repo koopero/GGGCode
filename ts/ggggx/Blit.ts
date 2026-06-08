@@ -33,9 +33,11 @@ function resolveOption( value: string | number | undefined, list: string[] ): st
 //                    PIXEL coords; the rect is stretched to fill the dest.
 //                    Omitted pair/value defaults to the full source [0,dim], so
 //                    the default box is an identity copy. Subsumes scale+translate.
-//   map           -- like box, but M is (axis, min, max) triples -- each names the
-//                    axis it sets, so you can remap one axis and leave the rest
-//                    identity. Unnamed axes stay full-source.
+//   map           -- M is (srcAxis, min, max) triples, positional by DEST axis:
+//                    dest axis k samples SOURCE axis srcAxis over [min,max]. Lets
+//                    axes swap (transpose / rotate) and generalizes box (box ==
+//                    each axis at its own position). Unspecified dest axes stay
+//                    identity.
 //   affine        -- M = the general rank x (rank+1) matrix (rotation/shear/...).
 //
 // (An identity copy is just the default box, so there is no separate identity
@@ -106,17 +108,27 @@ export function buildTransform( mode: BlitMode, M: number[], rank: number, srcDi
   }
 
   if ( mode === "map" ) {
-    // M = [ axis, min, max, axis, min, max, ... ] -- each triple sets one named
-    // axis's source rect (pixel coords), like box but axis-addressed. Axes not
-    // named stay identity (full source); incomplete trailing triples are ignored.
-    for ( let i = 0; i + 3 <= M.length; i += 3 ) {
-      const axis = Math.floor( M[i] )
-      if ( axis < 0 || axis >= rank ) continue
-      const dim = srcDims[axis] || 1
-      const lo = M[ i + 1 ]
-      const hi = M[ i + 2 ]
-      H[axis][axis] = ( hi - lo ) / dim
-      H[axis][rank] = lo / dim
+    // M = [ srcAxis, min, max, srcAxis, min, max, ... ], positional by DEST axis:
+    // triple k says destination axis k samples SOURCE axis srcAxis over [min,max]
+    // (pixel coords). Re-pointing a dest axis at a different source axis SWAPS axes
+    // -> transpose / rotation (a reversed range on a swapped axis = rotate). Dest
+    // axes with no triple stay identity. Generalizes box (box == srcAxis at its own
+    // position). Built from zero so a remapped axis drops its identity diagonal.
+    for ( let r = 0; r <= rank; r++ )
+      for ( let c = 0; c <= rank; c++ ) H[r][c] = 0
+    H[rank][rank] = 1
+    const triples = Math.floor( M.length / 3 )
+    for ( let i = 0; i < rank; i++ ) {
+      const a = i < triples ? Math.floor( M[ 3 * i ] ) : -1
+      if ( a >= 0 && a < rank ) {
+        const dim = srcDims[a] || 1
+        const lo = M[ 3 * i + 1 ]
+        const hi = M[ 3 * i + 2 ]
+        H[a][i]    = ( hi - lo ) / dim   // dest axis i drives source axis a
+        H[a][rank] = lo / dim
+      } else {
+        H[i][i] = 1                      // unspecified / invalid -> identity
+      }
     }
     return H
   }

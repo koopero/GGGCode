@@ -20,8 +20,10 @@
 // is the destination's spatial rank ( dim.size() - dimension ). Modes (M reused
 // per mode): box (default) = a source min,max rectangle in pixel coords stretched
 // to fill the dest (omitted -> full source [0,dim] = identity copy); affine = the
-// general matrix; map = box with (axis,min,max) triples (remap one axis, leave the
-// rest identity). Box subsumes the old scale+translate; a bare box is the identity.
+// general matrix; map = (srcAxis,min,max) triples positional by dest axis (dest
+// axis k samples source axis srcAxis over [min,max]) -- swaps axes for transpose /
+// rotation, and generalizes box. Box subsumes the old scale+translate; a bare box
+// is the identity.
 //
 
 namespace ggg {
@@ -84,17 +86,25 @@ namespace ggg {
     }
 
     if ( mode == "map" ) {
-      // M = [ axis, min, max, axis, min, max, ... ] -- each triple sets one named
-      // axis's source rect (pixel coords), like box but axis-addressed. Axes not
-      // named stay identity; incomplete trailing triples are ignored.
-      for ( int i = 0; i + 3 <= (int) M.size(); i += 3 ) {
-        int axis = (int) std::floor( M[i] );
-        if ( axis < 0 || axis >= rank ) continue;
-        double dim = ( axis < (int) srcDims.size() && srcDims[axis] > 0 ) ? (double) srcDims[axis] : 1.;
-        double lo = M[ i + 1 ];
-        double hi = M[ i + 2 ];
-        H[ (size_t) axis * n + axis ] = ( hi - lo ) / dim;
-        H[ (size_t) axis * n + rank ] = lo / dim;
+      // M = [ srcAxis, min, max, srcAxis, min, max, ... ], positional by DEST axis:
+      // triple k says destination axis k samples SOURCE axis srcAxis over [min,max].
+      // Re-pointing a dest axis at a different source axis SWAPS axes -> transpose /
+      // rotation; generalizes box. Built from zero so a remapped axis drops its
+      // identity diagonal; unspecified dest axes stay identity.
+      std::fill( H.begin(), H.end(), 0. );
+      H[ (size_t) rank * n + rank ] = 1.;
+      int triples = (int) M.size() / 3;
+      for ( int i = 0; i < rank; i++ ) {
+        int a = ( i < triples ) ? (int) std::floor( M[ 3 * i ] ) : -1;
+        if ( a >= 0 && a < rank ) {
+          double dim = ( a < (int) srcDims.size() && srcDims[a] > 0 ) ? (double) srcDims[a] : 1.;
+          double lo = M[ 3 * i + 1 ];
+          double hi = M[ 3 * i + 2 ];
+          H[ (size_t) a * n + i ]    = ( hi - lo ) / dim;   // dest axis i drives source axis a
+          H[ (size_t) a * n + rank ] = lo / dim;
+        } else {
+          H[ (size_t) i * n + i ] = 1.;                     // unspecified / invalid -> identity
+        }
       }
       return H;
     }
@@ -240,7 +250,7 @@ namespace ggg {
       addArg( Register, "source register index or name", "(n|s)" );
       addArg( Alias, "source register name", "(s)" );
       addArg( Target, "destination register index or name", "(n|s)" );
-      addArg( Transform, "transform coeffs (per mode): box = source min,max pairs; map = (axis,min,max) triples; affine = matrix", "(n+)" );
+      addArg( Transform, "transform coeffs (per mode): box = source min,max pairs; map = (srcAxis,min,max) triples per dest axis; affine = matrix", "(n+)" );
       addArg( Storage, "transform mode: box (default) / affine / map", "(n|s)" );
       addArg( Offset, "dest region offset", "(n+)" );
       addArg( Size, "dest region size", "(n+)" );

@@ -12,8 +12,8 @@ import { Blit, BlitOptions } from "./Blit"
 //   R / L   -- source register (sampled)   [index | name]
 //   W       -- destination register (written; Q combines here)
 //   M       -- transform coefficients, interpreted per the mode (box = source
-//             min,max pairs in pixel coords; map = (axis,min,max) triples;
-//             affine = matrix)
+//             min,max pairs in pixel coords; map = (srcAxis,min,max) triples,
+//             one per dest axis, so axes can swap; affine = matrix)
 //   T       -- transform mode (box [default] / affine / map; index | name)
 //             ( T is the Storage glyph reused contextually -- G40 has no storage arg )
 //   P / S   -- dest region offset / size (default whole dest spatial extent)

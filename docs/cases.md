@@ -4,18 +4,20 @@
 
 Each case is one artifact wearing four hats: a behavioural **spec**, a piece of **documentation**, a runnable **example**, and a cross-engine conformance **test**. The contract is the decoded `values` stream within a global epsilon; `status` is the control response. Cases are grouped below by `tag` (a case appears under each tag it carries).
 
-88 cases across 20 tags.
+94 cases across 23 tags.
 
 ## Tags
 
-- [blit](#blit) (15)
+- [blit](#blit) (21)
 - [conditionals](#conditionals) (6)
 - [decimals](#decimals) (7)
+- [flip](#flip) (3)
 - [flow](#flow) (12)
 - [hex](#hex) (7)
 - [irrational](#irrational) (3)
 - [iteration](#iteration) (2)
 - [lists](#lists) (5)
+- [map](#map) (6)
 - [matrix](#matrix) (11)
 - [multiaxis](#multiaxis) (2)
 - [normalized](#normalized) (2)
@@ -24,6 +26,7 @@ Each case is one artifact wearing four hats: a behavioural **spec**, a piece of 
 - [procedures](#procedures) (4)
 - [ranges](#ranges) (9)
 - [references](#references) (14)
+- [rotate](#rotate) (3)
 - [signs](#signs) (1)
 - [subscript](#subscript) (6)
 - [unicode](#unicode) (6)
@@ -67,12 +70,48 @@ G10 R"bd"
 - values: `[2,2,3,5,5,6,8,8,9]`
 - needs: `ggggx`
 
-### blit_map_axis
+### blit_box_flip_x
 
-map mode takes (axis,min,max) triples: remap only axis 1 to source rows 1..3, leaving axis 0 identity. nearest filter.
+A box flips an axis when its range runs backwards: M2.5,-0.5 on axis 0 (= [dim-0.5, -0.5], reversed + half-texel inset to land on pixel centers) mirrors each row left<->right. nearest filter.
 
 ```
-G40 R"bs" W"bd" T"map" M1,1,3 E"nearest"
+G40 R"bs" W"bd" T"box" M2.5,-0.5,0,3 E"nearest"
+G10 R"bd"
+```
+
+- values: `[3,2,1,6,5,4,9,8,7]`
+- needs: `ggggx`
+
+### blit_box_flip_y
+
+Reversing the axis-1 range (M...,2.5,-0.5) flips the matrix top<->bottom, leaving axis 0 as-is. nearest filter.
+
+```
+G40 R"bs" W"bd" T"box" M0,3,2.5,-0.5 E"nearest"
+G10 R"bd"
+```
+
+- values: `[7,8,9,4,5,6,1,2,3]`
+- needs: `ggggx`
+
+### blit_box_flip_180
+
+Reversing both axes flips the matrix in both directions -- a 180-degree turn (every element reversed). nearest filter.
+
+```
+G40 R"bs" W"bd" T"box" M2.5,-0.5,2.5,-0.5 E"nearest"
+G10 R"bd"
+```
+
+- values: `[9,8,7,6,5,4,3,2,1]`
+- needs: `ggggx`
+
+### blit_map_axes
+
+map's triples are (srcAxis,min,max) positional by dest axis: M0,0,3,1,1,3 = dest0<-src0 full, dest1<-src1 rows 1..3 -- i.e. it generalizes box (same as box M0,3,1,3). nearest filter.
+
+```
+G40 R"bs" W"bd" T"map" M0,0,3,1,1,3 E"nearest"
 G10 R"bd"
 ```
 
@@ -81,7 +120,7 @@ G10 R"bd"
 
 ### blit_map_default
 
-map with no triples names no axes, so every axis stays full-source -- an identity copy.
+map with no triples leaves every dest axis identity (dest k <- src k, full source) -- an identity copy.
 
 ```
 G40 R"bs" W"bd" T"map"
@@ -91,9 +130,45 @@ G10 R"bd"
 - values: `[1,2,3,4,5,6,7,8,9]`
 - needs: `ggggx`
 
+### blit_map_transpose
+
+Pointing each dest axis at the OTHER source axis (M1,0,3,0,0,3 = dest0<-src1, dest1<-src0) transposes the matrix (reflect across the main diagonal). nearest filter.
+
+```
+G40 R"bs" W"bd" T"map" M1,0,3,0,0,3 E"nearest"
+G10 R"bd"
+```
+
+- values: `[1,4,7,2,5,8,3,6,9]`
+- needs: `ggggx`
+
+### blit_map_rotate_cw
+
+A quarter turn clockwise = swap axes + reverse the swapped-in axis: M1,2.5,-0.5,0,0,3 (dest0<-src1 reversed, dest1<-src0). nearest filter.
+
+```
+G40 R"bs" W"bd" T"map" M1,2.5,-0.5,0,0,3 E"nearest"
+G10 R"bd"
+```
+
+- values: `[7,4,1,8,5,2,9,6,3]`
+- needs: `ggggx`
+
+### blit_map_rotate_ccw
+
+A quarter turn counter-clockwise = the other swap + reverse: M1,0,3,0,2.5,-0.5 (dest0<-src1, dest1<-src0 reversed). nearest filter.
+
+```
+G40 R"bs" W"bd" T"map" M1,0,3,0,2.5,-0.5 E"nearest"
+G10 R"bd"
+```
+
+- values: `[3,6,9,2,5,8,1,4,7]`
+- needs: `ggggx`
+
 ### blit_map_by_index
 
-Mode by index T2 == map; the (0,1,3) triple remaps axis 0 (== box [1,3] on axis 0). nearest filter.
+Mode by index T2 == map; a single triple (0,1,3) sets dest0<-src0 over [1,3] and leaves dest1 identity (== box [1,3] on axis 0). nearest filter.
 
 ```
 G40 R"bs" W"bd" T2 M0,1,3 E"nearest"
@@ -376,6 +451,44 @@ P10 V0.5
 
 - values: `[0.5]`
 - needs: `gggpx`
+
+## flip
+
+### blit_box_flip_x
+
+A box flips an axis when its range runs backwards: M2.5,-0.5 on axis 0 (= [dim-0.5, -0.5], reversed + half-texel inset to land on pixel centers) mirrors each row left<->right. nearest filter.
+
+```
+G40 R"bs" W"bd" T"box" M2.5,-0.5,0,3 E"nearest"
+G10 R"bd"
+```
+
+- values: `[3,2,1,6,5,4,9,8,7]`
+- needs: `ggggx`
+
+### blit_box_flip_y
+
+Reversing the axis-1 range (M...,2.5,-0.5) flips the matrix top<->bottom, leaving axis 0 as-is. nearest filter.
+
+```
+G40 R"bs" W"bd" T"box" M0,3,2.5,-0.5 E"nearest"
+G10 R"bd"
+```
+
+- values: `[7,8,9,4,5,6,1,2,3]`
+- needs: `ggggx`
+
+### blit_box_flip_180
+
+Reversing both axes flips the matrix in both directions -- a 180-degree turn (every element reversed). nearest filter.
+
+```
+G40 R"bs" W"bd" T"box" M2.5,-0.5,2.5,-0.5 E"nearest"
+G10 R"bd"
+```
+
+- values: `[9,8,7,6,5,4,3,2,1]`
+- needs: `ggggx`
 
 ## flow
 
@@ -747,6 +860,80 @@ P10 V☃,你
 
 - values: `[9731,20320]`
 - needs: `gggpx`
+
+## map
+
+### blit_map_axes
+
+map's triples are (srcAxis,min,max) positional by dest axis: M0,0,3,1,1,3 = dest0<-src0 full, dest1<-src1 rows 1..3 -- i.e. it generalizes box (same as box M0,3,1,3). nearest filter.
+
+```
+G40 R"bs" W"bd" T"map" M0,0,3,1,1,3 E"nearest"
+G10 R"bd"
+```
+
+- values: `[4,5,6,4,5,6,7,8,9]`
+- needs: `ggggx`
+
+### blit_map_default
+
+map with no triples leaves every dest axis identity (dest k <- src k, full source) -- an identity copy.
+
+```
+G40 R"bs" W"bd" T"map"
+G10 R"bd"
+```
+
+- values: `[1,2,3,4,5,6,7,8,9]`
+- needs: `ggggx`
+
+### blit_map_transpose
+
+Pointing each dest axis at the OTHER source axis (M1,0,3,0,0,3 = dest0<-src1, dest1<-src0) transposes the matrix (reflect across the main diagonal). nearest filter.
+
+```
+G40 R"bs" W"bd" T"map" M1,0,3,0,0,3 E"nearest"
+G10 R"bd"
+```
+
+- values: `[1,4,7,2,5,8,3,6,9]`
+- needs: `ggggx`
+
+### blit_map_rotate_cw
+
+A quarter turn clockwise = swap axes + reverse the swapped-in axis: M1,2.5,-0.5,0,0,3 (dest0<-src1 reversed, dest1<-src0). nearest filter.
+
+```
+G40 R"bs" W"bd" T"map" M1,2.5,-0.5,0,0,3 E"nearest"
+G10 R"bd"
+```
+
+- values: `[7,4,1,8,5,2,9,6,3]`
+- needs: `ggggx`
+
+### blit_map_rotate_ccw
+
+A quarter turn counter-clockwise = the other swap + reverse: M1,0,3,0,2.5,-0.5 (dest0<-src1, dest1<-src0 reversed). nearest filter.
+
+```
+G40 R"bs" W"bd" T"map" M1,0,3,0,2.5,-0.5 E"nearest"
+G10 R"bd"
+```
+
+- values: `[3,6,9,2,5,8,1,4,7]`
+- needs: `ggggx`
+
+### blit_map_by_index
+
+Mode by index T2 == map; a single triple (0,1,3) sets dest0<-src0 over [1,3] and leaves dest1 identity (== box [1,3] on axis 0). nearest filter.
+
+```
+G40 R"bs" W"bd" T2 M0,1,3 E"nearest"
+G10 R"bd"
+```
+
+- values: `[2,2,3,5,5,6,8,8,9]`
+- needs: `ggggx`
 
 ## matrix
 
@@ -1378,6 +1565,44 @@ P10 V$m@[4]
 
 - values: `[4]`
 - needs: `gggpx`
+
+## rotate
+
+### blit_map_transpose
+
+Pointing each dest axis at the OTHER source axis (M1,0,3,0,0,3 = dest0<-src1, dest1<-src0) transposes the matrix (reflect across the main diagonal). nearest filter.
+
+```
+G40 R"bs" W"bd" T"map" M1,0,3,0,0,3 E"nearest"
+G10 R"bd"
+```
+
+- values: `[1,4,7,2,5,8,3,6,9]`
+- needs: `ggggx`
+
+### blit_map_rotate_cw
+
+A quarter turn clockwise = swap axes + reverse the swapped-in axis: M1,2.5,-0.5,0,0,3 (dest0<-src1 reversed, dest1<-src0). nearest filter.
+
+```
+G40 R"bs" W"bd" T"map" M1,2.5,-0.5,0,0,3 E"nearest"
+G10 R"bd"
+```
+
+- values: `[7,4,1,8,5,2,9,6,3]`
+- needs: `ggggx`
+
+### blit_map_rotate_ccw
+
+A quarter turn counter-clockwise = the other swap + reverse: M1,0,3,0,2.5,-0.5 (dest0<-src1, dest1<-src0 reversed). nearest filter.
+
+```
+G40 R"bs" W"bd" T"map" M1,0,3,0,2.5,-0.5 E"nearest"
+G10 R"bd"
+```
+
+- values: `[3,6,9,2,5,8,1,4,7]`
+- needs: `ggggx`
 
 ## signs
 

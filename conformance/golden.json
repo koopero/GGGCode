@@ -75,15 +75,94 @@
     "expected": "OK\nG20 R3 P0 V2,2,3,5,5,6,8,8,9\nOK"
   },
   {
-    "name": "blit_map_axis",
-    "description": "map mode takes (axis,min,max) triples: remap only axis 1 to source rows 1..3, leaving axis 0 identity. nearest filter.",
+    "name": "blit_box_flip_x",
+    "description": "A box flips an axis when its range runs backwards: M2.5,-0.5 on axis 0 (= [dim-0.5, -0.5], reversed + half-texel inset to land on pixel centers) mirrors each row left<->right. nearest filter.",
     "needs": [
       "ggggx"
     ],
     "tags": [
-      "blit"
+      "blit",
+      "flip"
     ],
-    "program": "G40 R\"bs\" W\"bd\" T\"map\" M1,1,3 E\"nearest\"\nG10 R\"bd\"",
+    "program": "G40 R\"bs\" W\"bd\" T\"box\" M2.5,-0.5,0,3 E\"nearest\"\nG10 R\"bd\"",
+    "status": "OK",
+    "values": [
+      3,
+      2,
+      1,
+      6,
+      5,
+      4,
+      9,
+      8,
+      7
+    ],
+    "exact": false,
+    "expected": "OK\nG20 R3 P0 V3,2,1,6,5,4,9,8,7\nOK"
+  },
+  {
+    "name": "blit_box_flip_y",
+    "description": "Reversing the axis-1 range (M...,2.5,-0.5) flips the matrix top<->bottom, leaving axis 0 as-is. nearest filter.",
+    "needs": [
+      "ggggx"
+    ],
+    "tags": [
+      "blit",
+      "flip"
+    ],
+    "program": "G40 R\"bs\" W\"bd\" T\"box\" M0,3,2.5,-0.5 E\"nearest\"\nG10 R\"bd\"",
+    "status": "OK",
+    "values": [
+      7,
+      8,
+      9,
+      4,
+      5,
+      6,
+      1,
+      2,
+      3
+    ],
+    "exact": false,
+    "expected": "OK\nG20 R3 P0 V7,8,9,4,5,6,1,2,3\nOK"
+  },
+  {
+    "name": "blit_box_flip_180",
+    "description": "Reversing both axes flips the matrix in both directions -- a 180-degree turn (every element reversed). nearest filter.",
+    "needs": [
+      "ggggx"
+    ],
+    "tags": [
+      "blit",
+      "flip"
+    ],
+    "program": "G40 R\"bs\" W\"bd\" T\"box\" M2.5,-0.5,2.5,-0.5 E\"nearest\"\nG10 R\"bd\"",
+    "status": "OK",
+    "values": [
+      9,
+      8,
+      7,
+      6,
+      5,
+      4,
+      3,
+      2,
+      1
+    ],
+    "exact": false,
+    "expected": "OK\nG20 R3 P0 V9,8,7,6,5,4,3,2,1\nOK"
+  },
+  {
+    "name": "blit_map_axes",
+    "description": "map's triples are (srcAxis,min,max) positional by dest axis: M0,0,3,1,1,3 = dest0<-src0 full, dest1<-src1 rows 1..3 -- i.e. it generalizes box (same as box M0,3,1,3). nearest filter.",
+    "needs": [
+      "ggggx"
+    ],
+    "tags": [
+      "blit",
+      "map"
+    ],
+    "program": "G40 R\"bs\" W\"bd\" T\"map\" M0,0,3,1,1,3 E\"nearest\"\nG10 R\"bd\"",
     "status": "OK",
     "values": [
       4,
@@ -101,12 +180,13 @@
   },
   {
     "name": "blit_map_default",
-    "description": "map with no triples names no axes, so every axis stays full-source -- an identity copy.",
+    "description": "map with no triples leaves every dest axis identity (dest k <- src k, full source) -- an identity copy.",
     "needs": [
       "ggggx"
     ],
     "tags": [
-      "blit"
+      "blit",
+      "map"
     ],
     "program": "G40 R\"bs\" W\"bd\" T\"map\"\nG10 R\"bd\"",
     "status": "OK",
@@ -125,13 +205,95 @@
     "expected": "OK\nG20 R3 P0 V1,2,3,4,5,6,7,8,9\nOK"
   },
   {
-    "name": "blit_map_by_index",
-    "description": "Mode by index T2 == map; the (0,1,3) triple remaps axis 0 (== box [1,3] on axis 0). nearest filter.",
+    "name": "blit_map_transpose",
+    "description": "Pointing each dest axis at the OTHER source axis (M1,0,3,0,0,3 = dest0<-src1, dest1<-src0) transposes the matrix (reflect across the main diagonal). nearest filter.",
     "needs": [
       "ggggx"
     ],
     "tags": [
-      "blit"
+      "blit",
+      "map",
+      "rotate"
+    ],
+    "program": "G40 R\"bs\" W\"bd\" T\"map\" M1,0,3,0,0,3 E\"nearest\"\nG10 R\"bd\"",
+    "status": "OK",
+    "values": [
+      1,
+      4,
+      7,
+      2,
+      5,
+      8,
+      3,
+      6,
+      9
+    ],
+    "exact": false,
+    "expected": "OK\nG20 R3 P0 V1,4,7,2,5,8,3,6,9\nOK"
+  },
+  {
+    "name": "blit_map_rotate_cw",
+    "description": "A quarter turn clockwise = swap axes + reverse the swapped-in axis: M1,2.5,-0.5,0,0,3 (dest0<-src1 reversed, dest1<-src0). nearest filter.",
+    "needs": [
+      "ggggx"
+    ],
+    "tags": [
+      "blit",
+      "map",
+      "rotate"
+    ],
+    "program": "G40 R\"bs\" W\"bd\" T\"map\" M1,2.5,-0.5,0,0,3 E\"nearest\"\nG10 R\"bd\"",
+    "status": "OK",
+    "values": [
+      7,
+      4,
+      1,
+      8,
+      5,
+      2,
+      9,
+      6,
+      3
+    ],
+    "exact": false,
+    "expected": "OK\nG20 R3 P0 V7,4,1,8,5,2,9,6,3\nOK"
+  },
+  {
+    "name": "blit_map_rotate_ccw",
+    "description": "A quarter turn counter-clockwise = the other swap + reverse: M1,0,3,0,2.5,-0.5 (dest0<-src1, dest1<-src0 reversed). nearest filter.",
+    "needs": [
+      "ggggx"
+    ],
+    "tags": [
+      "blit",
+      "map",
+      "rotate"
+    ],
+    "program": "G40 R\"bs\" W\"bd\" T\"map\" M1,0,3,0,2.5,-0.5 E\"nearest\"\nG10 R\"bd\"",
+    "status": "OK",
+    "values": [
+      3,
+      6,
+      9,
+      2,
+      5,
+      8,
+      1,
+      4,
+      7
+    ],
+    "exact": false,
+    "expected": "OK\nG20 R3 P0 V3,6,9,2,5,8,1,4,7\nOK"
+  },
+  {
+    "name": "blit_map_by_index",
+    "description": "Mode by index T2 == map; a single triple (0,1,3) sets dest0<-src0 over [1,3] and leaves dest1 identity (== box [1,3] on axis 0). nearest filter.",
+    "needs": [
+      "ggggx"
+    ],
+    "tags": [
+      "blit",
+      "map"
     ],
     "program": "G40 R\"bs\" W\"bd\" T2 M0,1,3 E\"nearest\"\nG10 R\"bd\"",
     "status": "OK",
