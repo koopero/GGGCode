@@ -10,6 +10,7 @@
 #include "MatrixCommands.h"
 #include "DocCommands.h"
 #include "FlowCommands.h"
+#include "Sample.h"
 #include "gen/conformance_cases.h"
 
 // Test functions
@@ -584,6 +585,38 @@ void test_flow_iteration() {
   }
 }
 
+// Sample.h parity: values hand-verified against the TS Sample (ts/ggggx/Sample.ts).
+// Note the in-place pos-mutation quirk -- the second descent on an inner axis
+// reads the integer-rounded coordinate, so linear-center is 6.25, not 7.0.
+void test_sample() {
+  auto *src = new ggg::Matrix<float,false>( {3,3} );
+  src->allocate();
+  src->write( {1,2,3,4,5,6,7,8,9} );
+
+  auto s = [&]( std::vector<double> p, ggg::Index dim, const char *f, const char *e, const char *c ) {
+    return ggg::Sample( src, p, dim, f, e, c );
+  };
+  TEST_ASSERT_EQUAL_FLOAT( 5,      s( {0.5,0.5},   0, "nearest", "repeat", "normalized" )[0] );
+  TEST_ASSERT_EQUAL_FLOAT( 1,      s( {0,0},       0, "nearest", "repeat", "normalized" )[0] );
+  TEST_ASSERT_EQUAL_FLOAT( 6.25,   s( {0.5,0.5},   0, "linear",  "repeat", "normalized" )[0] );
+  TEST_ASSERT_EQUAL_FLOAT( 4.9375, s( {0.25,0.25}, 0, "linear",  "hold",   "normalized" )[0] );
+  TEST_ASSERT_EQUAL_FLOAT( 4.25,   s( {1.5,0.5},   0, "linear",  "hold",   "pixel" )[0] );
+  TEST_ASSERT_EQUAL_FLOAT( 5,      s( {0.5,0.5},   0, "linear",  "hold",   "fence" )[0] );
+  TEST_ASSERT_EQUAL_FLOAT( 1,      s( {-0.5,0},    0, "nearest", "hold",   "normalized" )[0] );
+
+  // 2-channel 1-D image: dim [2,3] = 2ch x 3px; pos = [channel0, x].
+  auto *src2 = new ggg::Matrix<float,false>( {2,3} );
+  src2->allocate();
+  src2->write( {10,11, 20,21, 30,31} );
+  auto r = ggg::Sample( src2, {0,0.5}, 1, "nearest", "repeat", "normalized" );
+  TEST_ASSERT_EQUAL_INT( 2, (int) r.size() );
+  TEST_ASSERT_EQUAL_FLOAT( 20, r[0] );
+  TEST_ASSERT_EQUAL_FLOAT( 21, r[1] );
+  auto r2 = ggg::Sample( src2, {0,0.25}, 1, "linear", "hold", "normalized" );
+  TEST_ASSERT_EQUAL_FLOAT( 17.5, r2[0] );
+  TEST_ASSERT_EQUAL_FLOAT( 18.5, r2[1] );
+}
+
 // Run all tests
 int main() {
   UNITY_BEGIN();
@@ -597,6 +630,7 @@ int main() {
   RUN_TEST(test_flow_procedures);
   RUN_TEST(test_flow_conditionals);
   RUN_TEST(test_flow_iteration);
+  RUN_TEST(test_sample);
   RUN_TEST(test_conformance);
   UNITY_END();
   return 0;
