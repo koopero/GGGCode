@@ -44,3 +44,62 @@
     G10 R0 P0 S3
   values: [ 7, 8, 9 ]
   exact: true
+
+# Q write operators (combine the incoming value with the current cell). Run
+# against r = [10,20,30]. Binary ops use both operands; unary ops (e.g. neg)
+# apply to the cell when the V operand is 0.
+- name: op_add
+  description: "Q\"add\" adds the value into each cell."
+  needs: [ ggggx ]
+  tags: [ matrix, operator ]
+  program: |
+    G20 R0 P0 Q"add" V5,5,5
+    G10 R0 P0 S3
+  values: [ 15, 25, 35 ]
+
+- name: op_sub
+  description: "Q\"sub\" subtracts the value from each cell."
+  needs: [ ggggx ]
+  tags: [ matrix, operator ]
+  program: |
+    G20 R0 P0 Q"sub" V1,2,3
+    G10 R0 P0 S3
+  values: [ 9, 18, 27 ]
+
+- name: op_mult
+  description: "Q\"mult\" multiplies each cell by the value."
+  needs: [ ggggx ]
+  tags: [ matrix, operator ]
+  program: |
+    G20 R0 P0 Q"mult" V2,2,2
+    G10 R0 P0 S3
+  values: [ 20, 40, 60 ]
+
+- name: op_min
+  description: "Q\"min\" keeps the smaller of cell and value."
+  needs: [ ggggx ]
+  tags: [ matrix, operator ]
+  program: |
+    G20 R0 P0 Q"min" V15,15,15
+    G10 R0 P0 S3
+  values: [ 10, 15, 15 ]
+
+- name: op_neg
+  description: "Q\"neg\" negates the cell (a unary op; applies when V is 0)."
+  needs: [ ggggx ]
+  tags: [ matrix, operator ]
+  program: |
+    G20 R0 P0 Q"neg" V0,0,0
+    G10 R0 P0 S3
+  values: [ -10, -20, -30 ]
+
+- name: op_sqrt
+  # Transcendental op: float (C++) vs double (TS) differ in the last digits but
+  # agree within the global epsilon -- exactly what the value contract is for.
+  description: "Q\"sqrt\" takes the square root of the cell (value-tolerance)."
+  needs: [ ggggx ]
+  tags: [ matrix, operator ]
+  program: |
+    G20 R0 P0 Q"sqrt" V0
+    G10 R0 P0 S1
+  values: [ 3.1622776601683795 ]

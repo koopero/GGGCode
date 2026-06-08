@@ -4,7 +4,7 @@
 
 Each case is one artifact wearing four hats: a behavioural **spec**, a piece of **documentation**, a runnable **example**, and a cross-engine conformance **test**. The contract is the decoded `values` stream within a global epsilon; `status` is the control response. Cases are grouped below by `tag` (a case appears under each tag it carries).
 
-70 cases across 19 tags.
+76 cases across 20 tags.
 
 ## Tags
 
@@ -16,10 +16,11 @@ Each case is one artifact wearing four hats: a behavioural **spec**, a piece of 
 - [iteration](#iteration) (2)
 - [lists](#lists) (5)
 - [loop](#loop) (3)
-- [matrix](#matrix) (5)
+- [matrix](#matrix) (11)
 - [multiaxis](#multiaxis) (2)
 - [normalized](#normalized) (2)
 - [offset](#offset) (5)
+- [operator](#operator) (6)
 - [procedures](#procedures) (4)
 - [ranges](#ranges) (9)
 - [references](#references) (14)
@@ -711,6 +712,78 @@ G10 R0 P0 S3
 - needs: `ggggx`
 - byte-exact (formatting is part of the contract)
 
+### op_add
+
+Q"add" adds the value into each cell.
+
+```
+G20 R0 P0 Q"add" V5,5,5
+G10 R0 P0 S3
+```
+
+- values: `[15,25,35]`
+- needs: `ggggx`
+
+### op_sub
+
+Q"sub" subtracts the value from each cell.
+
+```
+G20 R0 P0 Q"sub" V1,2,3
+G10 R0 P0 S3
+```
+
+- values: `[9,18,27]`
+- needs: `ggggx`
+
+### op_mult
+
+Q"mult" multiplies each cell by the value.
+
+```
+G20 R0 P0 Q"mult" V2,2,2
+G10 R0 P0 S3
+```
+
+- values: `[20,40,60]`
+- needs: `ggggx`
+
+### op_min
+
+Q"min" keeps the smaller of cell and value.
+
+```
+G20 R0 P0 Q"min" V15,15,15
+G10 R0 P0 S3
+```
+
+- values: `[10,15,15]`
+- needs: `ggggx`
+
+### op_neg
+
+Q"neg" negates the cell (a unary op; applies when V is 0).
+
+```
+G20 R0 P0 Q"neg" V0,0,0
+G10 R0 P0 S3
+```
+
+- values: `[-10,-20,-30]`
+- needs: `ggggx`
+
+### op_sqrt
+
+Q"sqrt" takes the square root of the cell (value-tolerance).
+
+```
+G20 R0 P0 Q"sqrt" V0
+G10 R0 P0 S1
+```
+
+- values: `[3.1622776601683795]`
+- needs: `ggggx`
+
 ## multiaxis
 
 ### multiaxis
@@ -815,6 +888,80 @@ P10 V$m@[4]
 
 - values: `[4]`
 - needs: `gggpx`
+
+## operator
+
+### op_add
+
+Q"add" adds the value into each cell.
+
+```
+G20 R0 P0 Q"add" V5,5,5
+G10 R0 P0 S3
+```
+
+- values: `[15,25,35]`
+- needs: `ggggx`
+
+### op_sub
+
+Q"sub" subtracts the value from each cell.
+
+```
+G20 R0 P0 Q"sub" V1,2,3
+G10 R0 P0 S3
+```
+
+- values: `[9,18,27]`
+- needs: `ggggx`
+
+### op_mult
+
+Q"mult" multiplies each cell by the value.
+
+```
+G20 R0 P0 Q"mult" V2,2,2
+G10 R0 P0 S3
+```
+
+- values: `[20,40,60]`
+- needs: `ggggx`
+
+### op_min
+
+Q"min" keeps the smaller of cell and value.
+
+```
+G20 R0 P0 Q"min" V15,15,15
+G10 R0 P0 S3
+```
+
+- values: `[10,15,15]`
+- needs: `ggggx`
+
+### op_neg
+
+Q"neg" negates the cell (a unary op; applies when V is 0).
+
+```
+G20 R0 P0 Q"neg" V0,0,0
+G10 R0 P0 S3
+```
+
+- values: `[-10,-20,-30]`
+- needs: `ggggx`
+
+### op_sqrt
+
+Q"sqrt" takes the square root of the cell (value-tolerance).
+
+```
+G20 R0 P0 Q"sqrt" V0
+G10 R0 P0 S1
+```
+
+- values: `[3.1622776601683795]`
+- needs: `ggggx`
 
 ## procedures
 

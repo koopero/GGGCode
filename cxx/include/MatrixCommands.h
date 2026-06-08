@@ -3,6 +3,7 @@
 #include "./Machine.h"
 #include "./Matrix.h"
 #include "./Format.h"
+#include "./Operators.h"
 #include "./gen/CommandConvention.h"
 
 namespace ggg {
@@ -17,6 +18,7 @@ namespace ggg {
   class MatrixWrite : public CommandType {
     MatrixBase * reg = nullptr;
     Index offset = 0;
+    String op;                       // Q operator (default "set")
   public:
     MatrixWrite() {
       name = "G20";
@@ -24,27 +26,42 @@ namespace ggg {
       addArg( Register, "register index or name", "(n|s)" );
       addArg( Alias, "register name", "(s)" );
       addArg( Offset, "start offset", "(n)" );
+      addArg( Operator, "write operator (set/add/mult/...)", "(s)" );
       addArg( Value, "values to write", "(n+)" );
     }
 
-    void hookCommand() override { reg = nullptr; offset = 0; okay = 1; }
+    void hookCommand() override { reg = nullptr; offset = 0; op = "set"; okay = 1; }
 
     void hookNumber() override {
       switch ( code ) {
         case Register: reg = machine->getRegister( (Index) number ); break;
         case Offset:   offset = (Index) number; break;
-        case Value:                 // 'V' -- the values slot
-          if ( reg ) reg->writeScalarFloat( number, offset++ );
+        case Value: {                // 'V' -- the values slot
+          if ( !reg ) break;
+          // Apply the operator: read the current cell, combine with the incoming
+          // value, write back (mirrors TS OperatorApply in MatrixWrite).
+          NumberType current = reg->readScalarFloat( offset, 0. );
+          NumberType result;
+          if ( applyOperator( op, current, number, result ) ) {
+            reg->writeScalarFloat( result, offset );
+          } else {
+            okay = 0;                // unknown operator -> report failure
+          }
+          offset++;
           break;
+        }
         default: break;
       }
     }
 
     // R is the universal register selector: numeric -> by index (hookNumber),
     // string -> by name here. Alias (L) stays as a back-compat name selector.
+    // Q selects the write operator.
     void hookString() override {
       if ( code == Register || code == Alias )
         reg = machine->resolveRegisterByName( string );
+      else if ( code == Operator )
+        op = string;
     }
 
     void hookFinish() override {

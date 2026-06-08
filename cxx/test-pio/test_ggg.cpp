@@ -320,6 +320,18 @@ void test_matrix_commands() {
   m.run("G10 R\"buf0\" P0 S2\n");            // read by name via R -> replayable G20 (by index)
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "G20 R0 P0 V3,4" ) );
 
+  // Q write operators: combine the incoming value with the current cell.
+  mat->writeScalarFloat( 10, 0 );
+  mat->writeScalarFloat( 20, 1 );
+  m.run("G20 R0 P0 Q\"add\" V5,5\n");        // add: 10+5, 20+5
+  TEST_ASSERT_EQUAL_FLOAT( 15, mat->readNumber(0) );
+  TEST_ASSERT_EQUAL_FLOAT( 25, mat->readNumber(1) );
+  m.run("G20 R0 P0 Q\"mult\" V2,2\n");       // mult: 15*2, 25*2
+  TEST_ASSERT_EQUAL_FLOAT( 30, mat->readNumber(0) );
+  TEST_ASSERT_EQUAL_FLOAT( 50, mat->readNumber(1) );
+  m.run("G20 R0 P0 Q\"neg\" V0\n");          // unary neg (V0 guard): -30
+  TEST_ASSERT_EQUAL_FLOAT( -30, mat->readNumber(0) );
+
   delete mat;
 }
 

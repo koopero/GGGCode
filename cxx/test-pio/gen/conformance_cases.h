@@ -26,6 +26,12 @@ namespace ggg_conformance {
   static const double values_matrix_read_by_name[] = { 10.0, 20.0, 30.0 };
   static const double values_matrix_read_by_ref[] = { 10.0, 20.0, 30.0 };
   static const double values_matrix_write_read[] = { 7.0, 8.0, 9.0 };
+  static const double values_op_add[] = { 15.0, 25.0, 35.0 };
+  static const double values_op_sub[] = { 9.0, 18.0, 27.0 };
+  static const double values_op_mult[] = { 20.0, 40.0, 60.0 };
+  static const double values_op_min[] = { 10.0, 15.0, 15.0 };
+  static const double values_op_neg[] = { -10.0, -20.0, -30.0 };
+  static const double values_op_sqrt[] = { 3.1622776601683795 };
   static const double values_print_single[] = { 42.0 };
   static const double values_print_list[] = { 1.0, 2.0, 3.0 };
   static const double values_print_zero[] = { 0.0 };
@@ -98,6 +104,12 @@ namespace ggg_conformance {
     { "matrix_read_by_name", "G10 L\"r\" P0 S3\n", "OK", values_matrix_read_by_name, 3, "G20 R0 P0 V10,20,30\nOK" },
     { "matrix_read_by_ref", "G10 R\"r\" P0 S3\n", "OK", values_matrix_read_by_ref, 3, "G20 R0 P0 V10,20,30\nOK" },
     { "matrix_write_read", "G20 R0 P0 V7,8,9\nG10 R0 P0 S3\n", "OK", values_matrix_write_read, 3, "OK\nG20 R0 P0 V7,8,9\nOK" },
+    { "op_add", "G20 R0 P0 Q\"add\" V5,5,5\nG10 R0 P0 S3\n", "OK", values_op_add, 3, nullptr },
+    { "op_sub", "G20 R0 P0 Q\"sub\" V1,2,3\nG10 R0 P0 S3\n", "OK", values_op_sub, 3, nullptr },
+    { "op_mult", "G20 R0 P0 Q\"mult\" V2,2,2\nG10 R0 P0 S3\n", "OK", values_op_mult, 3, nullptr },
+    { "op_min", "G20 R0 P0 Q\"min\" V15,15,15\nG10 R0 P0 S3\n", "OK", values_op_min, 3, nullptr },
+    { "op_neg", "G20 R0 P0 Q\"neg\" V0,0,0\nG10 R0 P0 S3\n", "OK", values_op_neg, 3, nullptr },
+    { "op_sqrt", "G20 R0 P0 Q\"sqrt\" V0\nG10 R0 P0 S1\n", "OK", values_op_sqrt, 1, nullptr },
     { "print_single", "P10 V42\n", "OK", values_print_single, 1, nullptr },
     { "print_list", "P10 V1,2,3\n", "OK", values_print_list, 3, nullptr },
     { "print_zero", "P10 V0\n", "OK", values_print_zero, 1, nullptr },

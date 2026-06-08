@@ -492,6 +492,124 @@
     "expected": "OK\nG20 R0 P0 V7,8,9\nOK"
   },
   {
+    "name": "op_add",
+    "description": "Q\"add\" adds the value into each cell.",
+    "needs": [
+      "ggggx"
+    ],
+    "tags": [
+      "matrix",
+      "operator"
+    ],
+    "program": "G20 R0 P0 Q\"add\" V5,5,5\nG10 R0 P0 S3",
+    "status": "OK",
+    "values": [
+      15,
+      25,
+      35
+    ],
+    "exact": false,
+    "expected": "OK\nG20 R0 P0 V15,25,35\nOK"
+  },
+  {
+    "name": "op_sub",
+    "description": "Q\"sub\" subtracts the value from each cell.",
+    "needs": [
+      "ggggx"
+    ],
+    "tags": [
+      "matrix",
+      "operator"
+    ],
+    "program": "G20 R0 P0 Q\"sub\" V1,2,3\nG10 R0 P0 S3",
+    "status": "OK",
+    "values": [
+      9,
+      18,
+      27
+    ],
+    "exact": false,
+    "expected": "OK\nG20 R0 P0 V9,18,27\nOK"
+  },
+  {
+    "name": "op_mult",
+    "description": "Q\"mult\" multiplies each cell by the value.",
+    "needs": [
+      "ggggx"
+    ],
+    "tags": [
+      "matrix",
+      "operator"
+    ],
+    "program": "G20 R0 P0 Q\"mult\" V2,2,2\nG10 R0 P0 S3",
+    "status": "OK",
+    "values": [
+      20,
+      40,
+      60
+    ],
+    "exact": false,
+    "expected": "OK\nG20 R0 P0 V20,40,60\nOK"
+  },
+  {
+    "name": "op_min",
+    "description": "Q\"min\" keeps the smaller of cell and value.",
+    "needs": [
+      "ggggx"
+    ],
+    "tags": [
+      "matrix",
+      "operator"
+    ],
+    "program": "G20 R0 P0 Q\"min\" V15,15,15\nG10 R0 P0 S3",
+    "status": "OK",
+    "values": [
+      10,
+      15,
+      15
+    ],
+    "exact": false,
+    "expected": "OK\nG20 R0 P0 V10,15,15\nOK"
+  },
+  {
+    "name": "op_neg",
+    "description": "Q\"neg\" negates the cell (a unary op; applies when V is 0).",
+    "needs": [
+      "ggggx"
+    ],
+    "tags": [
+      "matrix",
+      "operator"
+    ],
+    "program": "G20 R0 P0 Q\"neg\" V0,0,0\nG10 R0 P0 S3",
+    "status": "OK",
+    "values": [
+      -10,
+      -20,
+      -30
+    ],
+    "exact": false,
+    "expected": "OK\nG20 R0 P0 V-10,-20,-30\nOK"
+  },
+  {
+    "name": "op_sqrt",
+    "description": "Q\"sqrt\" takes the square root of the cell (value-tolerance).",
+    "needs": [
+      "ggggx"
+    ],
+    "tags": [
+      "matrix",
+      "operator"
+    ],
+    "program": "G20 R0 P0 Q\"sqrt\" V0\nG10 R0 P0 S1",
+    "status": "OK",
+    "values": [
+      3.1622776601683795
+    ],
+    "exact": false,
+    "expected": "OK\nG20 R0 P0 V3.1622776601683795\nOK"
+  },
+  {
     "name": "print_single",
     "description": "A bare decimal value echoes back unchanged.",
     "needs": [
