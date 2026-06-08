@@ -98,7 +98,30 @@ namespace ggg {
     std::vector<Index> size;
     String op = "set";
     String filter, edge, coord;
+    String reduce;                   // minification fold; empty => point sample
   };
+
+  // Footprint (source texels, per spatial axis) covered by one dest texel, via a
+  // numerical Jacobian (step one dest texel per dest axis, measure the source
+  // displacement, max over directions). Mirrors ts/ggggx/Blit.ts footprintOf.
+  inline std::vector<double> blitFootprint( const std::vector<double> &H, const std::vector<double> &c,
+      const std::vector<Index> &destSpatial, const std::vector<Index> &srcSpatial, int rank ) {
+    std::vector<double> src = blitApplyHomogeneous( H, c, rank );
+    std::vector<double> fp( (size_t) rank, 0. );
+    for ( int a = 0; a < rank; a++ ) {
+      std::vector<double> cc = c;
+      Index ds = ( a < (int) destSpatial.size() ) ? destSpatial[a] : 1;
+      if ( ds < 1 ) ds = 1;
+      cc[a] += 1.0 / ds;
+      std::vector<double> src2 = blitApplyHomogeneous( H, cc, rank );
+      for ( int b = 0; b < rank; b++ ) {
+        Index ss = ( b < (int) srcSpatial.size() ) ? srcSpatial[b] : 1;
+        double d = std::fabs( src2[b] - src[b] ) * ( ss ? ss : 1 );
+        if ( d > fp[b] ) fp[b] = d;
+      }
+    }
+    return fp;
+  }
 
   // Inverse-mapping driver. Returns false iff an unknown combine operator was hit
   // (so the command can report OZ); the matrix is mutated in place.
@@ -110,6 +133,10 @@ namespace ggg {
     std::vector<Index> destSpatial;
     for ( int a = 0; a < rank; a++ )
       destSpatial.push_back( dest->dim[ dimension + a ] );
+
+    std::vector<Index> srcSpatial;
+    for ( int a = 0; a < rank; a++ )
+      srcSpatial.push_back( ( dimension + a < (int) source->dim.size() ) ? source->dim[ dimension + a ] : 1 );
 
     std::vector<double> H = blitBuildTransform( o.mode, o.matrix, rank );
 
@@ -135,7 +162,16 @@ namespace ggg {
 
       std::vector<double> pos( (size_t) dimension, 0. );
       pos.insert( pos.end(), src.begin(), src.end() );
-      std::vector<NumberType> sampled = Sample( source, pos, dimension, o.filter, o.edge, o.coord );
+
+      // With a reduce op, integrate the transform-derived footprint (minification);
+      // SampleReduce degrades to a point sample when the footprint is <= 1 texel.
+      std::vector<NumberType> sampled;
+      if ( !o.reduce.empty() ) {
+        std::vector<double> fp = blitFootprint( H, cNorm, destSpatial, srcSpatial, rank );
+        sampled = SampleReduce( source, pos, fp, o.reduce, dimension, o.filter, o.edge, o.coord );
+      } else {
+        sampled = Sample( source, pos, dimension, o.filter, o.edge, o.coord );
+      }
 
       std::vector<double> destPos( (size_t) dimension, 0. );
       destPos.insert( destPos.end(), destCoord.begin(), destCoord.end() );
@@ -182,19 +218,20 @@ namespace ggg {
       addArg( Size, "dest region size", "(n+)" );
       addArg( Dimension, "channel dimension count", "(n)" );
       addArg( Operator, "combine operator into dest cell", "(s)" );
-      addArg( Encoding, "sampler options: filter, edge, coord", "(*)" );
+      addArg( Encoding, "sampler options: filter, edge, coord, reduce", "(*)" );
     }
 
     void hookCommand() override {
       source = nullptr; dest = nullptr; opt = BlitOptions(); eIndex = 0; okay = 1;
     }
 
-    // E is positional: slot 0 = filter, 1 = edge, 2 = coord (each index or name).
+    // E is positional: 0 = filter, 1 = edge, 2 = coord, 3 = reduce (index or name).
     void applyEOption( bool isNum, double num, const String &str ) {
       switch ( eIndex ) {
-        case 0: opt.filter = isNum ? blitOptionByIndex( blitFilters(), num ) : str; break;
-        case 1: opt.edge   = isNum ? blitOptionByIndex( blitEdges(), num )   : str; break;
-        case 2: opt.coord  = isNum ? blitOptionByIndex( blitCoords(), num )  : str; break;
+        case 0: opt.filter = isNum ? blitOptionByIndex( blitFilters(), num )      : str; break;
+        case 1: opt.edge   = isNum ? blitOptionByIndex( blitEdges(), num )        : str; break;
+        case 2: opt.coord  = isNum ? blitOptionByIndex( blitCoords(), num )       : str; break;
+        case 3: opt.reduce = isNum ? blitOptionByIndex( sampleReduceList(), num ) : str; break;
         default: break;
       }
       eIndex++;

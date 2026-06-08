@@ -4,11 +4,11 @@
 
 Each case is one artifact wearing four hats: a behavioural **spec**, a piece of **documentation**, a runnable **example**, and a cross-engine conformance **test**. The contract is the decoded `values` stream within a global epsilon; `status` is the control response. Cases are grouped below by `tag` (a case appears under each tag it carries).
 
-82 cases across 20 tags.
+84 cases across 20 tags.
 
 ## Tags
 
-- [blit](#blit) (9)
+- [blit](#blit) (11)
 - [conditionals](#conditionals) (6)
 - [decimals](#decimals) (7)
 - [flow](#flow) (12)
@@ -138,6 +138,30 @@ G10 R"bd"
 ```
 
 - values: `[11,12,13,14,15,16,17,18,19]`
+- needs: `ggggx`
+
+### blit_minify_mid
+
+Minification: a 2x scale makes each dest cell cover ~2 source texels; the transform-derived footprint is folded with mid (mean). E0,0,0,0 = linear, hold, normalized, reduce=mid.
+
+```
+G40 R"bs" W"bd" T"scale+translate" M2,2,0,0 E0,0,0,0
+G10 R"bd"
+```
+
+- values: `[2.1875,3.5625,3.75,6.6875,8.0625,8.25,7.25,8.75,9]`
+- needs: `ggggx`
+
+### blit_minify_max
+
+The reduce slot accepts max (E reduce index 2): 2x minify pooling the footprint maximum, nearest filter. E1,0,0,2 = nearest, hold, normalized, reduce=max.
+
+```
+G40 R"bs" W"bd" T"scale+translate" M2,2,0,0 E1,0,0,2
+G10 R"bd"
+```
+
+- values: `[1,3,3,7,9,9,7,9,9]`
 - needs: `ggggx`
 
 ## conditionals

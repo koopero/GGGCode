@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <vector>
+#include <algorithm>
 #include "./Types.h"
 #include "./Dim.h"
 #include "./Matrix.h"
@@ -170,6 +171,79 @@ namespace ggg {
 
     return sampleComputeAxis( buffer, position, (Index) position.size() - 1,
         dimension, channels, filter, edge, coord );
+  }
+
+  // Reduce (minification) operators for SampleReduce's footprint fold. Index
+  // order is the contract for the E sampler-options slot 3 (mirrors ts ReduceList).
+  inline const std::vector<String> & sampleReduceList() {
+    static const std::vector<String> v = { "mid", "min", "max", "add" };
+    return v;
+  }
+
+  // Minification: integrate the source over a footprint box around `position`
+  // (extent in source texels, per spatial axis) and fold the covered samples with
+  // a reduce op -- mid (mean) / min / max / add (sum). Walks a taps-per-axis grid
+  // (taps = clamp(ceil(footprint),1,MAX_TAPS)); footprint <= 1 => a single point
+  // sample. Faithful port of ts/ggggx/Sample.ts SampleReduce.
+  inline std::vector<NumberType> SampleReduce( MatrixBase *buffer, std::vector<double> position,
+      const std::vector<double> &footprint, const String &reduce, Index dimension = 0,
+      String filter = "", String edge = "", String coord = "" ) {
+    const int MAX_TAPS = 8;
+
+    Index channels = 1;
+    for ( Index d = 0; d < dimension && d < (Index) buffer->dim.size(); d++ )
+      channels *= buffer->dim[d];
+    if ( channels < 1 ) channels = 1;
+
+    int rank = (int) position.size() - dimension;
+    if ( rank < 0 ) rank = 0;
+
+    std::vector<int> taps( (size_t) rank, 1 );
+    for ( int a = 0; a < rank; a++ ) {
+      double f = ( a < (int) footprint.size() ) ? footprint[a] : 1.;
+      int t = (int) std::ceil( f );
+      if ( t < 1 ) t = 1;
+      if ( t > MAX_TAPS ) t = MAX_TAPS;
+      taps[a] = t;
+    }
+
+    double init = ( reduce == "min" ) ? INFINITY : ( reduce == "max" ) ? -INFINITY : 0.;
+    std::vector<double> acc( (size_t) channels, init );
+    long count = 0;
+
+    std::vector<int> combo( (size_t) rank, 0 );
+    bool more = true;
+    while ( more ) {
+      std::vector<double> pos = position;
+      for ( int a = 0; a < rank; a++ ) {
+        Index srcSize = ( dimension + a < (Index) buffer->dim.size() ) ? buffer->dim[ dimension + a ] : 1;
+        if ( srcSize < 1 ) srcSize = 1;
+        double fpNorm = ( ( a < (int) footprint.size() ) ? footprint[a] : 0. ) / srcSize;
+        double t = taps[a] > 1 ? ( ( combo[a] + 0.5 ) / taps[a] - 0.5 ) : 0.;
+        pos[ dimension + a ] += fpNorm * t;
+      }
+      std::vector<NumberType> s = Sample( buffer, pos, dimension, filter, edge, coord );
+      for ( Index ch = 0; ch < channels; ch++ ) {
+        double v = s[ch];
+        if ( reduce == "min" ) acc[ch] = std::min( acc[ch], v );
+        else if ( reduce == "max" ) acc[ch] = std::max( acc[ch], v );
+        else acc[ch] += v;                                  // add + mid both sum
+      }
+      count++;
+
+      more = false;
+      for ( int i = 0; i < rank; i++ ) {
+        if ( ++combo[i] < taps[i] ) { more = true; break; }
+        combo[i] = 0;
+      }
+    }
+
+    if ( reduce == "mid" && count > 0 )
+      for ( Index ch = 0; ch < channels; ch++ ) acc[ch] /= count;
+
+    std::vector<NumberType> out( (size_t) channels );
+    for ( Index ch = 0; ch < channels; ch++ ) out[ch] = (NumberType) acc[ch];
+    return out;
   }
 
 }; // namespace ggg

@@ -628,6 +628,14 @@ void test_sample() {
   auto r2 = ggg::Sample( src2, {0,0.25}, 1, "linear", "hold", "normalized" );
   TEST_ASSERT_EQUAL_FLOAT( 17.5, r2[0] );
   TEST_ASSERT_EQUAL_FLOAT( 18.5, r2[1] );
+
+  // SampleReduce: a [3,3] footprint with nearest covers all 9 cells exactly, so
+  // add=45, mid=5 (mean), max=9, min=1 (hand-verified against the TS SampleReduce).
+  std::vector<double> fp = { 3, 3 };
+  TEST_ASSERT_EQUAL_FLOAT( 45, ggg::SampleReduce( src, {0.5,0.5}, fp, "add", 0, "nearest", "repeat", "normalized" )[0] );
+  TEST_ASSERT_EQUAL_FLOAT( 5,  ggg::SampleReduce( src, {0.5,0.5}, fp, "mid", 0, "nearest", "repeat", "normalized" )[0] );
+  TEST_ASSERT_EQUAL_FLOAT( 9,  ggg::SampleReduce( src, {0.5,0.5}, fp, "max", 0, "nearest", "repeat", "normalized" )[0] );
+  TEST_ASSERT_EQUAL_FLOAT( 1,  ggg::SampleReduce( src, {0.5,0.5}, fp, "min", 0, "nearest", "repeat", "normalized" )[0] );
 }
 
 // MatrixBlit (G40) end-to-end: drive the command and check the destination.
@@ -667,6 +675,12 @@ void test_blit() {
   m.run( "G20 R1 V10,10,10,10,10,10,10,10,10\n" );
   m.run( "G40 R0 W1 T\"identity\" Q\"add\"\n" );
   expect( added );
+
+  // minify: scale 2 + mid reduce (E0,0,0,0 = linear, hold, normalized, reduce=mid)
+  m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
+  m.run( "G40 R0 W1 T\"scale+translate\" M2,2,0,0 E0,0,0,0\n" );
+  const float minified[9] = { 2.1875f, 3.5625f, 3.75f, 6.6875f, 8.0625f, 8.25f, 7.25f, 8.75f, 9 };
+  expect( minified );
 
   // missing source register -> OZ
   m.out.clear();

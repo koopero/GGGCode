@@ -15,6 +15,8 @@ namespace ggg_conformance {
   static const double values_blit_magnify_linear[] = { 1.0, 1.5000000000000000, 2.0, 2.5000000000000000, 2.7500000000000000, 3.0, 4.0, 4.5000000000000000, 5.0 };
   static const double values_blit_translate_hold[] = { 2.0, 3.0, 3.0, 5.0, 6.0, 6.0, 8.0, 9.0, 9.0 };
   static const double values_blit_operator_add[] = { 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0 };
+  static const double values_blit_minify_mid[] = { 2.1875000000000000, 3.5625000000000000, 3.7500000000000000, 6.6875000000000000, 8.0625000000000000, 8.2500000000000000, 7.2500000000000000, 8.7500000000000000, 9.0 };
+  static const double values_blit_minify_max[] = { 1.0, 3.0, 3.0, 7.0, 9.0, 9.0, 7.0, 9.0, 9.0 };
   static const double values_flow_define_run[] = { 42.0 };
   static const double values_flow_nested[] = { 7.0 };
   static const double values_cond_all_true[] = { 42.0 };
@@ -93,6 +95,8 @@ namespace ggg_conformance {
     { "blit_magnify_linear", "G40 R\"bs\" W\"bd\" T\"scale+translate\" M0.5,0.5,0,0\nG10 R\"bd\"\n", "OK", values_blit_magnify_linear, 9, nullptr },
     { "blit_translate_hold", "G40 R\"bs\" W\"bd\" T\"scale+translate\" M1,1,0.4,0 E1,0\nG10 R\"bd\"\n", "OK", values_blit_translate_hold, 9, nullptr },
     { "blit_operator_add", "G20 R\"bd\" V10,10,10,10,10,10,10,10,10\nG40 R\"bs\" W\"bd\" T\"identity\" Q\"add\"\nG10 R\"bd\"\n", "OK", values_blit_operator_add, 9, nullptr },
+    { "blit_minify_mid", "G40 R\"bs\" W\"bd\" T\"scale+translate\" M2,2,0,0 E0,0,0,0\nG10 R\"bd\"\n", "OK", values_blit_minify_mid, 9, nullptr },
+    { "blit_minify_max", "G40 R\"bs\" W\"bd\" T\"scale+translate\" M2,2,0,0 E1,0,0,2\nG10 R\"bd\"\n", "OK", values_blit_minify_max, 9, nullptr },
     { "flow_define_only", "T10 L\"p\"\nP10 V42\nT0\n", "", nullptr, 0, nullptr },
     { "flow_define_run", "T10 L\"p\"\nP10 V42\nT0\nT11 L\"p\"\n", "OK", values_flow_define_run, 1, nullptr },
     { "flow_unknown", "T11 L\"nope\"\n", "OZ", nullptr, 0, nullptr },
