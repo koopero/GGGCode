@@ -887,6 +887,83 @@ namespace ggg {
       pending.insert( pending.begin(), items.begin(), items.end() );
     }
 
+    // Collect the values of one A/O condition operand (comma-separated pieces:
+    // a $name reference reads the register's scalars; otherwise a literal number).
+    // Conditions are kept simple (refs + numbers) so they can be re-evaluated
+    // without the full streaming parser; ranges in a condition are not supported.
+    void collectConditionValues( const String & data, std::vector<NumberType> & out ) {
+      size_t b = 0;
+      while ( true ) {
+        size_t comma = data.find( ',', b );
+        String piece = ( comma == String::npos ) ? data.substr( b ) : data.substr( b, comma - b );
+        if ( !piece.empty() ) {
+          if ( piece[0] == GGG::Reference ) {            // $name -> register scalars
+            String regName = piece.substr( 1 );
+            size_t br = regName.find( GGG::Subscript );   // drop any [subscript]
+            if ( br != String::npos ) regName = regName.substr( 0, br );
+            MatrixBase * reg = resolveRegisterByName( regName );
+            if ( reg ) {
+              Index n = reg->sizeScalar();
+              for ( Index i = 0; i < n; i++ ) out.push_back( reg->readScalarFloat( i, 0. ) );
+            }
+          } else {
+            std::stringstream ss( piece );
+            NumberType v;
+            if ( ss >> v ) out.push_back( v );
+          }
+        }
+        if ( comma == String::npos ) break;
+        b = comma + 1;
+      }
+    }
+
+    // Re-evaluate a T9 condition from a stored opener source ("T9 G… A… O…"),
+    // re-solving the A/O operands against CURRENT state so references the loop
+    // body mutates ($x) drive termination. Mirrors evalCondition in TS Machine.ts.
+    bool evalCondition( const String & source ) {
+      bool hasA = false, hasO = false, allTruthy = true, anyTruthy = false;
+      size_t a = 0;
+      while ( a < source.size() ) {
+        size_t sp = source.find( ' ', a );
+        String arg = ( sp == String::npos ) ? source.substr( a ) : source.substr( a, sp - a );
+        if ( arg.size() >= 1 && ( arg[0] == 'A' || arg[0] == 'O' ) ) {
+          std::vector<NumberType> vals;
+          collectConditionValues( arg.substr( 1 ), vals );
+          for ( NumberType v : vals ) {
+            bool truthy = v != 0;
+            if ( arg[0] == 'A' ) { hasA = true; allTruthy = allTruthy && truthy; }
+            else { hasO = true; anyTruthy = anyTruthy || truthy; }
+          }
+        }
+        if ( sp == String::npos ) break;
+        a = sp + 1;
+      }
+      if ( !hasA && !hasO ) return false;
+      return ( hasA ? allTruthy : true ) && ( hasO ? anyTruthy : true );
+    }
+
+    // T9 G<max> while-loop: re-evaluate the condition before each pass and run the
+    // body while it holds, bounded by `max`. Each pass enqueues the body followed
+    // by a callback that re-checks for the next pass (drained in order).
+    void runLoop( const String & source, const std::vector<String> & body, long max ) {
+      loopStep( source, body, max );
+    }
+
+    void loopStep( const String & source, const std::vector<String> & body, long remaining ) {
+      if ( remaining <= 0 ) return;
+      if ( !evalCondition( source ) ) return;
+      std::vector<PendingItem> items;
+      for ( const String & l : body ) items.push_back( { false, l, {} } );
+      items.push_back( { true, "", [this, source, body, remaining]() {
+        this->loopStep( source, body, remaining - 1 );
+      } } );
+      if ( limits.maxQueue && (Int)( pending.size() + items.size() ) > limits.maxQueue ) {
+        outputOK( 0 );
+        return;
+      }
+      pending.insert( pending.begin(), items.begin(), items.end() );
+    }
+
     // Write a scalar into the iteration register (a single-element Matrix,
     // addressable by name or index), creating it if missing, so a loop body can
     // read it as $name / $index.

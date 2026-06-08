@@ -136,3 +136,38 @@
     P10 V$it
     T0
   values: []
+
+# --- T9 G: bounded while-loop (re-checks A/O each pass, capped by G<max>) ---
+- name: loop_bound
+  description: "T9 G<max> runs the body up to max times while the condition holds."
+  needs: [ gggpx, gggtx ]
+  tags: [ flow, loop ]
+  program: |
+    T9 G3 A1
+    P10 V7
+    T0
+  values: [ 7, 7, 7 ]
+
+- name: loop_false
+  description: "A loop whose condition is false up front never runs the body."
+  needs: [ gggpx, gggtx ]
+  tags: [ flow, loop ]
+  status: ""
+  program: |
+    T9 G5 A0
+    P10 V7
+    T0
+  values: []
+
+- name: loop_terminate
+  # The condition is re-evaluated each pass: the body zeroes r[0], so $r is no
+  # longer all-truthy and the loop stops after one pass (well before the G cap).
+  description: "A loop terminates when the body's writes make the re-checked condition false."
+  needs: [ gggpx, gggtx, ggggx ]
+  tags: [ flow, loop ]
+  program: |
+    T9 G100 A$r
+    P10 V$r[0]
+    G20 R0 P0 V0
+    T0
+  values: [ 10 ]

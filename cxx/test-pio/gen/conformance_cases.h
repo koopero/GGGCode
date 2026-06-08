@@ -12,6 +12,8 @@ namespace ggg_conformance {
   static const double values_cond_any_true[] = { 42.0 };
   static const double values_cond_nested_skip[] = { 2.0 };
   static const double values_iter_single[] = { 5.0 };
+  static const double values_loop_bound[] = { 7.0, 7.0, 7.0 };
+  static const double values_loop_terminate[] = { 10.0 };
   static const double values_hex_1f[] = { 31.0 };
   static const double values_hex_ff[] = { 255.0 };
   static const double values_hex_zero[] = { 0.0 };
@@ -81,6 +83,9 @@ namespace ggg_conformance {
     { "cond_nested_skip", "T9 A0\nT9 A1\nP10 V1\nT0\nT0\nP10 V2\n", "OK", values_cond_nested_skip, 1, nullptr },
     { "iter_single", "T9 V5 R\"it\"\nP10 V$it\nT0\n", "OK", values_iter_single, 1, nullptr },
     { "iter_zero", "T9 V$x R\"it\"\nP10 V$it\nT0\n", "", nullptr, 0, nullptr },
+    { "loop_bound", "T9 G3 A1\nP10 V7\nT0\n", "OK", values_loop_bound, 3, nullptr },
+    { "loop_false", "T9 G5 A0\nP10 V7\nT0\n", "", nullptr, 0, nullptr },
+    { "loop_terminate", "T9 G100 A$r\nP10 V$r[0]\nG20 R0 P0 V0\nT0\n", "OK", values_loop_terminate, 1, nullptr },
     { "hex_1f", "P10 V0X1F\n", "OK", values_hex_1f, 1, nullptr },
     { "hex_ff", "P10 V0XFF\n", "OK", values_hex_ff, 1, nullptr },
     { "hex_zero", "P10 V0X0\n", "OK", values_hex_zero, 1, nullptr },

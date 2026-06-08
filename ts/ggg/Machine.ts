@@ -1,5 +1,6 @@
 import { GGG, Hooks, Token, TokenArg, Command, Commands, HookArgs, CasedString, Primitive, CommandDecision } from "./Language"
 import ParseLines, { ParseLinesArgs } from "./ParseLines"
+import ParseLine from "./ParseLine"
 import { EventEmitter } from "../common/events"
 import { isArray, isNumber, isString, isBoolean, isDefined } from "../common/util"
 import NamedList, { NamedListItem } from "./NamedList"
@@ -71,6 +72,9 @@ export default class Machine extends EventEmitter  {
   queue:QueueItem[] = []
   queuePointer:number = 0
   runningCommand:Command|null = null
+  // Source of the line currently executing, stashed so a block opener's hooks
+  // (e.g. T9 G) can store it for later re-evaluation (the loop condition).
+  lineSource?:string
   registers:Map<object,NamedList<gggRegister>> = new Map<object,NamedList<gggRegister>>()
 
   timeout:ReturnType<typeof setTimeout>|null = null
@@ -209,6 +213,51 @@ export default class Machine extends EventEmitter  {
     queue.splice( queuePointer + 1, 0, ...items )
   }
 
+  // Re-evaluate a T9 condition from a stored opener source ("T9 G… A… O…").
+  // Mirrors the one-shot logic but re-solves the A/O args against CURRENT state
+  // each call, so references the loop body mutates ($x) drive termination.
+  evalCondition( source:string ) : boolean {
+    const [ token ] = ParseLine( source )
+    let hasA = false, hasO = false, condA = true, condO = false
+    for ( const arg of token.args || [] ) {
+      if ( arg.code !== "A" && arg.code !== "O" ) continue
+      for ( const v of this.solve( arg.data, { solveStrings: false } ) ) {
+        const truthy = ( typeof v === "number" ) && v !== 0
+        if ( arg.code === "A" ) { hasA = true; condA = condA && truthy }
+        else { hasO = true; condO = condO || truthy }
+      }
+    }
+    if ( !hasA && !hasO ) return false
+    return ( hasA ? condA : true ) && ( hasO ? condO : true )
+  }
+
+  // Enqueue a loop body followed by a continuation callback, so the callback
+  // runs after the body drains (the loop's next step). Bounded by maxQueue.
+  enqueueLoopStep( body:string[], next:() => void ) {
+    const { queue, queuePointer, limits } = this
+    const parsed = ParseLines( body.join( GGG.End ) )
+    const items:QueueItem[] = parsed.map( line => ( { line } ) )
+    items.push( { callback: next } )
+    if ( limits.maxQueue && queue.length + items.length > limits.maxQueue ) {
+      this.outputOk( 0 )
+      return
+    }
+    queue.splice( queuePointer + 1, 0, ...items )
+  }
+
+  // Run a captured body as a while-loop: re-evaluate the condition (from the
+  // opener source) before each pass and run the body while it holds, bounded by
+  // `max` iterations (T9 G<max>). The body runs, then a callback re-checks the
+  // condition for the next pass.
+  runLoop( source:string, body:string[], max:number ) {
+    const step = ( remaining:number ) => {
+      if ( remaining <= 0 ) return
+      if ( !this.evalCondition( source ) ) return
+      this.enqueueLoopStep( body, () => step( remaining - 1 ) )
+    }
+    step( max )
+  }
+
   getRegisterList( registerClass:object ) : NamedList<gggRegister> {
     let registers = this.registers.get( registerClass )
     if ( !registers ) {
@@ -254,6 +303,7 @@ export default class Machine extends EventEmitter  {
 
   async execLine( line:Token ) {
     const machine = this
+    this.lineSource = line.source
     if ( line.command ) {
       const command = line.command
       if ( isBlankCommand( command ) ) 

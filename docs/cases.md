@@ -4,17 +4,18 @@
 
 Each case is one artifact wearing four hats: a behavioural **spec**, a piece of **documentation**, a runnable **example**, and a cross-engine conformance **test**. The contract is the decoded `values` stream within a global epsilon; `status` is the control response. Cases are grouped below by `tag` (a case appears under each tag it carries).
 
-67 cases across 18 tags.
+70 cases across 19 tags.
 
 ## Tags
 
 - [conditionals](#conditionals) (6)
 - [decimals](#decimals) (7)
-- [flow](#flow) (12)
+- [flow](#flow) (15)
 - [hex](#hex) (7)
 - [irrational](#irrational) (3)
 - [iteration](#iteration) (2)
 - [lists](#lists) (5)
+- [loop](#loop) (3)
 - [matrix](#matrix) (5)
 - [multiaxis](#multiaxis) (2)
 - [normalized](#normalized) (2)
@@ -362,6 +363,47 @@ T0
 - status: (no response)
 - needs: `gggpx`, `gggtx`
 
+### loop_bound
+
+T9 G<max> runs the body up to max times while the condition holds.
+
+```
+T9 G3 A1
+P10 V7
+T0
+```
+
+- values: `[7,7,7]`
+- needs: `gggpx`, `gggtx`
+
+### loop_false
+
+A loop whose condition is false up front never runs the body.
+
+```
+T9 G5 A0
+P10 V7
+T0
+```
+
+- values: `[]`
+- status: (no response)
+- needs: `gggpx`, `gggtx`
+
+### loop_terminate
+
+A loop terminates when the body's writes make the re-checked condition false.
+
+```
+T9 G100 A$r
+P10 V$r[0]
+G20 R0 P0 V0
+T0
+```
+
+- values: `[10]`
+- needs: `gggpx`, `gggtx`, `ggggx`
+
 ## hex
 
 ### hex_1f
@@ -562,6 +604,49 @@ P10 V☃,你
 
 - values: `[9731,20320]`
 - needs: `gggpx`
+
+## loop
+
+### loop_bound
+
+T9 G<max> runs the body up to max times while the condition holds.
+
+```
+T9 G3 A1
+P10 V7
+T0
+```
+
+- values: `[7,7,7]`
+- needs: `gggpx`, `gggtx`
+
+### loop_false
+
+A loop whose condition is false up front never runs the body.
+
+```
+T9 G5 A0
+P10 V7
+T0
+```
+
+- values: `[]`
+- status: (no response)
+- needs: `gggpx`, `gggtx`
+
+### loop_terminate
+
+A loop terminates when the body's writes make the re-checked condition false.
+
+```
+T9 G100 A$r
+P10 V$r[0]
+G20 R0 P0 V0
+T0
+```
+
+- values: `[10]`
+- needs: `gggpx`, `gggtx`, `ggggx`
 
 ## matrix
 

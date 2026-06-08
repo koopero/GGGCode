@@ -572,6 +572,29 @@ void test_flow_iteration() {
   }
 }
 
+// Flow control: T9 G bounded while-loop (re-checks the A/O condition each pass,
+// capped by G<max>).
+void test_flow_loop() {
+  // A constant-true condition runs the body up to the G bound.
+  {
+    FlowMachine m; m.setup();
+    m.run( "T9 G3 A1\nP10 V7\nT0\n" );
+    TEST_ASSERT_EQUAL_STRING( "V7\nOK\nV7\nOK\nV7\nOK\n", m.out.c_str() );
+  }
+  // A false condition never runs the body (checked before each pass).
+  {
+    FlowMachine m; m.setup();
+    m.run( "T9 G5 A0\nP10 V7\nT0\n" );
+    TEST_ASSERT_EQUAL_STRING( "", m.out.c_str() );
+  }
+  // O (any) condition, capped by the bound.
+  {
+    FlowMachine m; m.setup();
+    m.run( "T9 G2 O0,1\nP10 V5\nT0\n" );
+    TEST_ASSERT_EQUAL_STRING( "V5\nOK\nV5\nOK\n", m.out.c_str() );
+  }
+}
+
 // Run all tests
 int main() {
   UNITY_BEGIN();
@@ -585,6 +608,7 @@ int main() {
   RUN_TEST(test_flow_procedures);
   RUN_TEST(test_flow_conditionals);
   RUN_TEST(test_flow_iteration);
+  RUN_TEST(test_flow_loop);
   RUN_TEST(test_conformance);
   UNITY_END();
   return 0;

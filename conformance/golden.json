@@ -215,6 +215,64 @@
     "expected": ""
   },
   {
+    "name": "loop_bound",
+    "description": "T9 G<max> runs the body up to max times while the condition holds.",
+    "needs": [
+      "gggpx",
+      "gggtx"
+    ],
+    "tags": [
+      "flow",
+      "loop"
+    ],
+    "program": "T9 G3 A1\nP10 V7\nT0",
+    "status": "OK",
+    "values": [
+      7,
+      7,
+      7
+    ],
+    "exact": false,
+    "expected": "V7\nOK\nV7\nOK\nV7\nOK"
+  },
+  {
+    "name": "loop_false",
+    "description": "A loop whose condition is false up front never runs the body.",
+    "needs": [
+      "gggpx",
+      "gggtx"
+    ],
+    "tags": [
+      "flow",
+      "loop"
+    ],
+    "program": "T9 G5 A0\nP10 V7\nT0",
+    "status": "",
+    "values": [],
+    "exact": false,
+    "expected": ""
+  },
+  {
+    "name": "loop_terminate",
+    "description": "A loop terminates when the body's writes make the re-checked condition false.",
+    "needs": [
+      "gggpx",
+      "gggtx",
+      "ggggx"
+    ],
+    "tags": [
+      "flow",
+      "loop"
+    ],
+    "program": "T9 G100 A$r\nP10 V$r[0]\nG20 R0 P0 V0\nT0",
+    "status": "OK",
+    "values": [
+      10
+    ],
+    "exact": false,
+    "expected": "V10\nOK\nOK"
+  },
+  {
     "name": "hex_1f",
     "description": "0X is a hexadecimal integer.",
     "needs": [

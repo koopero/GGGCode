@@ -106,6 +106,7 @@ const ConditionalCommand : Command = {
   args: {
     "A": { description: "run if all values are truthy", type: ArgType.Number },
     "O": { description: "run if any value is truthy", type: ArgType.Number },
+    [GGG.Repeat]: { description: "loop: max iterations, re-checking A/O each pass", type: ArgType.Number },
     [GGG.Value]: { description: "iterate the body once per value", type: ArgType.Number },
     [GGG.Register]: { description: "iteration register (name or index)", type: ArgType.Any },
   },
@@ -115,17 +116,31 @@ const ConditionalCommand : Command = {
     state.condO = null
     state.iterValues = []
     state.iterReg = undefined
+    state.loop = false
+    state.loopMax = 0
   },
   [Hooks.Value]: ( args ) => {
     const { state, code, value } = args
     const truthy = ( typeof value === "number" ) && value !== 0
     if ( code === "A" ) state.condA = ( state.condA === null ? true : state.condA ) && truthy
     else if ( code === "O" ) state.condO = ( state.condO === null ? false : state.condO ) || truthy
+    else if ( code === GGG.Repeat && typeof value === "number" ) { state.loop = true; state.loopMax = value }
     else if ( code === GGG.Value && typeof value === "number" ) state.iterValues.push( value )
     else if ( code === GGG.Register ) state.iterReg = value
   },
   [Hooks.End]: ( args ) => {
     const { machine, state } = args
+    if ( state.loop ) {
+      // Loop mode (T9 G<max>): capture the body, store the opener source so the
+      // A/O condition can be re-evaluated against current state each pass.
+      machine.pushFrame( {
+        command: ConditionalCommand,
+        state: { loop: true, max: state.loopMax, source: machine.lineSource },
+        capture: [],
+        depth: 0,
+      } )
+      return
+    }
     if ( state.iterValues.length ) {
       // Iteration mode.
       machine.pushFrame( {
@@ -150,7 +165,9 @@ const ConditionalCommand : Command = {
   },
   [Hooks.Stack]: ( args ) => captureGate( args, ( machine, frame ) => {
     const { state } = frame
-    if ( state.iter ) {
+    if ( state.loop ) {
+      machine.runLoop( state.source, frame.capture, state.max )
+    } else if ( state.iter ) {
       machine.enqueueLoop( state.values, frame.capture, state.reg )
     } else if ( state.bool ) {
       machine.enqueueLines( frame.capture )
