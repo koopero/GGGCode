@@ -4,7 +4,7 @@
 
 Each case is one artifact wearing four hats: a behavioural **spec**, a piece of **documentation**, a runnable **example**, and a cross-engine conformance **test**. The contract is the decoded `values` stream within a global epsilon; `status` is the control response. Cases are grouped below by `tag` (a case appears under each tag it carries).
 
-62 cases across 17 tags.
+67 cases across 18 tags.
 
 ## Tags
 
@@ -18,9 +18,10 @@ Each case is one artifact wearing four hats: a behavioural **spec**, a piece of 
 - [matrix](#matrix) (5)
 - [multiaxis](#multiaxis) (2)
 - [normalized](#normalized) (2)
+- [offset](#offset) (5)
 - [procedures](#procedures) (4)
 - [ranges](#ranges) (9)
-- [references](#references) (9)
+- [references](#references) (14)
 - [signs](#signs) (1)
 - [subscript](#subscript) (6)
 - [unicode](#unicode) (6)
@@ -673,6 +674,63 @@ P10 V0J8
 - values: `[0.5333333333333333]`
 - needs: `gggpx`
 
+## offset
+
+### off_origin
+
+$x@[0|0] is the flat offset of the origin coordinate.
+
+```
+P10 V$m@[0|0]
+```
+
+- values: `[0]`
+- needs: `gggpx`
+
+### off_coord
+
+$x@[a|b] is the flat offset of an exact coordinate.
+
+```
+P10 V$m@[1|2]
+```
+
+- values: `[5]`
+- needs: `gggpx`
+
+### off_coord_list
+
+A comma list of coordinates yields each one's flat offset.
+
+```
+P10 V$m@[1|0,0|1]
+```
+
+- values: `[1,2]`
+- needs: `gggpx`
+
+### off_range
+
+Explicit coordinate ranges sweep, yielding a block of offsets.
+
+```
+P10 V$m@[0:1|0:2]
+```
+
+- values: `[0,1,2,3,4,5]`
+- needs: `gggpx`
+
+### off_bare
+
+A bare number in an offset ref is the offset itself.
+
+```
+P10 V$m@[4]
+```
+
+- values: `[4]`
+- needs: `gggpx`
+
 ## procedures
 
 ### flow_define_only
@@ -933,6 +991,61 @@ P10 V$r[1|1]
 ```
 
 - values: `[]`
+- needs: `gggpx`
+
+### off_origin
+
+$x@[0|0] is the flat offset of the origin coordinate.
+
+```
+P10 V$m@[0|0]
+```
+
+- values: `[0]`
+- needs: `gggpx`
+
+### off_coord
+
+$x@[a|b] is the flat offset of an exact coordinate.
+
+```
+P10 V$m@[1|2]
+```
+
+- values: `[5]`
+- needs: `gggpx`
+
+### off_coord_list
+
+A comma list of coordinates yields each one's flat offset.
+
+```
+P10 V$m@[1|0,0|1]
+```
+
+- values: `[1,2]`
+- needs: `gggpx`
+
+### off_range
+
+Explicit coordinate ranges sweep, yielding a block of offsets.
+
+```
+P10 V$m@[0:1|0:2]
+```
+
+- values: `[0,1,2,3,4,5]`
+- needs: `gggpx`
+
+### off_bare
+
+A bare number in an offset ref is the offset itself.
+
+```
+P10 V$m@[4]
+```
+
+- values: `[4]`
 - needs: `gggpx`
 
 ## signs

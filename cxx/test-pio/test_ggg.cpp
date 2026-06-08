@@ -167,6 +167,13 @@ struct ConformanceMachine : public ggg::Machine {
     reg->writeScalarFloat( 20, 1 );
     reg->writeScalarFloat( 30, 2 );
     addRegister( reg );
+    // A 2x3 register "m" for offset references ($m@[...]), where the shape (and
+    // thus the per-axis strides) is what's under test.
+    auto *mat = new ggg::Matrix<float,false>( {2,3} );
+    mat->allocate();
+    mat->name = "m";
+    for ( int i = 0; i < 6; i++ ) mat->writeScalarFloat( 10 + i, i );
+    addRegister( mat );
   }
 };
 

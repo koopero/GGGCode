@@ -37,6 +37,7 @@ export enum GGG {
   Subscript = "[",
   SubscriptEnd = "]",
   NextAxis = "|",
+  At = "@",
 }
 
 export type EncodingName = string
@@ -142,6 +143,10 @@ export type Numeric = number | RangeAxes | RangeAxis
 export type Reference = {
   register: string,
   subscript: Numeric[],
+  // Offset reference ($x@[...]): yield the flat OFFSETS computed from the
+  // subscript coordinates against the register's dimensions/strides, instead of
+  // reading the values at those positions.
+  offset?: boolean,
 }
 
 export type ValueWithEncoding = {

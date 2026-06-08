@@ -72,3 +72,41 @@
   tags: [ references, subscript ]
   program: "P10 V$r[1|1]"
   values: []
+
+# Offset references ($x@[...]): yield flat OFFSETS computed from coordinates
+# against the register's dimensions/strides, not the values. Run against the 2x3
+# fixture "m" (strides [1,2]).
+- name: off_origin
+  description: "$x@[0|0] is the flat offset of the origin coordinate."
+  needs: [ gggpx ]
+  tags: [ references, offset ]
+  program: "P10 V$m@[0|0]"
+  values: [ 0 ]
+
+- name: off_coord
+  description: "$x@[a|b] is the flat offset of an exact coordinate."
+  needs: [ gggpx ]
+  tags: [ references, offset ]
+  program: "P10 V$m@[1|2]"
+  values: [ 5 ]
+
+- name: off_coord_list
+  description: "A comma list of coordinates yields each one's flat offset."
+  needs: [ gggpx ]
+  tags: [ references, offset ]
+  program: "P10 V$m@[1|0,0|1]"
+  values: [ 1, 2 ]
+
+- name: off_range
+  description: "Explicit coordinate ranges sweep, yielding a block of offsets."
+  needs: [ gggpx ]
+  tags: [ references, offset ]
+  program: "P10 V$m@[0:1|0:2]"
+  values: [ 0, 1, 2, 3, 4, 5 ]
+
+- name: off_bare
+  description: "A bare number in an offset ref is the offset itself."
+  needs: [ gggpx ]
+  tags: [ references, offset ]
+  program: "P10 V$m@[4]"
+  values: [ 4 ]

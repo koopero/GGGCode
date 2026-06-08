@@ -28,6 +28,7 @@ namespace ggg {
     // bare whole-register read.
     bool refInSub = false;
     bool refHasSub = false;
+    bool refOffset = false;   // $x@[...]: yield coordinate offsets, not values
     String refSub;
 
     Index index = 0;
@@ -94,6 +95,7 @@ namespace ggg {
       state.captureLine = false;
       state.refInSub = false;
       state.refHasSub = false;
+      state.refOffset = false;
       state.refSub.clear();
     }
 
@@ -272,6 +274,7 @@ namespace ggg {
         state.refSub.clear();
         state.refInSub = false;
         state.refHasSub = false;
+        state.refOffset = false;
       } else if ( isNumberStart( _char ) ) {
         startNumber();
         bufferAppend( _char );
@@ -403,6 +406,10 @@ namespace ggg {
         state.argBuffer += _char;
         return;
       }
+      if ( _char == GGG::At ) {              // '@' -> offset reference ($x@[...])
+        state.refOffset = true;
+        return;
+      }
       if ( _char == GGG::Subscript ) {       // '[' -> capture subscript
         state.refHasSub = true;
         state.refInSub = true;
@@ -415,7 +422,9 @@ namespace ggg {
     void finishReference() {
       state.expressionMode = GGG::Encoding;
       if ( !state.argBuffer.empty() ) {
-        if ( state.refHasSub ) {
+        if ( state.refHasSub && state.refOffset ) {
+          resolveOffsetSubscript( state.argBuffer, state.refSub );
+        } else if ( state.refHasSub ) {
           resolveReferenceSubscript( state.argBuffer, state.refSub );
         } else {
           resolveReference( state.argBuffer );
@@ -425,6 +434,7 @@ namespace ggg {
       state.refSub.clear();
       state.refInSub = false;
       state.refHasSub = false;
+      state.refOffset = false;
     }
 
     // Resolve a register by name, falling back to an index lookup for a numeric
@@ -457,22 +467,17 @@ namespace ggg {
       if ( !std::isnan( val ) ) dataAppend( val );
     }
 
-    // Resolve $name[subscript]: the bracketed text is a comma-separated list of
-    // compound segments; each is solved into a set of flat indices, and every
-    // index reads one scalar. Mirrors Solve.solveReference (ts/ggg/Solve.ts):
-    // the subscript is solved REGISTER-LESS (dimension 1, stride 1 per axis) --
-    // Solve.solve drops the register when recursing into the subscript array, so
-    // the register's shape never sizes the ranges; it only supplies the values
-    // read by the resolved indices. Multi-axis (a|b) thus expands coordinate-wise
-    // into flat indices exactly like the register-less print compound.
-    void resolveReferenceSubscript( const String & name, const String & sub ) {
-      MatrixBase * reg = resolveRegisterByName( name );
-      if ( !reg ) return;
+    // One comma-separated subscript segment: a compound (numbers + the range
+    // symbols seen between them), in the ParseData grammar.
+    struct SubSegment { std::vector<NumberType> numbers; std::vector<Char> symbols; };
 
+    // Tokenize a subscript into its comma-separated compound segments. Shared by
+    // the plain ($x[...]) and offset ($x@[...]) resolvers.
+    std::vector<SubSegment> parseSubscriptSegments( const String & sub ) {
+      std::vector<SubSegment> segs;
       std::vector<NumberType> numbers;
       std::vector<Char> symbols;
       String num;
-
       auto flushNumber = [&]() {
         if ( num.empty() ) return;
         std::stringstream ss( num );
@@ -483,17 +488,10 @@ namespace ggg {
       auto flushSegment = [&]() {
         flushNumber();
         if ( numbers.empty() && symbols.empty() ) return;
-        if ( numbers.size() == 1 && symbols.empty() ) {
-          readReferenceIndex( reg, numbers[0] );
-        } else {
-          CompoundExpansion expansion( buildAxes( numbers, symbols ) );   // register-less
-          NumberType v;
-          while ( expansion.next( v ) ) readReferenceIndex( reg, v );
-        }
+        segs.push_back( { numbers, symbols } );
         numbers.clear();
         symbols.clear();
       };
-
       for ( char c : sub ) {
         if ( ( c >= '0' && c <= '9' ) || c == '.' || c == '+' || c == '-' ) {
           num += c;
@@ -507,6 +505,59 @@ namespace ggg {
         // any other char (whitespace, etc.) is ignored
       }
       flushSegment();
+      return segs;
+    }
+
+    // Resolve $name[subscript]: each segment is solved into a set of flat indices,
+    // and every index reads one scalar. Mirrors Solve.solveReference (ts/ggg/Solve.ts):
+    // the subscript is solved REGISTER-LESS (dimension 1, stride 1 per axis) --
+    // Solve.solve drops the register when recursing into the subscript array, so
+    // the register's shape never sizes the ranges; it only supplies the values
+    // read by the resolved indices. Multi-axis (a|b) thus expands coordinate-wise
+    // into flat indices exactly like the register-less print compound.
+    void resolveReferenceSubscript( const String & name, const String & sub ) {
+      MatrixBase * reg = resolveRegisterByName( name );
+      if ( !reg ) return;
+      for ( auto & seg : parseSubscriptSegments( sub ) ) {
+        if ( seg.numbers.size() == 1 && seg.symbols.empty() ) {
+          readReferenceIndex( reg, seg.numbers[0] );
+        } else {
+          CompoundExpansion expansion( buildAxes( seg.numbers, seg.symbols ) );   // register-less
+          NumberType v;
+          while ( expansion.next( v ) ) readReferenceIndex( reg, v );
+        }
+      }
+    }
+
+    // Resolve $name@[subscript]: an OFFSET reference. Each segment's coordinates
+    // resolve against the register's per-axis dimensions/strides, and the flat
+    // OFFSETS are yielded (not the values). A lone coordinate value is an EXACT
+    // coordinate (a single point), so blank-end axes are pinned to start; explicit
+    // ranges (a:b) still sweep coordinates. Mirrors the offset branch of
+    // Solve.solveReference (ts/ggg/Solve.ts).
+    void resolveOffsetSubscript( const String & name, const String & sub ) {
+      MatrixBase * reg = resolveRegisterByName( name );
+      if ( !reg ) return;
+      for ( auto & seg : parseSubscriptSegments( sub ) ) {
+        std::vector<RangeAxis> axes = buildAxes( seg.numbers, seg.symbols );
+        // Pin lone values (blank end) to a single coordinate at start.
+        for ( auto & a : axes ) {
+          if ( std::isnan( a.end ) ) { a.end = a.start; a.inclusive = true; }
+        }
+        // Per-axis dimensions + strides from the register shape (axis 0 innermost,
+        // stride 1); axes beyond the register's rank use dimension 1.
+        std::vector<NumberType> dims, strides;
+        NumberType stride = 1;
+        for ( size_t k = 0; k < axes.size(); k++ ) {
+          NumberType d = ( k < reg->dim.size() ) ? (NumberType) reg->dim[k] : 1;
+          dims.push_back( d );
+          strides.push_back( stride );
+          stride *= d;
+        }
+        CompoundExpansion expansion( axes, dims, strides );
+        NumberType v;
+        while ( expansion.next( v ) ) dataAppend( v );   // yield the flat offset
+      }
     }
 
     void parseHex( Char _char ) {

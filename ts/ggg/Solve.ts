@@ -53,11 +53,10 @@ export function* Solve( arg:SolveArgument, options:SolveOptions = {
   }
 
   function* solveReference( value:Reference ):Generator<number> {
-    const { register, subscript } = value
+    const { register, subscript, offset } = value
     const reg = MatrixResolve && MatrixResolve( register )
     if ( reg ) {
-      // Bare $name (no subscript) reads the whole register in order; $name[...]
-      // resolves the subscript against the register's dimensions.
+      // Bare $name (no subscript) reads the whole register in order.
       if ( !subscript || ( isArray( subscript ) && subscript.length === 0 ) ) {
         const size = reg.getSize()
         for ( let i = 0; i < size; i++ ) {
@@ -68,6 +67,31 @@ export function* Solve( arg:SolveArgument, options:SolveOptions = {
         }
         return
       }
+      if ( offset ) {
+        // Offset reference ($x@[...]): resolve the subscript coordinates against
+        // the register's dimensions/strides and yield the resulting flat OFFSETS
+        // (not the values). A lone coordinate value is an EXACT coordinate (a
+        // single point), not an open range to the axis end -- so blank-end axes
+        // are pinned to start. Explicit ranges (a:b) still sweep coordinates.
+        const pin = ( a:RangeAxis ):RangeAxis =>
+          isBlank( a.end ) ? { ...a, end: a.start, inclusive: true } : a
+        for ( const item of subscript as any[] ) {
+          if ( isNumber( item ) ) {
+            yield item
+          } else if ( item && typeof item === "object" ) {
+            if ( "axes" in item ) {
+              yield* solveRangeAxes( { axes: ( item.axes as RangeAxis[] ).map( pin ) }, reg )
+            } else if ( "value" in item ) {
+              if ( isNumber( item.value ) ) yield item.value
+            } else {
+              yield* solveRangeAxis( pin( item as RangeAxis ), reg.getSize(), 1 )
+            }
+          }
+        }
+        return
+      }
+      // Plain subscript ($x[...]): solve register-less (Solve drops the register
+      // recursing into the array) into flat indices, then read those values.
       for ( const index of solve( subscript, reg ) ) {
         if ( isNumber( index ) ) {
           const val = reg.readNumber( index )

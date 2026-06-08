@@ -897,6 +897,102 @@
     "expected": "\nOK"
   },
   {
+    "name": "off_origin",
+    "description": "$x@[0|0] is the flat offset of the origin coordinate.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "references",
+      "offset"
+    ],
+    "program": "P10 V$m@[0|0]",
+    "status": "OK",
+    "values": [
+      0
+    ],
+    "exact": false,
+    "expected": "V0\nOK"
+  },
+  {
+    "name": "off_coord",
+    "description": "$x@[a|b] is the flat offset of an exact coordinate.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "references",
+      "offset"
+    ],
+    "program": "P10 V$m@[1|2]",
+    "status": "OK",
+    "values": [
+      5
+    ],
+    "exact": false,
+    "expected": "V5\nOK"
+  },
+  {
+    "name": "off_coord_list",
+    "description": "A comma list of coordinates yields each one's flat offset.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "references",
+      "offset"
+    ],
+    "program": "P10 V$m@[1|0,0|1]",
+    "status": "OK",
+    "values": [
+      1,
+      2
+    ],
+    "exact": false,
+    "expected": "V1,2\nOK"
+  },
+  {
+    "name": "off_range",
+    "description": "Explicit coordinate ranges sweep, yielding a block of offsets.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "references",
+      "offset"
+    ],
+    "program": "P10 V$m@[0:1|0:2]",
+    "status": "OK",
+    "values": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "exact": false,
+    "expected": "V0,1,2,3,4,5\nOK"
+  },
+  {
+    "name": "off_bare",
+    "description": "A bare number in an offset ref is the offset itself.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "references",
+      "offset"
+    ],
+    "program": "P10 V$m@[4]",
+    "status": "OK",
+    "values": [
+      4
+    ],
+    "exact": false,
+    "expected": "V4\nOK"
+  },
+  {
     "name": "unicode_snowman",
     "description": "A Unicode character decodes to its code point.",
     "needs": [

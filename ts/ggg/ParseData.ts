@@ -9,7 +9,7 @@ const decimalNumber = /^[+-]?(\d+(\.\d+)?)([Ee][+-]?\d+)?/
 const doubleQuotedString = /^((""|".*?[^\\]"))/
 
 const RegexEscape = ( str:string ) => str.replace( /[-/\\^$*+?.()|[\]{}]/g, "\\$&" )
-const referenceReg = new RegExp( `^${RegexEscape(GGG.Reference)}([a-zA-Z0-9_]*)(${RegexEscape(GGG.Subscript)}?)` )
+const referenceReg = new RegExp( `^${RegexEscape(GGG.Reference)}([a-zA-Z0-9_]*)(${RegexEscape(GGG.At)}?)(${RegexEscape(GGG.Subscript)}?)` )
 
 const unitaryPattern = new RegExp( `^[${Object.values(UnitaryNames).map(RegexEscape).join("")}]`, "iu" )
 const unitaryMap: Record<string, number> = {}
@@ -224,10 +224,13 @@ export default function ParseData( str:string, options:ParseOptions = {} ) : [ P
     } else if ( ( match = str.match( referenceReg ) ) ) {
       // Is reference. Always emit the reference; a bare $name (no subscript)
       // reads the whole register at solve time. With a subscript, descend so
-      // the bracketed expression becomes reference.subscript.
+      // the bracketed expression becomes reference.subscript. An `@` before the
+      // subscript marks an offset reference: it yields the flat offsets computed
+      // from the subscript coordinates against the register, not the values.
       const register = match[1] ? match[1] : null
-      const subscriptStart = match[2]
-      const reference = { register, subscript: [] }
+      const offset = match[2] === GGG.At
+      const subscriptStart = match[3]
+      const reference = { register, subscript: [], offset }
 
       currentList.push( reference as Reference )
 

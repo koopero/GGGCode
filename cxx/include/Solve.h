@@ -156,13 +156,31 @@ namespace ggg {
     // $name[subscript] -- Solve drops the register inside the subscript array, so
     // the register's shape never sizes subscript ranges).
     explicit CompoundExpansion( const std::vector<RangeAxis> &axes ) {
+      init( axes, nullptr, nullptr );
+    }
+
+    // Coordinate-aware expansion: per-axis dimensions + strides (mirrors
+    // Solve.solveRangeAxes with a register). Used by offset references
+    // ($x@[...]), where each axis contributes coord*stride to the flat offset.
+    // dims/strides must be sized to axes.
+    CompoundExpansion( const std::vector<RangeAxis> &axes,
+                       const std::vector<NumberType> &dims,
+                       const std::vector<NumberType> &strides ) {
+      init( axes, &dims, &strides );
+    }
+
+    void init( const std::vector<RangeAxis> &axes,
+               const std::vector<NumberType> *dims,
+               const std::vector<NumberType> *strides ) {
       const size_t n = axes.size();
       first.resize( n );
       delta.resize( n );
       count.resize( n );
       idx.assign( n, 0 );
       for ( size_t k = 0; k < n; k++ ) {
-        resolveAxis( axes[k], 1, 1, first[k], delta[k], count[k] );
+        const NumberType dim    = dims    ? (*dims)[k]    : 1;
+        const NumberType stride = strides ? (*strides)[k] : 1;
+        resolveAxis( axes[k], dim, stride, first[k], delta[k], count[k] );
         // Product semantics: any empty axis means the whole expansion is empty
         // (mirrors solveAxes looping zero times at that level). This also yields
         // the "a|b|c collapses to empty" quirk, since each lone value resolves

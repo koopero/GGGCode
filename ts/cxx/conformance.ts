@@ -28,8 +28,11 @@ export function normalizeOutput( output: string ): string {
 
 export async function golden( program: string, needs: Subsystem[] ): Promise<string> {
   const machine = new Machine( { commands: commandsFor( needs ) } )
-  // A fixed register "r" = [10,20,30] so reference cases ($r) have data to read.
-  machine.getRegisterList( Matrix ).add( new Matrix( { dim: [3], data: [10, 20, 30] } ), { name: "r" } )
+  // Fixed register fixtures: "r" = [10,20,30] (1-D) for $r reference cases, and
+  // "m" = a 2x3 matrix for offset references ($m@[...]) where the shape matters.
+  const registers = machine.getRegisterList( Matrix )
+  registers.add( new Matrix( { dim: [3], data: [10, 20, 30] } ), { name: "r" } )
+  registers.add( new Matrix( { dim: [2, 3], data: [10, 11, 12, 13, 14, 15] } ), { name: "m" } )
   let out = ""
   const onOutput = ( line: any ) => { out += Format( line ) }
   machine.on( "output", onOutput )
