@@ -24,21 +24,29 @@ function resolveOption( value: string | number | undefined, list: string[] ): st
 // channels) is delegated to Sample (./Sample.ts).
 //
 // The transform is affine, selected by `mode`, which says how the flat `matrix`
-// coefficients fill the internal (rank+1)x(rank+1) homogeneous matrix. The rank
-// is the destination's spatial rank ( dim.length - dimension ); `dimension` is
-// the count of leading channel dims (0 = single-channel, all axes spatial).
+// (M) coefficients fill the internal (rank+1)x(rank+1) homogeneous matrix. The
+// rank is the destination's spatial rank ( dim.length - dimension ); `dimension`
+// is the count of leading channel dims (0 = single-channel, all axes spatial).
+//
+// Modes (M reused per mode):
+//   box (default) -- M = a source rectangle, min,max pairs per axis in SOURCE
+//                    PIXEL coords; the rect is stretched to fill the dest.
+//                    Omitted pair/value defaults to the full source [0,dim], so
+//                    the default box is an identity copy. Subsumes scale+translate.
+//   identity      -- explicit no-op (== box with default args).
+//   affine        -- M = the general rank x (rank+1) matrix (rotation/shear/...).
 //
 // Non-affine / arbitrary warp is a separate (future) command; the homogeneous
 // form here leaves room for a projective mode later.
 //
 
-export const BlitModes = [ "identity", "affine", "scale+translate" ] as const
+export const BlitModes = [ "box", "identity", "affine" ] as const
 export type BlitMode = typeof BlitModes[number]
 
 export function resolveMode( mode: string | number | undefined ): BlitMode {
-  if ( typeof mode === "number" ) return BlitModes[ mode ] ?? "identity"
+  if ( typeof mode === "number" ) return BlitModes[ mode ] ?? "box"
   if ( isString( mode ) ) return mode as BlitMode
-  return "identity"
+  return "box"
 }
 
 export interface BlitOptions {
@@ -64,12 +72,14 @@ function identity( n: number ): number[][] {
   return H
 }
 
-// Build the homogeneous transform from the mode + flat coefficients.
-export function buildTransform( mode: BlitMode, M: number[], rank: number ): number[][] {
+// Build the homogeneous transform from the mode + flat M coefficients. `srcDims`
+// (source spatial dims) is needed by `box` to normalize the pixel rectangle and
+// to default omitted bounds to the full source extent.
+export function buildTransform( mode: BlitMode, M: number[], rank: number, srcDims: number[] = [] ): number[][] {
   const H = identity( rank + 1 )
-  if ( mode === "identity" || !M.length ) return H
 
   if ( mode === "affine" ) {
+    if ( !M.length ) return H
     // M = rank rows x (rank+1) cols, row-major (linear part + translation).
     for ( let r = 0; r < rank; r++ )
       for ( let c = 0; c < rank + 1; c++ )
@@ -77,15 +87,22 @@ export function buildTransform( mode: BlitMode, M: number[], rank: number ): num
     return H
   }
 
-  if ( mode === "scale+translate" ) {
-    // M = [ scale_0..scale_{rank-1}, translate_0..translate_{rank-1} ].
+  if ( mode === "box" ) {
+    // M = [ min_0, max_0, min_1, max_1, ... ] in source PIXEL coords. Each axis
+    // maps dest-normalized c -> source-normalized ( min + c*(max-min) ) / dim, an
+    // axis-aligned scale+translate. Omitted min/max default to [0, dim] (full
+    // source), so a bare box is an identity copy.
     for ( let i = 0; i < rank; i++ ) {
-      H[i][i]    = M[i] ?? 1
-      H[i][rank] = M[ rank + i ] ?? 0
+      const dim = srcDims[i] || 1
+      const lo = M[ 2 * i ] ?? 0
+      const hi = M[ 2 * i + 1 ] ?? dim
+      H[i][i]    = ( hi - lo ) / dim
+      H[i][rank] = lo / dim
     }
     return H
   }
 
+  // identity (explicit no-op)
   return H
 }
 
@@ -138,7 +155,7 @@ export function Blit( dest: Matrix, source: Matrix, options: BlitOptions = {} ):
   const rank = dest.dim.length - dimension
   const destSpatial = dest.dim.slice( dimension )
   const srcSpatial = source.dim.slice( dimension )
-  const H = buildTransform( mode, M, rank )
+  const H = buildTransform( mode, M, rank, srcSpatial )
 
   const size = options.size && options.size.length ? options.size : destSpatial
   const offset = options.offset ?? []

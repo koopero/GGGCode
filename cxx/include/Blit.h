@@ -15,9 +15,12 @@
 // to a source coordinate, sample, combine). Faithful port of ts/ggggx/Blit.ts +
 // the ts/ggggx/MatrixBlit.ts command. Sampling is delegated to Sample.h.
 //
-// The transform is affine, selected by `mode`, which says how the flat `matrix`
+// The transform is affine, selected by `mode`, which says how the flat M
 // coefficients fill the internal (rank+1)x(rank+1) homogeneous matrix. The rank
-// is the destination's spatial rank ( dim.size() - dimension ).
+// is the destination's spatial rank ( dim.size() - dimension ). Modes (M reused
+// per mode): box (default) = a source min,max rectangle in pixel coords stretched
+// to fill the dest (omitted -> full source [0,dim] = identity); identity = no-op;
+// affine = the general matrix. Box subsumes the old scale+translate.
 //
 
 namespace ggg {
@@ -29,7 +32,7 @@ namespace ggg {
     return "";
   }
   inline const std::vector<String> & blitModes() {
-    static const std::vector<String> v = { "identity", "affine", "scale+translate" };
+    static const std::vector<String> v = { "box", "identity", "affine" };
     return v;
   }
   inline const std::vector<String> & blitFilters() {
@@ -45,15 +48,17 @@ namespace ggg {
     return v;
   }
 
-  // Row-major flat (rank+1)x(rank+1) homogeneous transform from mode + coeffs.
-  inline std::vector<double> blitBuildTransform( const String &mode, const std::vector<double> &M, int rank ) {
+  // Row-major flat (rank+1)x(rank+1) homogeneous transform from mode + M coeffs.
+  // `srcDims` (source spatial dims) is used by `box` to normalize the pixel
+  // rectangle and default omitted bounds to the full source extent.
+  inline std::vector<double> blitBuildTransform( const String &mode, const std::vector<double> &M, int rank,
+      const std::vector<Index> &srcDims ) {
     int n = rank + 1;
     std::vector<double> H( (size_t) n * n, 0. );
     for ( int r = 0; r < n; r++ ) H[ (size_t) r * n + r ] = 1.;
 
-    if ( mode == "identity" || M.empty() ) return H;
-
     if ( mode == "affine" ) {
+      if ( M.empty() ) return H;
       // M = rank rows x (rank+1) cols (linear part + translation), row-major.
       for ( int r = 0; r < rank; r++ )
         for ( int c = 0; c < rank + 1; c++ ) {
@@ -63,15 +68,21 @@ namespace ggg {
       return H;
     }
 
-    if ( mode == "scale+translate" ) {
-      // M = [ scale_0..scale_{rank-1}, translate_0..translate_{rank-1} ].
+    if ( mode == "box" ) {
+      // M = [ min_0, max_0, min_1, max_1, ... ] in source PIXEL coords. Each axis
+      // maps dest-normalized c -> source-normalized ( min + c*(max-min) ) / dim.
+      // Omitted min/max default to [0, dim] (full source) => identity copy.
       for ( int i = 0; i < rank; i++ ) {
-        H[ (size_t) i * n + i ]    = ( i < (int) M.size() ) ? M[i] : 1.;
-        H[ (size_t) i * n + rank ] = ( rank + i < (int) M.size() ) ? M[ rank + i ] : 0.;
+        double dim = ( i < (int) srcDims.size() && srcDims[i] > 0 ) ? (double) srcDims[i] : 1.;
+        double lo = ( 2 * i     < (int) M.size() ) ? M[ 2 * i ]     : 0.;
+        double hi = ( 2 * i + 1 < (int) M.size() ) ? M[ 2 * i + 1 ] : dim;
+        H[ (size_t) i * n + i ]    = ( hi - lo ) / dim;
+        H[ (size_t) i * n + rank ] = lo / dim;
       }
       return H;
     }
 
+    // identity (explicit no-op)
     return H;
   }
 
@@ -92,7 +103,7 @@ namespace ggg {
 
   struct BlitOptions {
     int dimension = 0;
-    String mode = "identity";
+    String mode = "box";
     std::vector<double> matrix;
     std::vector<Index> offset;
     std::vector<Index> size;
@@ -138,7 +149,7 @@ namespace ggg {
     for ( int a = 0; a < rank; a++ )
       srcSpatial.push_back( ( dimension + a < (int) source->dim.size() ) ? source->dim[ dimension + a ] : 1 );
 
-    std::vector<double> H = blitBuildTransform( o.mode, o.matrix, rank );
+    std::vector<double> H = blitBuildTransform( o.mode, o.matrix, rank, srcSpatial );
 
     std::vector<Index> size = !o.size.empty() ? o.size : destSpatial;
     size.resize( rank, 0 );
@@ -212,8 +223,8 @@ namespace ggg {
       addArg( Register, "source register index or name", "(n|s)" );
       addArg( Alias, "source register name", "(s)" );
       addArg( Target, "destination register index or name", "(n|s)" );
-      addArg( Transform, "transform coefficients (per mode)", "(n+)" );
-      addArg( Storage, "transform mode: identity/affine/scale+translate", "(n|s)" );
+      addArg( Transform, "transform coeffs (per mode): box = source min,max pairs; affine = matrix", "(n+)" );
+      addArg( Storage, "transform mode: box (default) / identity / affine", "(n|s)" );
       addArg( Offset, "dest region offset", "(n+)" );
       addArg( Size, "dest region size", "(n+)" );
       addArg( Dimension, "channel dimension count", "(n)" );
@@ -243,7 +254,7 @@ namespace ggg {
         case Target:    dest = machine->getRegister( (Index) number ); break;
         case Transform: opt.matrix.push_back( number ); break;
         case Storage:   opt.mode = blitOptionByIndex( blitModes(), number );
-                        if ( opt.mode.empty() ) opt.mode = "identity";
+                        if ( opt.mode.empty() ) opt.mode = "box";
                         break;
         case Offset:    opt.offset.push_back( (Index) number ); break;
         case Size:      opt.size.push_back( (Index) number ); break;

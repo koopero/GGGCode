@@ -6,9 +6,11 @@
 //
 namespace ggg_conformance {
   constexpr double EPSILON = 0.00010000000000000000;
+  static const double values_blit_box_default[] = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0 };
+  static const double values_blit_box_full[] = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0 };
+  static const double values_blit_box_subregion[] = { 2.0, 2.0, 3.0, 5.0, 5.0, 6.0, 8.0, 8.0, 9.0 };
   static const double values_blit_identity[] = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0 };
   static const double values_blit_affine_identity[] = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0 };
-  static const double values_blit_scale_identity[] = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0 };
   static const double values_blit_mode_by_index[] = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0 };
   static const double values_blit_magnify_nearest[] = { 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 4.0, 4.0, 5.0 };
   static const double values_blit_filter_by_index[] = { 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 4.0, 4.0, 5.0 };
@@ -86,17 +88,19 @@ namespace ggg_conformance {
     const double* values; int valueCount; const char* expected;
   };
   constexpr Case cases[] = {
+    { "blit_box_default", "G40 R\"bs\" W\"bd\"\nG10 R\"bd\"\n", "OK", values_blit_box_default, 9, nullptr },
+    { "blit_box_full", "G40 R\"bs\" W\"bd\" T\"box\" M0,3,0,3\nG10 R\"bd\"\n", "OK", values_blit_box_full, 9, nullptr },
+    { "blit_box_subregion", "G40 R\"bs\" W\"bd\" T\"box\" M1,3,0,3 E\"nearest\"\nG10 R\"bd\"\n", "OK", values_blit_box_subregion, 9, nullptr },
     { "blit_identity", "G40 R\"bs\" W\"bd\" T\"identity\"\nG10 R\"bd\"\n", "OK", values_blit_identity, 9, nullptr },
     { "blit_affine_identity", "G40 R\"bs\" W\"bd\" T\"affine\" M1,0,0,0,1,0\nG10 R\"bd\"\n", "OK", values_blit_affine_identity, 9, nullptr },
-    { "blit_scale_identity", "G40 R\"bs\" W\"bd\" T\"scale+translate\" M1,1,0,0\nG10 R\"bd\"\n", "OK", values_blit_scale_identity, 9, nullptr },
-    { "blit_mode_by_index", "G40 R\"bs\" W\"bd\" T2 M1,1,0,0\nG10 R\"bd\"\n", "OK", values_blit_mode_by_index, 9, nullptr },
-    { "blit_magnify_nearest", "G40 R\"bs\" W\"bd\" T\"scale+translate\" M0.5,0.5,0,0 E\"nearest\"\nG10 R\"bd\"\n", "OK", values_blit_magnify_nearest, 9, nullptr },
-    { "blit_filter_by_index", "G40 R\"bs\" W\"bd\" T2 M0.5,0.5,0,0 E1\nG10 R\"bd\"\n", "OK", values_blit_filter_by_index, 9, nullptr },
-    { "blit_magnify_linear", "G40 R\"bs\" W\"bd\" T\"scale+translate\" M0.5,0.5,0,0\nG10 R\"bd\"\n", "OK", values_blit_magnify_linear, 9, nullptr },
-    { "blit_translate_hold", "G40 R\"bs\" W\"bd\" T\"scale+translate\" M1,1,0.4,0 E1,0\nG10 R\"bd\"\n", "OK", values_blit_translate_hold, 9, nullptr },
+    { "blit_mode_by_index", "G40 R\"bs\" W\"bd\" T2 M1,0,0,0,1,0\nG10 R\"bd\"\n", "OK", values_blit_mode_by_index, 9, nullptr },
+    { "blit_magnify_nearest", "G40 R\"bs\" W\"bd\" T\"box\" M0,1.5,0,1.5 E\"nearest\"\nG10 R\"bd\"\n", "OK", values_blit_magnify_nearest, 9, nullptr },
+    { "blit_filter_by_index", "G40 R\"bs\" W\"bd\" T0 M0,1.5,0,1.5 E1\nG10 R\"bd\"\n", "OK", values_blit_filter_by_index, 9, nullptr },
+    { "blit_magnify_linear", "G40 R\"bs\" W\"bd\" T\"box\" M0,1.5,0,1.5\nG10 R\"bd\"\n", "OK", values_blit_magnify_linear, 9, nullptr },
+    { "blit_translate_hold", "G40 R\"bs\" W\"bd\" T\"box\" M1.2,4.2,0,3 E1,0\nG10 R\"bd\"\n", "OK", values_blit_translate_hold, 9, nullptr },
     { "blit_operator_add", "G20 R\"bd\" V10,10,10,10,10,10,10,10,10\nG40 R\"bs\" W\"bd\" T\"identity\" Q\"add\"\nG10 R\"bd\"\n", "OK", values_blit_operator_add, 9, nullptr },
-    { "blit_minify_mid", "G40 R\"bs\" W\"bd\" T\"scale+translate\" M2,2,0,0 E0,0,0,0\nG10 R\"bd\"\n", "OK", values_blit_minify_mid, 9, nullptr },
-    { "blit_minify_max", "G40 R\"bs\" W\"bd\" T\"scale+translate\" M2,2,0,0 E1,0,0,2\nG10 R\"bd\"\n", "OK", values_blit_minify_max, 9, nullptr },
+    { "blit_minify_mid", "G40 R\"bs\" W\"bd\" T\"box\" M0,6,0,6 E0,0,0,0\nG10 R\"bd\"\n", "OK", values_blit_minify_mid, 9, nullptr },
+    { "blit_minify_max", "G40 R\"bs\" W\"bd\" T\"box\" M0,6,0,6 E1,0,0,2\nG10 R\"bd\"\n", "OK", values_blit_minify_max, 9, nullptr },
     { "flow_define_only", "T10 L\"p\"\nP10 V42\nT0\n", "", nullptr, 0, nullptr },
     { "flow_define_run", "T10 L\"p\"\nP10 V42\nT0\nT11 L\"p\"\n", "OK", values_flow_define_run, 1, nullptr },
     { "flow_unknown", "T11 L\"nope\"\n", "OZ", nullptr, 0, nullptr },

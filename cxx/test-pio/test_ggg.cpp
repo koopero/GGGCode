@@ -653,22 +653,28 @@ void test_blit() {
   auto expect = [&]( const float *e ) {
     for ( int i = 0; i < 9; i++ ) TEST_ASSERT_EQUAL_FLOAT( e[i], dst->readNumber( i ) );
   };
-  const float ident[9]   = { 1,2,3,4,5,6,7,8,9 };
-  const float magnify[9] = { 1,1,2,1,1,2,4,4,5 };
-  const float added[9]   = { 11,12,13,14,15,16,17,18,19 };
+  const float ident[9]     = { 1,2,3,4,5,6,7,8,9 };
+  const float subregion[9] = { 2,2,3,5,5,6,8,8,9 };
+  const float magnify[9]   = { 1,1,2,1,1,2,4,4,5 };
+  const float added[9]     = { 11,12,13,14,15,16,17,18,19 };
 
-  // identity copy
-  m.run( "G40 R0 W1 T\"identity\"\n" );
+  // default (no mode/coeffs) = full-source box = identity copy
+  m.run( "G40 R0 W1\n" );
   expect( ident );
 
-  // scale 0.5 nearest magnify (filter by name)
+  // box sub-region [1,3] x [0,3] stretched, nearest
   m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
-  m.run( "G40 R0 W1 T\"scale+translate\" M0.5,0.5,0,0 E\"nearest\"\n" );
+  m.run( "G40 R0 W1 T\"box\" M1,3,0,3 E\"nearest\"\n" );
+  expect( subregion );
+
+  // half-extent box [0,1.5] nearest magnify (filter by name)
+  m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
+  m.run( "G40 R0 W1 T\"box\" M0,1.5,0,1.5 E\"nearest\"\n" );
   expect( magnify );
 
-  // mode by index (2) + filter by index (1 = nearest)
+  // box by index (T0) + filter by index (1 = nearest)
   m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
-  m.run( "G40 R0 W1 T2 M0.5,0.5,0,0 E1\n" );
+  m.run( "G40 R0 W1 T0 M0,1.5,0,1.5 E1\n" );
   expect( magnify );
 
   // operator add onto a dest pre-filled with 10
@@ -676,9 +682,9 @@ void test_blit() {
   m.run( "G40 R0 W1 T\"identity\" Q\"add\"\n" );
   expect( added );
 
-  // minify: scale 2 + mid reduce (E0,0,0,0 = linear, hold, normalized, reduce=mid)
+  // minify: oversized box [0,6] + mid reduce (E0,0,0,0 = linear, hold, normalized, reduce=mid)
   m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
-  m.run( "G40 R0 W1 T\"scale+translate\" M2,2,0,0 E0,0,0,0\n" );
+  m.run( "G40 R0 W1 T\"box\" M0,6,0,6 E0,0,0,0\n" );
   const float minified[9] = { 2.1875f, 3.5625f, 3.75f, 6.6875f, 8.0625f, 8.25f, 7.25f, 8.75f, 9 };
   expect( minified );
 

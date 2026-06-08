@@ -4,9 +4,41 @@
 # matrix [1..9], and destination "bd" = a zeroed 3x3. Each case blits into "bd"
 # then reads it back with G10, so the decoded V slot is the transform result.
 # Axis 0 is the innermost (stride-1) axis, so transforms index axes in that order.
+#
+# Transform modes (the T arg; M reused per mode): box (default) = a source min,max
+# rectangle in PIXEL coords stretched to fill the dest (omitted -> full source
+# [0,dim], i.e. an identity copy); identity = explicit no-op; affine = the general
+# rank x (rank+1) matrix. Box subsumes the old scale+translate parameterization.
+
+- name: blit_box_default
+  description: "With no mode/coeffs the default box is the full source [0,dim] per axis -- an identity copy."
+  needs: [ ggggx ]
+  tags: [ blit ]
+  program: |
+    G40 R"bs" W"bd"
+    G10 R"bd"
+  values: [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
+
+- name: blit_box_full
+  description: "An explicit full-source box M0,3,0,3 (min,max per axis, in source pixels) copies the source unchanged."
+  needs: [ ggggx ]
+  tags: [ blit ]
+  program: |
+    G40 R"bs" W"bd" T"box" M0,3,0,3
+    G10 R"bd"
+  values: [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
+
+- name: blit_box_subregion
+  description: "A box selects a source sub-rectangle (x columns 1..3) and stretches it to fill the dest; nearest filter."
+  needs: [ ggggx ]
+  tags: [ blit ]
+  program: |
+    G40 R"bs" W"bd" T"box" M1,3,0,3 E"nearest"
+    G10 R"bd"
+  values: [ 2, 2, 3, 5, 5, 6, 8, 8, 9 ]
 
 - name: blit_identity
-  description: "G40 identity mode copies the source into the destination unchanged."
+  description: "The explicit identity mode copies the source into the destination unchanged."
   needs: [ ggggx ]
   tags: [ blit ]
   program: |
@@ -23,57 +55,48 @@
     G10 R"bd"
   values: [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
 
-- name: blit_scale_identity
-  description: "scale+translate mode with unit scale and zero translation copies the source."
-  needs: [ ggggx ]
-  tags: [ blit ]
-  program: |
-    G40 R"bs" W"bd" T"scale+translate" M1,1,0,0
-    G10 R"bd"
-  values: [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
-
 - name: blit_mode_by_index
-  description: "The transform mode accepts an index: T2 == scale+translate."
+  description: "The transform mode accepts an index: T2 == affine."
   needs: [ ggggx ]
   tags: [ blit ]
   program: |
-    G40 R"bs" W"bd" T2 M1,1,0,0
+    G40 R"bs" W"bd" T2 M1,0,0,0,1,0
     G10 R"bd"
   values: [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
 
 - name: blit_magnify_nearest
-  description: "0.5 scale + nearest filter magnifies the top-left 2x2 of the source."
+  description: "A half-extent box [0,1.5] per axis magnifies the top-left 2x2 of the source; nearest filter."
   needs: [ ggggx ]
   tags: [ blit ]
   program: |
-    G40 R"bs" W"bd" T"scale+translate" M0.5,0.5,0,0 E"nearest"
+    G40 R"bs" W"bd" T"box" M0,1.5,0,1.5 E"nearest"
     G10 R"bd"
   values: [ 1, 1, 2, 1, 1, 2, 4, 4, 5 ]
 
 - name: blit_filter_by_index
-  description: "Sampler options accept an index: E1 == nearest (slot 0 = filter)."
+  description: "Sampler options accept an index: E1 == nearest (slot 0 = filter). Box by index (T0)."
   needs: [ ggggx ]
   tags: [ blit ]
   program: |
-    G40 R"bs" W"bd" T2 M0.5,0.5,0,0 E1
+    G40 R"bs" W"bd" T0 M0,1.5,0,1.5 E1
     G10 R"bd"
   values: [ 1, 1, 2, 1, 1, 2, 4, 4, 5 ]
 
 - name: blit_magnify_linear
-  description: "0.5 scale with the default linear filter interpolates between source texels (fractional result)."
+  description: "Same half-extent box with the default linear filter interpolates between source texels (fractional result)."
   needs: [ ggggx ]
   tags: [ blit ]
   program: |
-    G40 R"bs" W"bd" T"scale+translate" M0.5,0.5,0,0
+    G40 R"bs" W"bd" T"box" M0,1.5,0,1.5
     G10 R"bd"
   values: [ 1, 1.5, 2, 2.5, 2.75, 3, 4, 4.5, 5 ]
 
 - name: blit_translate_hold
-  description: "A +0.4 normalized translate on axis 0 with nearest+hold shifts and clamps at the edge; E is positional [filter, edge] by index (E1,0)."
+  description: "An axis-0 shifted box [1.2,4.2] with nearest+hold shifts and clamps at the edge; E is positional [filter, edge] by index (E1,0)."
   needs: [ ggggx ]
   tags: [ blit ]
   program: |
-    G40 R"bs" W"bd" T"scale+translate" M1,1,0.4,0 E1,0
+    G40 R"bs" W"bd" T"box" M1.2,4.2,0,3 E1,0
     G10 R"bd"
   values: [ 2, 3, 3, 5, 6, 6, 8, 9, 9 ]
 
@@ -88,11 +111,11 @@
   values: [ 11, 12, 13, 14, 15, 16, 17, 18, 19 ]
 
 - name: blit_minify_mid
-  description: "Minification: a 2x scale makes each dest cell cover ~2 source texels; the transform-derived footprint is folded with mid (mean). E0,0,0,0 = linear, hold, normalized, reduce=mid."
+  description: "Minification: an oversized box [0,6] (2x the source extent) makes each dest cell cover ~2 source texels; the transform-derived footprint is folded with mid (mean). E0,0,0,0 = linear, hold, normalized, reduce=mid."
   needs: [ ggggx ]
   tags: [ blit ]
   program: |
-    G40 R"bs" W"bd" T"scale+translate" M2,2,0,0 E0,0,0,0
+    G40 R"bs" W"bd" T"box" M0,6,0,6 E0,0,0,0
     G10 R"bd"
   values: [ 2.1875, 3.5625, 3.75, 6.6875, 8.0625, 8.25, 7.25, 8.75, 9 ]
 
@@ -101,6 +124,6 @@
   needs: [ ggggx ]
   tags: [ blit ]
   program: |
-    G40 R"bs" W"bd" T"scale+translate" M2,2,0,0 E1,0,0,2
+    G40 R"bs" W"bd" T"box" M0,6,0,6 E1,0,0,2
     G10 R"bd"
   values: [ 1, 3, 3, 7, 9, 9, 7, 9, 9 ]

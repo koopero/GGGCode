@@ -23,35 +23,46 @@ describe( "Blit", () => {
     expect( d.data ).toEqual( srcData )
   } )
 
-  test( "scale+translate identity copies the source", () => {
+  test( "default (no mode) is a box of the full source -- identity copy", () => {
     const d = mk( [ 3, 3 ] )
-    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "scale+translate", matrix: [ 1, 1, 0, 0 ] } )
+    Blit( d, mk( [ 3, 3 ], srcData ), {} )
     expect( d.data ).toEqual( srcData )
   } )
 
-  test( "mode by index (2 = scale+translate)", () => {
+  test( "explicit full-source box [0,dim] copies the source", () => {
     const d = mk( [ 3, 3 ] )
-    Blit( d, mk( [ 3, 3 ], srcData ), { mode: 2, matrix: [ 1, 1, 0, 0 ] } )
+    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "box", matrix: [ 0, 3, 0, 3 ] } )
     expect( d.data ).toEqual( srcData )
   } )
 
-  test( "scale 0.5 nearest magnifies the top-left", () => {
+  test( "mode by index (0 = box) with a default box copies the source", () => {
     const d = mk( [ 3, 3 ] )
-    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "scale+translate", matrix: [ 0.5, 0.5, 0, 0 ], filter: "nearest" } )
+    Blit( d, mk( [ 3, 3 ], srcData ), { mode: 0 } )
+    expect( d.data ).toEqual( srcData )
+  } )
+
+  test( "half-extent box [0,1.5] nearest magnifies the top-left", () => {
+    const d = mk( [ 3, 3 ] )
+    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "box", matrix: [ 0, 1.5, 0, 1.5 ], filter: "nearest" } )
     expect( d.data ).toEqual( [ 1, 1, 2, 1, 1, 2, 4, 4, 5 ] )
   } )
 
-  test( "translate (nearest, hold) shifts along axis 0 (innermost)", () => {
+  test( "box sub-region [1,3] selects + stretches source columns 1..3 (nearest)", () => {
     const d = mk( [ 3, 3 ] )
-    // axis 0 is the innermost (stride-1) axis; translate[0]=+0.4 normalized shifts
-    // it: cell x samples src floor((x/3+0.4)*3) = x+1 (held at the edge).
-    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "scale+translate", matrix: [ 1, 1, 0.4, 0 ], filter: "nearest", edge: "hold" } )
+    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "box", matrix: [ 1, 3, 0, 3 ], filter: "nearest" } )
+    expect( d.data ).toEqual( [ 2, 2, 3, 5, 5, 6, 8, 8, 9 ] )
+  } )
+
+  test( "axis-0 shifted box (nearest, hold) shifts along the innermost axis", () => {
+    const d = mk( [ 3, 3 ] )
+    // box [1.2,4.2] on axis 0 == old scale 1 + translate 0.4 (1.2/3); held at edge.
+    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "box", matrix: [ 1.2, 4.2, 0, 3 ], filter: "nearest", edge: "hold" } )
     expect( d.data ).toEqual( [ 2, 3, 3, 5, 6, 6, 8, 9, 9 ] )
   } )
 
-  test( "scale 2 + mid reduce minifies (box mean over a 2-texel footprint)", () => {
+  test( "oversized box [0,6] + mid reduce minifies (mean over a 2-texel footprint)", () => {
     const d = mk( [ 3, 3 ] )
-    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "scale+translate", matrix: [ 2, 2, 0, 0 ], edge: "hold", reduce: "mid" } )
+    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "box", matrix: [ 0, 6, 0, 6 ], edge: "hold", reduce: "mid" } )
     expect( d.data.map( ( v: number ) => +v.toFixed( 4 ) ) )
       .toEqual( [ 2.1875, 3.5625, 3.75, 6.6875, 8.0625, 8.25, 7.25, 8.75, 9 ] )
   } )
@@ -75,10 +86,17 @@ describe( "Blit", () => {
     } )
   } )
 
-  test( "buildTransform / applyHomogeneous: scale+translate maps coordinates", () => {
-    const H = buildTransform( "scale+translate", [ 2, 2, 0.1, 0.2 ], 2 )
+  test( "buildTransform / applyHomogeneous: box maps the pixel rect to normalized source", () => {
+    // box [2,7] x [3,8] on a 10x10 source: scale 0.5, translate 0.2 / 0.3.
+    const H = buildTransform( "box", [ 2, 7, 3, 8 ], 2, [ 10, 10 ] )
     const a = applyHomogeneous( H, [ 0, 0 ], 2 )
-    expect( a[0] ).toBeCloseTo( 0.1 ); expect( a[1] ).toBeCloseTo( 0.2 )
+    expect( a[0] ).toBeCloseTo( 0.2 ); expect( a[1] ).toBeCloseTo( 0.3 )
+    const b = applyHomogeneous( H, [ 1, 1 ], 2 )
+    expect( b[0] ).toBeCloseTo( 0.7 ); expect( b[1] ).toBeCloseTo( 0.8 )
+  } )
+
+  test( "buildTransform / applyHomogeneous: affine fills the matrix", () => {
+    const H = buildTransform( "affine", [ 2, 0, 0.1, 0, 2, 0.2 ], 2 )
     const b = applyHomogeneous( H, [ 0.5, 0.5 ], 2 )
     expect( b[0] ).toBeCloseTo( 1.1 ); expect( b[1] ).toBeCloseTo( 1.2 )
   } )
