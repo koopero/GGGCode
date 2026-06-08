@@ -11,6 +11,7 @@
 #include "DocCommands.h"
 #include "FlowCommands.h"
 #include "Sample.h"
+#include "Blit.h"
 #include "gen/conformance_cases.h"
 
 // Test functions
@@ -617,6 +618,53 @@ void test_sample() {
   TEST_ASSERT_EQUAL_FLOAT( 18.5, r2[1] );
 }
 
+// MatrixBlit (G40) end-to-end: drive the command and check the destination.
+// Expected dest data mirrors the TS MatrixBlit.test.ts cases.
+void test_blit() {
+  MatrixCmdMachine m;
+  m.addCommand( new ggg::MatrixWrite() );
+  m.addCommand( new ggg::MatrixBlit() );
+
+  auto *src = new ggg::Matrix<float,false>( {3,3} ); src->allocate(); src->name = "src"; m.addRegister( src ); // 0
+  auto *dst = new ggg::Matrix<float,false>( {3,3} ); dst->allocate(); dst->name = "dst"; m.addRegister( dst ); // 1
+
+  m.run( "G20 R0 V1,2,3,4,5,6,7,8,9\n" );
+
+  auto expect = [&]( const float *e ) {
+    for ( int i = 0; i < 9; i++ ) TEST_ASSERT_EQUAL_FLOAT( e[i], dst->readNumber( i ) );
+  };
+  const float ident[9]   = { 1,2,3,4,5,6,7,8,9 };
+  const float magnify[9] = { 1,1,2,1,1,2,4,4,5 };
+  const float added[9]   = { 11,12,13,14,15,16,17,18,19 };
+
+  // identity copy
+  m.run( "G40 R0 W1 T\"identity\"\n" );
+  expect( ident );
+
+  // scale 0.5 nearest magnify (filter by name)
+  m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
+  m.run( "G40 R0 W1 T\"scale+translate\" M0.5,0.5,0,0 E\"nearest\"\n" );
+  expect( magnify );
+
+  // mode by index (2) + filter by index (1 = nearest)
+  m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
+  m.run( "G40 R0 W1 T2 M0.5,0.5,0,0 E1\n" );
+  expect( magnify );
+
+  // operator add onto a dest pre-filled with 10
+  m.run( "G20 R1 V10,10,10,10,10,10,10,10,10\n" );
+  m.run( "G40 R0 W1 T\"identity\" Q\"add\"\n" );
+  expect( added );
+
+  // missing source register -> OZ
+  m.out.clear();
+  m.run( "G40 R5 W1 T\"identity\"\n" );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "OZ" ) );
+
+  delete src;
+  delete dst;
+}
+
 // Run all tests
 int main() {
   UNITY_BEGIN();
@@ -631,6 +679,7 @@ int main() {
   RUN_TEST(test_flow_conditionals);
   RUN_TEST(test_flow_iteration);
   RUN_TEST(test_sample);
+  RUN_TEST(test_blit);
   RUN_TEST(test_conformance);
   UNITY_END();
   return 0;
