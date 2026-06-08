@@ -14,7 +14,7 @@ import { Blit, BlitOptions } from "./Blit"
 //   M       -- transform coefficients, interpreted per the mode (box = source
 //             min,max pairs in pixel coords; map = (axis,min,max) triples;
 //             affine = matrix)
-//   T       -- transform mode (box [default] / identity / affine / map; index | name)
+//   T       -- transform mode (box [default] / affine / map; index | name)
 //             ( T is the Storage glyph reused contextually -- G40 has no storage arg )
 //   P / S   -- dest region offset / size (default whole dest spatial extent)
 //   D       -- channel-dimension count (default 0 = all axes spatial)

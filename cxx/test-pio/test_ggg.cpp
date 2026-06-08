@@ -683,9 +683,9 @@ void test_blit() {
   m.run( "G40 R0 W1 T0 M0,1.5,0,1.5 E1\n" );
   expect( magnify );
 
-  // operator add onto a dest pre-filled with 10
+  // operator add onto a dest pre-filled with 10 (default full-source blit)
   m.run( "G20 R1 V10,10,10,10,10,10,10,10,10\n" );
-  m.run( "G40 R0 W1 T\"identity\" Q\"add\"\n" );
+  m.run( "G40 R0 W1 Q\"add\"\n" );
   expect( added );
 
   // minify: oversized box [0,6] + mid reduce (E0,0,0,0 = linear, hold, normalized, reduce=mid)
@@ -696,7 +696,7 @@ void test_blit() {
 
   // missing source register -> OZ
   m.out.clear();
-  m.run( "G40 R5 W1 T\"identity\"\n" );
+  m.run( "G40 R5 W1\n" );
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "OZ" ) );
 
   delete src;

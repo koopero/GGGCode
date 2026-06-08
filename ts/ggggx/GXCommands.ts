@@ -123,7 +123,7 @@ function GXCommandsForNamespace( namespace?: GXNamespaceArg ) {
           format: "(n+)",
         },
         [GGG.Storage]: {
-          description: "Transform mode: box (default) / identity / affine / map (index or name).",
+          description: "Transform mode: box (default) / affine / map (index or name).",
           type: ArgType.Any,
         },
         [GGG.Offset]: ArgsPosition,

@@ -22,7 +22,7 @@ async function blit( program: string ): Promise<number[]> {
 }
 
 describe( "MatrixBlit (G40)", () => {
-  test( "identity copies the source", async () => {
+  test( "an unknown mode falls back to an identity copy (identity is no longer a mode)", async () => {
     expect( await blit( 'G40 R0 W1 T"identity"' ) )
       .toEqual( [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ] )
   } )
@@ -71,7 +71,7 @@ describe( "MatrixBlit (G40)", () => {
       "G20 R0 V1,2,3,4,5,6,7,8,9\n" +
       "G30 R1 S3,3\n" +
       "G20 R1 V10,10,10,10,10,10,10,10,10\n" +
-      'G40 R0 W1 T"identity" Q"add"\n'
+      'G40 R0 W1 Q"add"\n'
     )
     const dest = machine.getMatrix( 1 ) as Matrix
     expect( [ ...dest.data ] ).toEqual( [ 11, 12, 13, 14, 15, 16, 17, 18, 19 ] )
@@ -87,7 +87,7 @@ describe( "MatrixBlit (G40)", () => {
   test( "missing source register reports OZ", async () => {
     const machine = ggggxMachine()
     await machine.run( "G30 R1 S3,3\n" )
-    const out = await machine.run( 'G40 R0 W1 T"identity"\n' )
+    const out = await machine.run( 'G40 R0 W1\n' )
     const last = out[ out.length - 1 ]
     expect( last.code ).toEqual( "OZ" )
   } )

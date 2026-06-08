@@ -4,11 +4,11 @@
 
 Each case is one artifact wearing four hats: a behavioural **spec**, a piece of **documentation**, a runnable **example**, and a cross-engine conformance **test**. The contract is the decoded `values` stream within a global epsilon; `status` is the control response. Cases are grouped below by `tag` (a case appears under each tag it carries).
 
-89 cases across 20 tags.
+88 cases across 20 tags.
 
 ## Tags
 
-- [blit](#blit) (16)
+- [blit](#blit) (15)
 - [conditionals](#conditionals) (6)
 - [decimals](#decimals) (7)
 - [flow](#flow) (12)
@@ -93,26 +93,14 @@ G10 R"bd"
 
 ### blit_map_by_index
 
-Mode by index T3 == map; the (0,1,3) triple remaps axis 0 (== box [1,3] on axis 0). nearest filter.
+Mode by index T2 == map; the (0,1,3) triple remaps axis 0 (== box [1,3] on axis 0). nearest filter.
 
 ```
-G40 R"bs" W"bd" T3 M0,1,3 E"nearest"
+G40 R"bs" W"bd" T2 M0,1,3 E"nearest"
 G10 R"bd"
 ```
 
 - values: `[2,2,3,5,5,6,8,8,9]`
-- needs: `ggggx`
-
-### blit_identity
-
-The explicit identity mode copies the source into the destination unchanged.
-
-```
-G40 R"bs" W"bd" T"identity"
-G10 R"bd"
-```
-
-- values: `[1,2,3,4,5,6,7,8,9]`
 - needs: `ggggx`
 
 ### blit_affine_identity
@@ -129,10 +117,10 @@ G10 R"bd"
 
 ### blit_mode_by_index
 
-The transform mode accepts an index: T2 == affine.
+The transform mode accepts an index: T1 == affine.
 
 ```
-G40 R"bs" W"bd" T2 M1,0,0,0,1,0
+G40 R"bs" W"bd" T1 M1,0,0,0,1,0
 G10 R"bd"
 ```
 
@@ -189,11 +177,11 @@ G10 R"bd"
 
 ### blit_operator_add
 
-Q combines the sampled value into the destination cell: an identity blit with add onto a dest pre-filled with 10.
+Q combines the sampled value into the destination cell: a default (full-source) blit with add onto a dest pre-filled with 10.
 
 ```
 G20 R"bd" V10,10,10,10,10,10,10,10,10
-G40 R"bs" W"bd" T"identity" Q"add"
+G40 R"bs" W"bd" Q"add"
 G10 R"bd"
 ```
 

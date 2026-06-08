@@ -11,9 +11,9 @@ describe( "Blit", () => {
   // source 3x3 = 1..9
   const srcData = [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
 
-  test( "identity copies the source", () => {
+  test( "an unknown mode falls back to an identity copy (no separate identity mode)", () => {
     const d = mk( [ 3, 3 ] )
-    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "identity" } )
+    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "identity" } )   // "identity" is no longer a mode
     expect( d.data ).toEqual( srcData )
   } )
 

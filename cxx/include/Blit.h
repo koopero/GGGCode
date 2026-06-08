@@ -19,9 +19,9 @@
 // coefficients fill the internal (rank+1)x(rank+1) homogeneous matrix. The rank
 // is the destination's spatial rank ( dim.size() - dimension ). Modes (M reused
 // per mode): box (default) = a source min,max rectangle in pixel coords stretched
-// to fill the dest (omitted -> full source [0,dim] = identity); identity = no-op;
-// affine = the general matrix; map = box with (axis,min,max) triples (remap one
-// axis, leave the rest identity). Box subsumes the old scale+translate.
+// to fill the dest (omitted -> full source [0,dim] = identity copy); affine = the
+// general matrix; map = box with (axis,min,max) triples (remap one axis, leave the
+// rest identity). Box subsumes the old scale+translate; a bare box is the identity.
 //
 
 namespace ggg {
@@ -33,7 +33,7 @@ namespace ggg {
     return "";
   }
   inline const std::vector<String> & blitModes() {
-    static const std::vector<String> v = { "box", "identity", "affine", "map" };
+    static const std::vector<String> v = { "box", "affine", "map" };
     return v;
   }
   inline const std::vector<String> & blitFilters() {
@@ -99,7 +99,7 @@ namespace ggg {
       return H;
     }
 
-    // identity (explicit no-op)
+    // unknown / unset mode -> identity passthrough (the default box covers identity)
     return H;
   }
 
@@ -241,7 +241,7 @@ namespace ggg {
       addArg( Alias, "source register name", "(s)" );
       addArg( Target, "destination register index or name", "(n|s)" );
       addArg( Transform, "transform coeffs (per mode): box = source min,max pairs; map = (axis,min,max) triples; affine = matrix", "(n+)" );
-      addArg( Storage, "transform mode: box (default) / identity / affine / map", "(n|s)" );
+      addArg( Storage, "transform mode: box (default) / affine / map", "(n|s)" );
       addArg( Offset, "dest region offset", "(n+)" );
       addArg( Size, "dest region size", "(n+)" );
       addArg( Dimension, "channel dimension count", "(n)" );

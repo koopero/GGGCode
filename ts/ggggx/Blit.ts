@@ -36,14 +36,14 @@ function resolveOption( value: string | number | undefined, list: string[] ): st
 //   map           -- like box, but M is (axis, min, max) triples -- each names the
 //                    axis it sets, so you can remap one axis and leave the rest
 //                    identity. Unnamed axes stay full-source.
-//   identity      -- explicit no-op (== box with default args).
 //   affine        -- M = the general rank x (rank+1) matrix (rotation/shear/...).
 //
-// Non-affine / arbitrary warp is a separate (future) command; the homogeneous
-// form here leaves room for a projective mode later.
+// (An identity copy is just the default box, so there is no separate identity
+// mode.) Non-affine / arbitrary warp is a separate (future) command; the
+// homogeneous form here leaves room for a projective mode later.
 //
 
-export const BlitModes = [ "box", "identity", "affine", "map" ] as const
+export const BlitModes = [ "box", "affine", "map" ] as const
 export type BlitMode = typeof BlitModes[number]
 
 export function resolveMode( mode: string | number | undefined ): BlitMode {
@@ -121,7 +121,7 @@ export function buildTransform( mode: BlitMode, M: number[], rank: number, srcDi
     return H
   }
 
-  // identity (explicit no-op)
+  // unknown / unset mode -> identity passthrough (the default box covers identity)
   return H
 }
 

@@ -8,8 +8,9 @@
 # Transform modes (the T arg; M reused per mode): box (default) = a source min,max
 # rectangle in PIXEL coords stretched to fill the dest (omitted -> full source
 # [0,dim], i.e. an identity copy); map = box with (axis,min,max) triples so one
-# axis can be remapped while the rest stay identity; identity = explicit no-op;
-# affine = the general rank x (rank+1) matrix. Box subsumes the old scale+translate.
+# axis can be remapped while the rest stay identity; affine = the general
+# rank x (rank+1) matrix. Box subsumes the old scale+translate; a bare box is the
+# identity copy, so there is no separate identity mode.
 
 - name: blit_box_default
   description: "With no mode/coeffs the default box is the full source [0,dim] per axis -- an identity copy."
@@ -57,22 +58,13 @@
   values: [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
 
 - name: blit_map_by_index
-  description: "Mode by index T3 == map; the (0,1,3) triple remaps axis 0 (== box [1,3] on axis 0). nearest filter."
+  description: "Mode by index T2 == map; the (0,1,3) triple remaps axis 0 (== box [1,3] on axis 0). nearest filter."
   needs: [ ggggx ]
   tags: [ blit ]
   program: |
-    G40 R"bs" W"bd" T3 M0,1,3 E"nearest"
+    G40 R"bs" W"bd" T2 M0,1,3 E"nearest"
     G10 R"bd"
   values: [ 2, 2, 3, 5, 5, 6, 8, 8, 9 ]
-
-- name: blit_identity
-  description: "The explicit identity mode copies the source into the destination unchanged."
-  needs: [ ggggx ]
-  tags: [ blit ]
-  program: |
-    G40 R"bs" W"bd" T"identity"
-    G10 R"bd"
-  values: [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
 
 - name: blit_affine_identity
   description: "Affine mode with the identity matrix (linear part + zero translation) copies the source."
@@ -84,11 +76,11 @@
   values: [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
 
 - name: blit_mode_by_index
-  description: "The transform mode accepts an index: T2 == affine."
+  description: "The transform mode accepts an index: T1 == affine."
   needs: [ ggggx ]
   tags: [ blit ]
   program: |
-    G40 R"bs" W"bd" T2 M1,0,0,0,1,0
+    G40 R"bs" W"bd" T1 M1,0,0,0,1,0
     G10 R"bd"
   values: [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
 
@@ -129,12 +121,12 @@
   values: [ 2, 3, 3, 5, 6, 6, 8, 9, 9 ]
 
 - name: blit_operator_add
-  description: "Q combines the sampled value into the destination cell: an identity blit with add onto a dest pre-filled with 10."
+  description: "Q combines the sampled value into the destination cell: a default (full-source) blit with add onto a dest pre-filled with 10."
   needs: [ ggggx ]
   tags: [ blit ]
   program: |
     G20 R"bd" V10,10,10,10,10,10,10,10,10
-    G40 R"bs" W"bd" T"identity" Q"add"
+    G40 R"bs" W"bd" Q"add"
     G10 R"bd"
   values: [ 11, 12, 13, 14, 15, 16, 17, 18, 19 ]
 
