@@ -51,14 +51,14 @@
   },
   {
     "name": "blit_box_subregion",
-    "description": "A box selects a source sub-rectangle (x columns 1..3) and stretches it to fill the dest; nearest filter (I1).",
+    "description": "A box selects a source sub-rectangle (x columns 1..3) and stretches it to fill the dest; nearest filter (F1).",
     "needs": [
       "ggggx"
     ],
     "tags": [
       "blit"
     ],
-    "program": "G40 R\"bs\" W\"bd\" T\"box\" M1,3,0,3 I1\nG10 R\"bd\"",
+    "program": "G40 R\"bs\" W\"bd\" T\"box\" M1,3,0,3 F1\nG10 R\"bd\"",
     "status": "OK",
     "values": [
       2,
@@ -76,7 +76,7 @@
   },
   {
     "name": "blit_box_flip_x",
-    "description": "A box flips an axis when its range runs backwards: M2.5,-0.5 on axis 0 (= [dim-0.5, -0.5], reversed + half-texel inset to land on pixel centers) mirrors each row left<->right. nearest filter (I1).",
+    "description": "A box flips an axis when its range runs backwards: M2.5,-0.5 on axis 0 (= [dim-0.5, -0.5], reversed + half-texel inset to land on pixel centers) mirrors each row left<->right. nearest filter (F1).",
     "needs": [
       "ggggx"
     ],
@@ -84,7 +84,7 @@
       "blit",
       "flip"
     ],
-    "program": "G40 R\"bs\" W\"bd\" T\"box\" M2.5,-0.5,0,3 I1\nG10 R\"bd\"",
+    "program": "G40 R\"bs\" W\"bd\" T\"box\" M2.5,-0.5,0,3 F1\nG10 R\"bd\"",
     "status": "OK",
     "values": [
       3,
@@ -102,7 +102,7 @@
   },
   {
     "name": "blit_box_flip_y",
-    "description": "Reversing the axis-1 range (M...,2.5,-0.5) flips the matrix top<->bottom, leaving axis 0 as-is. nearest filter (I1).",
+    "description": "Reversing the axis-1 range (M...,2.5,-0.5) flips the matrix top<->bottom, leaving axis 0 as-is. nearest filter (F1).",
     "needs": [
       "ggggx"
     ],
@@ -110,7 +110,7 @@
       "blit",
       "flip"
     ],
-    "program": "G40 R\"bs\" W\"bd\" T\"box\" M0,3,2.5,-0.5 I1\nG10 R\"bd\"",
+    "program": "G40 R\"bs\" W\"bd\" T\"box\" M0,3,2.5,-0.5 F1\nG10 R\"bd\"",
     "status": "OK",
     "values": [
       7,
@@ -128,7 +128,7 @@
   },
   {
     "name": "blit_box_flip_180",
-    "description": "Reversing both axes flips the matrix in both directions -- a 180-degree turn (every element reversed). nearest filter (I1).",
+    "description": "Reversing both axes flips the matrix in both directions -- a 180-degree turn (every element reversed). nearest filter (F1).",
     "needs": [
       "ggggx"
     ],
@@ -136,7 +136,7 @@
       "blit",
       "flip"
     ],
-    "program": "G40 R\"bs\" W\"bd\" T\"box\" M2.5,-0.5,2.5,-0.5 I1\nG10 R\"bd\"",
+    "program": "G40 R\"bs\" W\"bd\" T\"box\" M2.5,-0.5,2.5,-0.5 F1\nG10 R\"bd\"",
     "status": "OK",
     "values": [
       9,
@@ -154,7 +154,7 @@
   },
   {
     "name": "blit_map_axes",
-    "description": "map's triples are (srcAxis,min,max) positional by dest axis: M0,0,3,1,1,3 = dest0<-src0 full, dest1<-src1 rows 1..3 -- i.e. it generalizes box (same as box M0,3,1,3). nearest filter (I1).",
+    "description": "map's triples are (srcAxis,min,max) positional by dest axis: M0,0,3,1,1,3 = dest0<-src0 full, dest1<-src1 rows 1..3 -- i.e. it generalizes box (same as box M0,3,1,3). nearest filter (F1).",
     "needs": [
       "ggggx"
     ],
@@ -162,7 +162,7 @@
       "blit",
       "map"
     ],
-    "program": "G40 R\"bs\" W\"bd\" T\"map\" M0,0,3,1,1,3 I1\nG10 R\"bd\"",
+    "program": "G40 R\"bs\" W\"bd\" T\"map\" M0,0,3,1,1,3 F1\nG10 R\"bd\"",
     "status": "OK",
     "values": [
       4,
@@ -206,7 +206,7 @@
   },
   {
     "name": "blit_map_transpose",
-    "description": "Pointing each dest axis at the OTHER source axis (M1,0,3,0,0,3 = dest0<-src1, dest1<-src0) transposes the matrix (reflect across the main diagonal). nearest filter (I1).",
+    "description": "Pointing each dest axis at the OTHER source axis (M1,0,3,0,0,3 = dest0<-src1, dest1<-src0) transposes the matrix (reflect across the main diagonal). nearest filter (F1).",
     "needs": [
       "ggggx"
     ],
@@ -215,7 +215,7 @@
       "map",
       "rotate"
     ],
-    "program": "G40 R\"bs\" W\"bd\" T\"map\" M1,0,3,0,0,3 I1\nG10 R\"bd\"",
+    "program": "G40 R\"bs\" W\"bd\" T\"map\" M1,0,3,0,0,3 F1\nG10 R\"bd\"",
     "status": "OK",
     "values": [
       1,
@@ -233,7 +233,7 @@
   },
   {
     "name": "blit_map_rotate_cw",
-    "description": "A quarter turn clockwise = swap axes + reverse the swapped-in axis: M1,2.5,-0.5,0,0,3 (dest0<-src1 reversed, dest1<-src0). nearest filter (I1).",
+    "description": "A quarter turn clockwise = swap axes + reverse the swapped-in axis: M1,2.5,-0.5,0,0,3 (dest0<-src1 reversed, dest1<-src0). nearest filter (F1).",
     "needs": [
       "ggggx"
     ],
@@ -242,7 +242,7 @@
       "map",
       "rotate"
     ],
-    "program": "G40 R\"bs\" W\"bd\" T\"map\" M1,2.5,-0.5,0,0,3 I1\nG10 R\"bd\"",
+    "program": "G40 R\"bs\" W\"bd\" T\"map\" M1,2.5,-0.5,0,0,3 F1\nG10 R\"bd\"",
     "status": "OK",
     "values": [
       7,
@@ -260,7 +260,7 @@
   },
   {
     "name": "blit_map_rotate_ccw",
-    "description": "A quarter turn counter-clockwise = the other swap + reverse: M1,0,3,0,2.5,-0.5 (dest0<-src1, dest1<-src0 reversed). nearest filter (I1).",
+    "description": "A quarter turn counter-clockwise = the other swap + reverse: M1,0,3,0,2.5,-0.5 (dest0<-src1, dest1<-src0 reversed). nearest filter (F1).",
     "needs": [
       "ggggx"
     ],
@@ -269,7 +269,7 @@
       "map",
       "rotate"
     ],
-    "program": "G40 R\"bs\" W\"bd\" T\"map\" M1,0,3,0,2.5,-0.5 I1\nG10 R\"bd\"",
+    "program": "G40 R\"bs\" W\"bd\" T\"map\" M1,0,3,0,2.5,-0.5 F1\nG10 R\"bd\"",
     "status": "OK",
     "values": [
       3,
@@ -287,7 +287,7 @@
   },
   {
     "name": "blit_map_by_index",
-    "description": "Mode by index T2 == map; a single triple (0,1,3) sets dest0<-src0 over [1,3] and leaves dest1 identity (== box [1,3] on axis 0). nearest filter (I1).",
+    "description": "Mode by index T2 == map; a single triple (0,1,3) sets dest0<-src0 over [1,3] and leaves dest1 identity (== box [1,3] on axis 0). nearest filter (F1).",
     "needs": [
       "ggggx"
     ],
@@ -295,7 +295,7 @@
       "blit",
       "map"
     ],
-    "program": "G40 R\"bs\" W\"bd\" T2 M0,1,3 I1\nG10 R\"bd\"",
+    "program": "G40 R\"bs\" W\"bd\" T2 M0,1,3 F1\nG10 R\"bd\"",
     "status": "OK",
     "values": [
       2,
@@ -363,14 +363,14 @@
   },
   {
     "name": "blit_magnify_nearest",
-    "description": "A half-extent box [0,1.5] per axis magnifies the top-left 2x2 of the source; nearest filter (I1).",
+    "description": "A half-extent box [0,1.5] per axis magnifies the top-left 2x2 of the source; nearest filter (F1).",
     "needs": [
       "ggggx"
     ],
     "tags": [
       "blit"
     ],
-    "program": "G40 R\"bs\" W\"bd\" T\"box\" M0,1.5,0,1.5 I1\nG10 R\"bd\"",
+    "program": "G40 R\"bs\" W\"bd\" T\"box\" M0,1.5,0,1.5 F1\nG10 R\"bd\"",
     "status": "OK",
     "values": [
       1,
@@ -413,14 +413,14 @@
   },
   {
     "name": "blit_filter_per_axis",
-    "description": "I is per-axis: I0,1 = linear on X (smooth, fractional), nearest on Y (blocky) -- a magnify interpolates columns but steps rows.",
+    "description": "F is per-axis: F0,1 = linear on X (smooth, fractional), nearest on Y (blocky) -- a magnify interpolates columns but steps rows.",
     "needs": [
       "ggggx"
     ],
     "tags": [
       "blit"
     ],
-    "program": "G40 R\"bs\" W\"bd\" T\"box\" M0,1.5,0,1.5 I0,1\nG10 R\"bd\"",
+    "program": "G40 R\"bs\" W\"bd\" T\"box\" M0,1.5,0,1.5 F0,1\nG10 R\"bd\"",
     "status": "OK",
     "values": [
       1,
@@ -438,14 +438,14 @@
   },
   {
     "name": "blit_filter_by_name",
-    "description": "Per-axis options also take names: I\"linear\",\"nearest\" == I0,1 (a comma-separated quoted-string list, which parses identically in both engines).",
+    "description": "Per-axis options also take names: F\"linear\",\"nearest\" == F0,1 (a comma-separated quoted-string list, which parses identically in both engines).",
     "needs": [
       "ggggx"
     ],
     "tags": [
       "blit"
     ],
-    "program": "G40 R\"bs\" W\"bd\" T\"box\" M0,1.5,0,1.5 I\"linear\",\"nearest\"\nG10 R\"bd\"",
+    "program": "G40 R\"bs\" W\"bd\" T\"box\" M0,1.5,0,1.5 F\"linear\",\"nearest\"\nG10 R\"bd\"",
     "status": "OK",
     "values": [
       1,
@@ -463,14 +463,14 @@
   },
   {
     "name": "blit_translate_hold",
-    "description": "An axis-0 shifted box [1.2,4.2] with nearest filter + hold edge shifts and clamps at the edge (I1 E1).",
+    "description": "An axis-0 shifted box [1.2,4.2] with nearest filter + hold edge shifts and clamps at the edge (F1 E1).",
     "needs": [
       "ggggx"
     ],
     "tags": [
       "blit"
     ],
-    "program": "G40 R\"bs\" W\"bd\" T\"box\" M1.2,4.2,0,3 I1 E1\nG10 R\"bd\"",
+    "program": "G40 R\"bs\" W\"bd\" T\"box\" M1.2,4.2,0,3 F1 E1\nG10 R\"bd\"",
     "status": "OK",
     "values": [
       2,
@@ -513,7 +513,7 @@
   },
   {
     "name": "blit_minify_lerp",
-    "description": "Lerp WITH minify: a 1.5x oversized box [0,4.5] with the default linear filter and NO fold (F none) ignores the footprint and just lerps the centre -- interpolated but aliased. Shows linear coexists with minify; a fold is opt-in. Hold edge (E1).",
+    "description": "Lerp WITH minify: a 1.5x oversized box [0,4.5] with the default linear filter (a point filter, no fold) ignores the footprint and just lerps the centre -- interpolated but aliased. linear coexists with minify; a fold (mean/min/max/add) is opt-in. Hold edge (E1).",
     "needs": [
       "ggggx"
     ],
@@ -538,14 +538,14 @@
   },
   {
     "name": "blit_minify_mean",
-    "description": "Explicit mean fold (F1): the 2x box [0,6] box-averages each cell's footprint (anti-aliases). mean is opt-in, not what linear does implicitly. Hold edge (E1).",
+    "description": "Explicit mean filter (F2): the 2x box [0,6] box-averages each cell's footprint (anti-aliases). mean is one filter value, not what linear does implicitly. Hold edge (E1).",
     "needs": [
       "ggggx"
     ],
     "tags": [
       "blit"
     ],
-    "program": "G40 R\"bs\" W\"bd\" T\"box\" M0,6,0,6 F1 E1\nG10 R\"bd\"",
+    "program": "G40 R\"bs\" W\"bd\" T\"box\" M0,6,0,6 F2 E1\nG10 R\"bd\"",
     "status": "OK",
     "values": [
       1,
@@ -563,14 +563,14 @@
   },
   {
     "name": "blit_minify_max",
-    "description": "F3 = max fold: the 2x minify pools the footprint maximum instead of averaging. Hold edge (E1).",
+    "description": "F4 = max: the 2x minify pools the footprint maximum instead of averaging. Hold edge (E1).",
     "needs": [
       "ggggx"
     ],
     "tags": [
       "blit"
     ],
-    "program": "G40 R\"bs\" W\"bd\" T\"box\" M0,6,0,6 F3 E1\nG10 R\"bd\"",
+    "program": "G40 R\"bs\" W\"bd\" T\"box\" M0,6,0,6 F4 E1\nG10 R\"bd\"",
     "status": "OK",
     "values": [
       1,
@@ -588,14 +588,14 @@
   },
   {
     "name": "blit_minify_pool",
-    "description": "Separable per-axis fold: F3,1 = max-pool X (F3) but mean-pool Y (F1). Differs from a uniform fold, proving the fold is per-axis. Hold edge (E1).",
+    "description": "Separable per-axis filter: F4,2 = max-pool X (F4) but mean-pool Y (F2). Differs from a uniform fold, proving the filter is per-axis. Hold edge (E1).",
     "needs": [
       "ggggx"
     ],
     "tags": [
       "blit"
     ],
-    "program": "G40 R\"bs\" W\"bd\" T\"box\" M0,6,0,6 F3,1 E1\nG10 R\"bd\"",
+    "program": "G40 R\"bs\" W\"bd\" T\"box\" M0,6,0,6 F4,2 E1\nG10 R\"bd\"",
     "status": "OK",
     "values": [
       1,

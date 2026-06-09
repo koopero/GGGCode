@@ -18,10 +18,10 @@ describe( "Sample", () => {
 
   test( "fold reduces the footprint when minifying (footprint [3] covers the whole axis)", () => {
     const fp = { footprint: [ 3 ] }
-    expect( Sample( line, [ 0.5 ], { fold: [ "max" ],  ...fp } ) ).toEqual( [ 30 ] )
-    expect( Sample( line, [ 0.5 ], { fold: [ "min" ],  ...fp } ) ).toEqual( [ 10 ] )
-    expect( Sample( line, [ 0.5 ], { fold: [ "add" ],  ...fp } ) ).toEqual( [ 60 ] )
-    expect( Sample( line, [ 0.5 ], { fold: [ "mean" ], ...fp } ) ).toEqual( [ 20 ] )
+    expect( Sample( line, [ 0.5 ], { filter: [ "max" ],  ...fp } ) ).toEqual( [ 30 ] )
+    expect( Sample( line, [ 0.5 ], { filter: [ "min" ],  ...fp } ) ).toEqual( [ 10 ] )
+    expect( Sample( line, [ 0.5 ], { filter: [ "add" ],  ...fp } ) ).toEqual( [ 60 ] )
+    expect( Sample( line, [ 0.5 ], { filter: [ "mean" ], ...fp } ) ).toEqual( [ 20 ] )
     // no fold (default) => the filter just samples the centre, footprint ignored
     expect( Sample( line, [ 0.5 ], { filter: [ "nearest" ], ...fp } ) ).toEqual( [ 20 ] )
   } )

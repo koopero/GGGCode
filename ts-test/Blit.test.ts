@@ -89,13 +89,13 @@ describe( "Blit", () => {
 
   test( "minify: explicit mean fold box-averages the footprint (anti-aliases)", () => {
     const d = mk( [ 3, 3 ] )
-    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "box", matrix: [ 0, 6, 0, 6 ], fold: [ "mean" ], edges: [ "hold" ] } )
+    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "box", matrix: [ 0, 6, 0, 6 ], filter: [ "mean" ], edges: [ "hold" ] } )
     expect( d.data ).toEqual( [ 1, 2.75, 3, 5.5, 7.25, 7.5, 7, 8.75, 9 ] )
   } )
 
-  test( "minify: separable per-axis fold F3,1 -- max-pool X, mean-pool Y", () => {
+  test( "minify: separable per-axis fold F4,2 -- max-pool X, mean-pool Y", () => {
     const d = mk( [ 3, 3 ] )
-    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "box", matrix: [ 0, 6, 0, 6 ], fold: [ "max", "mean" ], edges: [ "hold" ] } )
+    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "box", matrix: [ 0, 6, 0, 6 ], filter: [ "max", "mean" ], edges: [ "hold" ] } )
     expect( d.data ).toEqual( [ 1, 3, 3, 5.5, 7.5, 7.5, 7, 9, 9 ] )
   } )
 

@@ -49,8 +49,7 @@ export interface BlitOptions {
   offset?: number[]               // dest region offset (spatial)
   size?: number[]                 // dest region size (spatial)
   operator?: string | number      // combine sampled value into dest cell (Q)
-  filter?: string[]               // per-axis filter (I): linear/nearest
-  fold?: string[]                 // per-axis minify fold (F): none/mean/min/max/add
+  filter?: string[]               // per-axis filter (F): linear/nearest/mean/min/max/add
   edges?: string[]               // per-axis edge (E): loop/hold/mirror/zero
 }
 
@@ -162,7 +161,7 @@ export function Blit( dest: Matrix, source: Matrix, options: BlitOptions = {} ):
   const mode = resolveMode( options.mode )
   const M = options.matrix ?? []
   const operator = options.operator ?? "set"
-  const { filter, fold, edges } = options
+  const { filter, edges } = options
 
   const rank = dest.dim.length - dimension
   const destSpatial = dest.dim.slice( dimension )
@@ -182,10 +181,11 @@ export function Blit( dest: Matrix, source: Matrix, options: BlitOptions = {} ):
     // Inverse-map to a normalized source coordinate.
     const src = applyHomogeneous( H, c, rank )
 
-    // Sample per-axis: filter (I) interpolates the point; a fold (F) reduces the
-    // footprint when minifying. The Jacobian footprint drives magnify vs minify.
+    // Sample per-axis: the filter (F) op samples/combines (linear/nearest point, or
+    // mean/min/max/add fold the footprint when minifying). The Jacobian footprint
+    // drives magnify vs minify.
     const footprint = footprintOf( H, c, destSpatial, srcSpatial, rank )
-    const sampled = Sample( source, channelPrefix.concat( src ), { dimension, filter, fold, edges, footprint } )
+    const sampled = Sample( source, channelPrefix.concat( src ), { dimension, filter, edges, footprint } )
 
     const destPos = channelPrefix.concat( destCoord )
     for ( let ch = 0; ch < sampled.length; ch++ ) {

@@ -2,7 +2,7 @@ import { GGG, Hooks, HookArgs } from "../ggg/Language"
 import { isString, isNumber, toInt } from "../common/util"
 import Matrix from "../ggg/Matrix"
 import { Blit, BlitOptions } from "./Blit"
-import { FilterList, FoldList, EdgeList } from "./Sample"
+import { FilterList, EdgeList } from "./Sample"
 
 //
 // MatrixBlit (G40): copy from a SOURCE register into a DESTINATION register
@@ -20,11 +20,10 @@ import { FilterList, FoldList, EdgeList } from "./Sample"
 //   P / S   -- dest region offset / size (default whole dest spatial extent)
 //   D       -- channel-dimension count (default 0 = all axes spatial)
 //   Q       -- operator combining the sampled value into the dest cell (default set)
-//   I       -- per-axis filter (list, continue-last): 0 linear / 1 nearest. How a
-//             sample point reads texels (lerp / point). (Interp glyph.)
-//   F       -- per-axis minify fold (list, continue-last): 0 none / 1 mean / 2 min /
-//             3 max / 4 add. none = no footprint reduction (lerp/point the centre,
-//             aliases); mean/min/max/add integrate the footprint. (Failure='F'=Fold.)
+//   F       -- per-axis filter (list, continue-last): 0 linear / 1 nearest /
+//             2 mean / 3 min / 4 max / 5 add. linear/nearest are point filters (no
+//             footprint reduction -- a minifying linear lerps/aliases); mean/min/
+//             max/add fold the footprint when minifying. (Failure glyph reused.)
 //   E       -- per-axis edge (list, continue-last): 0 loop / 1 hold / 2 mirror /
 //             3 zero. (Encoding glyph reused contextually -- G40 has no encoding.)
 //
@@ -38,8 +37,7 @@ function reset( state: { [key: string]: any } ) {
   state.blitSize = []
   state.dimension = undefined
   state.operator = undefined
-  state.filter = []    // I: per-axis filter names
-  state.fold = []      // F: per-axis minify-fold names
+  state.filter = []    // F: per-axis filter names
   state.edges = []     // E: per-axis edge names
 }
 
@@ -82,11 +80,8 @@ function MatrixBlitHookValue( arg: HookArgs ) {
     case GGG.Operator:
       state.operator = value
       break
-    case "I":           // I -- per-axis filter (list)
+    case GGG.Failure:   // F -- per-axis filter (list)
       state.filter.push( optName( value, FilterList ) )
-      break
-    case GGG.Failure:   // F -- per-axis minify fold (list)
-      state.fold.push( optName( value, FoldList ) )
       break
     case GGG.Encoding:  // E -- per-axis edge (list)
       state.edges.push( optName( value, EdgeList ) )
@@ -113,7 +108,6 @@ function MatrixBlitHookEnd( arg: HookArgs ) {
     size: state.blitSize.length ? state.blitSize : undefined,
     operator: state.operator,
     filter: state.filter.length ? state.filter : undefined,
-    fold: state.fold.length ? state.fold : undefined,
     edges: state.edges.length ? state.edges : undefined,
   }
 

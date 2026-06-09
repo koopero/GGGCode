@@ -60,10 +60,10 @@ G10 R"bd"
 
 ### blit_box_subregion
 
-A box selects a source sub-rectangle (x columns 1..3) and stretches it to fill the dest; nearest filter (I1).
+A box selects a source sub-rectangle (x columns 1..3) and stretches it to fill the dest; nearest filter (F1).
 
 ```
-G40 R"bs" W"bd" T"box" M1,3,0,3 I1
+G40 R"bs" W"bd" T"box" M1,3,0,3 F1
 G10 R"bd"
 ```
 
@@ -72,10 +72,10 @@ G10 R"bd"
 
 ### blit_box_flip_x
 
-A box flips an axis when its range runs backwards: M2.5,-0.5 on axis 0 (= [dim-0.5, -0.5], reversed + half-texel inset to land on pixel centers) mirrors each row left<->right. nearest filter (I1).
+A box flips an axis when its range runs backwards: M2.5,-0.5 on axis 0 (= [dim-0.5, -0.5], reversed + half-texel inset to land on pixel centers) mirrors each row left<->right. nearest filter (F1).
 
 ```
-G40 R"bs" W"bd" T"box" M2.5,-0.5,0,3 I1
+G40 R"bs" W"bd" T"box" M2.5,-0.5,0,3 F1
 G10 R"bd"
 ```
 
@@ -84,10 +84,10 @@ G10 R"bd"
 
 ### blit_box_flip_y
 
-Reversing the axis-1 range (M...,2.5,-0.5) flips the matrix top<->bottom, leaving axis 0 as-is. nearest filter (I1).
+Reversing the axis-1 range (M...,2.5,-0.5) flips the matrix top<->bottom, leaving axis 0 as-is. nearest filter (F1).
 
 ```
-G40 R"bs" W"bd" T"box" M0,3,2.5,-0.5 I1
+G40 R"bs" W"bd" T"box" M0,3,2.5,-0.5 F1
 G10 R"bd"
 ```
 
@@ -96,10 +96,10 @@ G10 R"bd"
 
 ### blit_box_flip_180
 
-Reversing both axes flips the matrix in both directions -- a 180-degree turn (every element reversed). nearest filter (I1).
+Reversing both axes flips the matrix in both directions -- a 180-degree turn (every element reversed). nearest filter (F1).
 
 ```
-G40 R"bs" W"bd" T"box" M2.5,-0.5,2.5,-0.5 I1
+G40 R"bs" W"bd" T"box" M2.5,-0.5,2.5,-0.5 F1
 G10 R"bd"
 ```
 
@@ -108,10 +108,10 @@ G10 R"bd"
 
 ### blit_map_axes
 
-map's triples are (srcAxis,min,max) positional by dest axis: M0,0,3,1,1,3 = dest0<-src0 full, dest1<-src1 rows 1..3 -- i.e. it generalizes box (same as box M0,3,1,3). nearest filter (I1).
+map's triples are (srcAxis,min,max) positional by dest axis: M0,0,3,1,1,3 = dest0<-src0 full, dest1<-src1 rows 1..3 -- i.e. it generalizes box (same as box M0,3,1,3). nearest filter (F1).
 
 ```
-G40 R"bs" W"bd" T"map" M0,0,3,1,1,3 I1
+G40 R"bs" W"bd" T"map" M0,0,3,1,1,3 F1
 G10 R"bd"
 ```
 
@@ -132,10 +132,10 @@ G10 R"bd"
 
 ### blit_map_transpose
 
-Pointing each dest axis at the OTHER source axis (M1,0,3,0,0,3 = dest0<-src1, dest1<-src0) transposes the matrix (reflect across the main diagonal). nearest filter (I1).
+Pointing each dest axis at the OTHER source axis (M1,0,3,0,0,3 = dest0<-src1, dest1<-src0) transposes the matrix (reflect across the main diagonal). nearest filter (F1).
 
 ```
-G40 R"bs" W"bd" T"map" M1,0,3,0,0,3 I1
+G40 R"bs" W"bd" T"map" M1,0,3,0,0,3 F1
 G10 R"bd"
 ```
 
@@ -144,10 +144,10 @@ G10 R"bd"
 
 ### blit_map_rotate_cw
 
-A quarter turn clockwise = swap axes + reverse the swapped-in axis: M1,2.5,-0.5,0,0,3 (dest0<-src1 reversed, dest1<-src0). nearest filter (I1).
+A quarter turn clockwise = swap axes + reverse the swapped-in axis: M1,2.5,-0.5,0,0,3 (dest0<-src1 reversed, dest1<-src0). nearest filter (F1).
 
 ```
-G40 R"bs" W"bd" T"map" M1,2.5,-0.5,0,0,3 I1
+G40 R"bs" W"bd" T"map" M1,2.5,-0.5,0,0,3 F1
 G10 R"bd"
 ```
 
@@ -156,10 +156,10 @@ G10 R"bd"
 
 ### blit_map_rotate_ccw
 
-A quarter turn counter-clockwise = the other swap + reverse: M1,0,3,0,2.5,-0.5 (dest0<-src1, dest1<-src0 reversed). nearest filter (I1).
+A quarter turn counter-clockwise = the other swap + reverse: M1,0,3,0,2.5,-0.5 (dest0<-src1, dest1<-src0 reversed). nearest filter (F1).
 
 ```
-G40 R"bs" W"bd" T"map" M1,0,3,0,2.5,-0.5 I1
+G40 R"bs" W"bd" T"map" M1,0,3,0,2.5,-0.5 F1
 G10 R"bd"
 ```
 
@@ -168,10 +168,10 @@ G10 R"bd"
 
 ### blit_map_by_index
 
-Mode by index T2 == map; a single triple (0,1,3) sets dest0<-src0 over [1,3] and leaves dest1 identity (== box [1,3] on axis 0). nearest filter (I1).
+Mode by index T2 == map; a single triple (0,1,3) sets dest0<-src0 over [1,3] and leaves dest1 identity (== box [1,3] on axis 0). nearest filter (F1).
 
 ```
-G40 R"bs" W"bd" T2 M0,1,3 I1
+G40 R"bs" W"bd" T2 M0,1,3 F1
 G10 R"bd"
 ```
 
@@ -204,10 +204,10 @@ G10 R"bd"
 
 ### blit_magnify_nearest
 
-A half-extent box [0,1.5] per axis magnifies the top-left 2x2 of the source; nearest filter (I1).
+A half-extent box [0,1.5] per axis magnifies the top-left 2x2 of the source; nearest filter (F1).
 
 ```
-G40 R"bs" W"bd" T"box" M0,1.5,0,1.5 I1
+G40 R"bs" W"bd" T"box" M0,1.5,0,1.5 F1
 G10 R"bd"
 ```
 
@@ -228,10 +228,10 @@ G10 R"bd"
 
 ### blit_filter_per_axis
 
-I is per-axis: I0,1 = linear on X (smooth, fractional), nearest on Y (blocky) -- a magnify interpolates columns but steps rows.
+F is per-axis: F0,1 = linear on X (smooth, fractional), nearest on Y (blocky) -- a magnify interpolates columns but steps rows.
 
 ```
-G40 R"bs" W"bd" T"box" M0,1.5,0,1.5 I0,1
+G40 R"bs" W"bd" T"box" M0,1.5,0,1.5 F0,1
 G10 R"bd"
 ```
 
@@ -240,10 +240,10 @@ G10 R"bd"
 
 ### blit_filter_by_name
 
-Per-axis options also take names: I"linear","nearest" == I0,1 (a comma-separated quoted-string list, which parses identically in both engines).
+Per-axis options also take names: F"linear","nearest" == F0,1 (a comma-separated quoted-string list, which parses identically in both engines).
 
 ```
-G40 R"bs" W"bd" T"box" M0,1.5,0,1.5 I"linear","nearest"
+G40 R"bs" W"bd" T"box" M0,1.5,0,1.5 F"linear","nearest"
 G10 R"bd"
 ```
 
@@ -252,10 +252,10 @@ G10 R"bd"
 
 ### blit_translate_hold
 
-An axis-0 shifted box [1.2,4.2] with nearest filter + hold edge shifts and clamps at the edge (I1 E1).
+An axis-0 shifted box [1.2,4.2] with nearest filter + hold edge shifts and clamps at the edge (F1 E1).
 
 ```
-G40 R"bs" W"bd" T"box" M1.2,4.2,0,3 I1 E1
+G40 R"bs" W"bd" T"box" M1.2,4.2,0,3 F1 E1
 G10 R"bd"
 ```
 
@@ -277,7 +277,7 @@ G10 R"bd"
 
 ### blit_minify_lerp
 
-Lerp WITH minify: a 1.5x oversized box [0,4.5] with the default linear filter and NO fold (F none) ignores the footprint and just lerps the centre -- interpolated but aliased. Shows linear coexists with minify; a fold is opt-in. Hold edge (E1).
+Lerp WITH minify: a 1.5x oversized box [0,4.5] with the default linear filter (a point filter, no fold) ignores the footprint and just lerps the centre -- interpolated but aliased. linear coexists with minify; a fold (mean/min/max/add) is opt-in. Hold edge (E1).
 
 ```
 G40 R"bs" W"bd" T"box" M0,4.5,0,4.5 E1
@@ -289,10 +289,10 @@ G10 R"bd"
 
 ### blit_minify_mean
 
-Explicit mean fold (F1): the 2x box [0,6] box-averages each cell's footprint (anti-aliases). mean is opt-in, not what linear does implicitly. Hold edge (E1).
+Explicit mean filter (F2): the 2x box [0,6] box-averages each cell's footprint (anti-aliases). mean is one filter value, not what linear does implicitly. Hold edge (E1).
 
 ```
-G40 R"bs" W"bd" T"box" M0,6,0,6 F1 E1
+G40 R"bs" W"bd" T"box" M0,6,0,6 F2 E1
 G10 R"bd"
 ```
 
@@ -301,10 +301,10 @@ G10 R"bd"
 
 ### blit_minify_max
 
-F3 = max fold: the 2x minify pools the footprint maximum instead of averaging. Hold edge (E1).
+F4 = max: the 2x minify pools the footprint maximum instead of averaging. Hold edge (E1).
 
 ```
-G40 R"bs" W"bd" T"box" M0,6,0,6 F3 E1
+G40 R"bs" W"bd" T"box" M0,6,0,6 F4 E1
 G10 R"bd"
 ```
 
@@ -313,10 +313,10 @@ G10 R"bd"
 
 ### blit_minify_pool
 
-Separable per-axis fold: F3,1 = max-pool X (F3) but mean-pool Y (F1). Differs from a uniform fold, proving the fold is per-axis. Hold edge (E1).
+Separable per-axis filter: F4,2 = max-pool X (F4) but mean-pool Y (F2). Differs from a uniform fold, proving the filter is per-axis. Hold edge (E1).
 
 ```
-G40 R"bs" W"bd" T"box" M0,6,0,6 F3,1 E1
+G40 R"bs" W"bd" T"box" M0,6,0,6 F4,2 E1
 G10 R"bd"
 ```
 
@@ -492,10 +492,10 @@ P10 V0.5
 
 ### blit_box_flip_x
 
-A box flips an axis when its range runs backwards: M2.5,-0.5 on axis 0 (= [dim-0.5, -0.5], reversed + half-texel inset to land on pixel centers) mirrors each row left<->right. nearest filter (I1).
+A box flips an axis when its range runs backwards: M2.5,-0.5 on axis 0 (= [dim-0.5, -0.5], reversed + half-texel inset to land on pixel centers) mirrors each row left<->right. nearest filter (F1).
 
 ```
-G40 R"bs" W"bd" T"box" M2.5,-0.5,0,3 I1
+G40 R"bs" W"bd" T"box" M2.5,-0.5,0,3 F1
 G10 R"bd"
 ```
 
@@ -504,10 +504,10 @@ G10 R"bd"
 
 ### blit_box_flip_y
 
-Reversing the axis-1 range (M...,2.5,-0.5) flips the matrix top<->bottom, leaving axis 0 as-is. nearest filter (I1).
+Reversing the axis-1 range (M...,2.5,-0.5) flips the matrix top<->bottom, leaving axis 0 as-is. nearest filter (F1).
 
 ```
-G40 R"bs" W"bd" T"box" M0,3,2.5,-0.5 I1
+G40 R"bs" W"bd" T"box" M0,3,2.5,-0.5 F1
 G10 R"bd"
 ```
 
@@ -516,10 +516,10 @@ G10 R"bd"
 
 ### blit_box_flip_180
 
-Reversing both axes flips the matrix in both directions -- a 180-degree turn (every element reversed). nearest filter (I1).
+Reversing both axes flips the matrix in both directions -- a 180-degree turn (every element reversed). nearest filter (F1).
 
 ```
-G40 R"bs" W"bd" T"box" M2.5,-0.5,2.5,-0.5 I1
+G40 R"bs" W"bd" T"box" M2.5,-0.5,2.5,-0.5 F1
 G10 R"bd"
 ```
 
@@ -901,10 +901,10 @@ P10 V☃,你
 
 ### blit_map_axes
 
-map's triples are (srcAxis,min,max) positional by dest axis: M0,0,3,1,1,3 = dest0<-src0 full, dest1<-src1 rows 1..3 -- i.e. it generalizes box (same as box M0,3,1,3). nearest filter (I1).
+map's triples are (srcAxis,min,max) positional by dest axis: M0,0,3,1,1,3 = dest0<-src0 full, dest1<-src1 rows 1..3 -- i.e. it generalizes box (same as box M0,3,1,3). nearest filter (F1).
 
 ```
-G40 R"bs" W"bd" T"map" M0,0,3,1,1,3 I1
+G40 R"bs" W"bd" T"map" M0,0,3,1,1,3 F1
 G10 R"bd"
 ```
 
@@ -925,10 +925,10 @@ G10 R"bd"
 
 ### blit_map_transpose
 
-Pointing each dest axis at the OTHER source axis (M1,0,3,0,0,3 = dest0<-src1, dest1<-src0) transposes the matrix (reflect across the main diagonal). nearest filter (I1).
+Pointing each dest axis at the OTHER source axis (M1,0,3,0,0,3 = dest0<-src1, dest1<-src0) transposes the matrix (reflect across the main diagonal). nearest filter (F1).
 
 ```
-G40 R"bs" W"bd" T"map" M1,0,3,0,0,3 I1
+G40 R"bs" W"bd" T"map" M1,0,3,0,0,3 F1
 G10 R"bd"
 ```
 
@@ -937,10 +937,10 @@ G10 R"bd"
 
 ### blit_map_rotate_cw
 
-A quarter turn clockwise = swap axes + reverse the swapped-in axis: M1,2.5,-0.5,0,0,3 (dest0<-src1 reversed, dest1<-src0). nearest filter (I1).
+A quarter turn clockwise = swap axes + reverse the swapped-in axis: M1,2.5,-0.5,0,0,3 (dest0<-src1 reversed, dest1<-src0). nearest filter (F1).
 
 ```
-G40 R"bs" W"bd" T"map" M1,2.5,-0.5,0,0,3 I1
+G40 R"bs" W"bd" T"map" M1,2.5,-0.5,0,0,3 F1
 G10 R"bd"
 ```
 
@@ -949,10 +949,10 @@ G10 R"bd"
 
 ### blit_map_rotate_ccw
 
-A quarter turn counter-clockwise = the other swap + reverse: M1,0,3,0,2.5,-0.5 (dest0<-src1, dest1<-src0 reversed). nearest filter (I1).
+A quarter turn counter-clockwise = the other swap + reverse: M1,0,3,0,2.5,-0.5 (dest0<-src1, dest1<-src0 reversed). nearest filter (F1).
 
 ```
-G40 R"bs" W"bd" T"map" M1,0,3,0,2.5,-0.5 I1
+G40 R"bs" W"bd" T"map" M1,0,3,0,2.5,-0.5 F1
 G10 R"bd"
 ```
 
@@ -961,10 +961,10 @@ G10 R"bd"
 
 ### blit_map_by_index
 
-Mode by index T2 == map; a single triple (0,1,3) sets dest0<-src0 over [1,3] and leaves dest1 identity (== box [1,3] on axis 0). nearest filter (I1).
+Mode by index T2 == map; a single triple (0,1,3) sets dest0<-src0 over [1,3] and leaves dest1 identity (== box [1,3] on axis 0). nearest filter (F1).
 
 ```
-G40 R"bs" W"bd" T2 M0,1,3 I1
+G40 R"bs" W"bd" T2 M0,1,3 F1
 G10 R"bd"
 ```
 
@@ -1606,10 +1606,10 @@ P10 V$m@[4]
 
 ### blit_map_transpose
 
-Pointing each dest axis at the OTHER source axis (M1,0,3,0,0,3 = dest0<-src1, dest1<-src0) transposes the matrix (reflect across the main diagonal). nearest filter (I1).
+Pointing each dest axis at the OTHER source axis (M1,0,3,0,0,3 = dest0<-src1, dest1<-src0) transposes the matrix (reflect across the main diagonal). nearest filter (F1).
 
 ```
-G40 R"bs" W"bd" T"map" M1,0,3,0,0,3 I1
+G40 R"bs" W"bd" T"map" M1,0,3,0,0,3 F1
 G10 R"bd"
 ```
 
@@ -1618,10 +1618,10 @@ G10 R"bd"
 
 ### blit_map_rotate_cw
 
-A quarter turn clockwise = swap axes + reverse the swapped-in axis: M1,2.5,-0.5,0,0,3 (dest0<-src1 reversed, dest1<-src0). nearest filter (I1).
+A quarter turn clockwise = swap axes + reverse the swapped-in axis: M1,2.5,-0.5,0,0,3 (dest0<-src1 reversed, dest1<-src0). nearest filter (F1).
 
 ```
-G40 R"bs" W"bd" T"map" M1,2.5,-0.5,0,0,3 I1
+G40 R"bs" W"bd" T"map" M1,2.5,-0.5,0,0,3 F1
 G10 R"bd"
 ```
 
@@ -1630,10 +1630,10 @@ G10 R"bd"
 
 ### blit_map_rotate_ccw
 
-A quarter turn counter-clockwise = the other swap + reverse: M1,0,3,0,2.5,-0.5 (dest0<-src1, dest1<-src0 reversed). nearest filter (I1).
+A quarter turn counter-clockwise = the other swap + reverse: M1,0,3,0,2.5,-0.5 (dest0<-src1, dest1<-src0 reversed). nearest filter (F1).
 
 ```
-G40 R"bs" W"bd" T"map" M1,0,3,0,2.5,-0.5 I1
+G40 R"bs" W"bd" T"map" M1,0,3,0,2.5,-0.5 F1
 G10 R"bd"
 ```
 

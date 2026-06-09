@@ -133,13 +133,8 @@ function GXCommandsForNamespace( namespace?: GXNamespaceArg ) {
           description: "Combine operator into the destination cell.",
           type: ArgType.String,
         },
-        ["I"]: {
-          description: "Per-axis filter (list, continue-last): 0 linear / 1 nearest.",
-          type: ArgType.Any,
-          format: "(*)",
-        },
         [GGG.Failure]: {
-          description: "Per-axis minify fold (list, continue-last): 0 none / 1 mean / 2 min / 3 max / 4 add.",
+          description: "Per-axis filter (list, continue-last): 0 linear / 1 nearest / 2 mean / 3 min / 4 max / 5 add.",
           type: ArgType.Any,
           format: "(*)",
         },
