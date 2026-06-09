@@ -27,6 +27,8 @@ namespace ggg {
     constexpr const char *Repeat  = "repeat";   // = "loop" (the E arg index-0 name)
     constexpr const char *Mirror  = "mirror";
     constexpr const char *Zero    = "zero";
+    constexpr const char *None    = "none";
+    constexpr const char *Mean    = "mean";
     constexpr const char *Min     = "min";
     constexpr const char *Max     = "max";
     constexpr const char *Add     = "add";
@@ -125,14 +127,17 @@ namespace ggg {
 
   inline std::vector<NumberType> sampleCombineAxis( MatrixBase *buffer, std::vector<double> &pos,
       Index dimIndex, Index dimension, Index length,
-      const std::vector<String> &combine, const std::vector<String> &edges, const std::vector<double> &footprint ) {
-    static const String dfltCombine = SampleOpt::Linear;
+      const std::vector<String> &filter, const std::vector<String> &fold,
+      const std::vector<String> &edges, const std::vector<double> &footprint ) {
+    static const String dfltFilter = SampleOpt::Linear;
+    static const String dfltFold = SampleOpt::None;
     static const String dfltEdge = SampleOpt::Repeat;
     const int MAX_TAPS = 8;
     const double EPS = 1e-6;
 
     int a = (int) dimIndex - (int) dimension;
-    const String &op = samplePick( combine, a, dfltCombine );
+    const String &filt = samplePick( filter, a, dfltFilter );
+    const String &fld = samplePick( fold, a, dfltFold );
     const String &edge = samplePick( edges, a, dfltEdge );
     double fp = ( a >= 0 && a < (int) footprint.size() ) ? footprint[a] : 0.;
     Index size = ( dimIndex >= 0 && dimIndex < (Index) buffer->dim.size() ) ? buffer->dim[dimIndex] : 1;
@@ -141,61 +146,60 @@ namespace ggg {
 
     auto inner = [&]() -> std::vector<NumberType> {
       if ( dimIndex > dimension )
-        return sampleCombineAxis( buffer, pos, dimIndex - 1, dimension, length, combine, edges, footprint );
+        return sampleCombineAxis( buffer, pos, dimIndex - 1, dimension, length, filter, fold, edges, footprint );
       std::vector<NumberType> out( length, 0. );
       sampleReadChannels( buffer, pos, length, out );
       return out;
     };
 
-    // nearest: a single tap at the nearest texel.
-    if ( op == SampleOpt::Nearest ) {
+    // MINIFY fold: point-sample the footprint's taps and reduce them (the filter
+    // governs point sampling, not the fold, so a fold integrates raw texels).
+    if ( fld != SampleOpt::None && fp > 1.0 + EPS ) {
+      int taps = (int) std::ceil( fp - EPS );
+      if ( taps < 1 ) taps = 1;
+      if ( taps > MAX_TAPS ) taps = MAX_TAPS;
+      double fpNorm = fp / size;
+      bool isMin = ( fld == SampleOpt::Min ), isMax = ( fld == SampleOpt::Max );
+      double init = isMin ? INFINITY : isMax ? -INFINITY : 0.;
+      std::vector<double> acc( (size_t) length, init );
+      for ( int t = 0; t < taps; t++ ) {
+        double offset = taps > 1 ? ( ( t + 0.5 ) / taps - 0.5 ) : 0.;
+        if ( dimIndex >= 0 ) pos[dimIndex] = resolveAxis( center + fpNorm * offset, size, SampleOpt::Nearest, edge ).index0;
+        std::vector<NumberType> s = inner();
+        for ( Index i = 0; i < length; i++ ) {
+          if ( isMin ) acc[i] = std::min( acc[i], (double) s[i] );
+          else if ( isMax ) acc[i] = std::max( acc[i], (double) s[i] );
+          else acc[i] += s[i];
+        }
+      }
+      std::vector<NumberType> out( (size_t) length );
+      if ( fld == SampleOpt::Mean )
+        for ( Index i = 0; i < length; i++ ) out[i] = (NumberType)( acc[i] / taps );
+      else
+        for ( Index i = 0; i < length; i++ ) out[i] = (NumberType) acc[i];
+      return out;
+    }
+
+    // Otherwise sample a single point via the filter.
+    if ( filt == SampleOpt::Nearest ) {
       if ( dimIndex >= 0 ) pos[dimIndex] = resolveAxis( center, size, SampleOpt::Nearest, edge ).index0;
       return inner();
     }
-
-    // linear + magnify (footprint <= 1): two-tap fractional lerp.
-    if ( op == SampleOpt::Linear && fp <= 1.0 + EPS ) {
-      ResolvedAxis r = resolveAxis( center, size, SampleOpt::Linear, edge );
-      if ( dimIndex >= 0 ) pos[dimIndex] = r.index0;
-      std::vector<NumberType> sampA = inner();
-      if ( r.fraction == 0. || r.index0 == r.index1 ) return sampA;
-      if ( dimIndex >= 0 ) pos[dimIndex] = r.index1;
-      std::vector<NumberType> sampB = inner();
-      for ( Index i = 0; i < length; i++ )
-        sampA[i] = sampA[i] * ( 1. - r.fraction ) + sampB[i] * r.fraction;
-      return sampA;
-    }
-
-    // fold: linear(box-mean) when minifying, or min/max/add at any scale.
-    int taps = (int) std::ceil( fp - EPS );
-    if ( taps < 1 ) taps = 1;
-    if ( taps > MAX_TAPS ) taps = MAX_TAPS;
-    double fpNorm = fp / size;
-    bool isMin = ( op == SampleOpt::Min ), isMax = ( op == SampleOpt::Max );
-    double init = isMin ? INFINITY : isMax ? -INFINITY : 0.;
-    std::vector<double> acc( (size_t) length, init );
-    for ( int t = 0; t < taps; t++ ) {
-      double offset = taps > 1 ? ( ( t + 0.5 ) / taps - 0.5 ) : 0.;
-      if ( dimIndex >= 0 ) pos[dimIndex] = resolveAxis( center + fpNorm * offset, size, SampleOpt::Nearest, edge ).index0;
-      std::vector<NumberType> s = inner();
-      for ( Index i = 0; i < length; i++ ) {
-        if ( isMin ) acc[i] = std::min( acc[i], (double) s[i] );
-        else if ( isMax ) acc[i] = std::max( acc[i], (double) s[i] );
-        else acc[i] += s[i];
-      }
-    }
-    std::vector<NumberType> out( (size_t) length );
-    if ( op == SampleOpt::Linear )
-      for ( Index i = 0; i < length; i++ ) out[i] = (NumberType)( acc[i] / taps );
-    else
-      for ( Index i = 0; i < length; i++ ) out[i] = (NumberType) acc[i];
-    return out;
+    ResolvedAxis r = resolveAxis( center, size, SampleOpt::Linear, edge );
+    if ( dimIndex >= 0 ) pos[dimIndex] = r.index0;
+    std::vector<NumberType> sampA = inner();
+    if ( r.fraction == 0. || r.index0 == r.index1 ) return sampA;
+    if ( dimIndex >= 0 ) pos[dimIndex] = r.index1;
+    std::vector<NumberType> sampB = inner();
+    for ( Index i = 0; i < length; i++ )
+      sampA[i] = sampA[i] * ( 1. - r.fraction ) + sampB[i] * r.fraction;
+    return sampA;
   }
 
-  // Sample `buffer` at `position` with per-axis `combine`/`edges` ops and per-axis
-  // `footprint` (source-texel extent). Returns one value per channel.
+  // Sample `buffer` at `position` with per-axis `filter` (interp) + `fold` (minify
+  // reduce) + `edges` ops and per-axis `footprint`. Returns one value per channel.
   inline std::vector<NumberType> Sample( MatrixBase *buffer, std::vector<double> position,
-      Index dimension = 0, const std::vector<String> &combine = {},
+      Index dimension = 0, const std::vector<String> &filter = {}, const std::vector<String> &fold = {},
       const std::vector<String> &edges = {}, const std::vector<double> &footprint = {} ) {
     Index channels = 1;
     for ( Index d = 0; d < dimension && d < (Index) buffer->dim.size(); d++ )
@@ -209,7 +213,7 @@ namespace ggg {
     }
 
     return sampleCombineAxis( buffer, position, (Index) position.size() - 1,
-        dimension, channels, combine, edges, footprint );
+        dimension, channels, filter, fold, edges, footprint );
   }
 
 }; // namespace ggg

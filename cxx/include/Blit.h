@@ -38,11 +38,16 @@ namespace ggg {
     static const std::vector<String> v = { "box", "affine", "map" };
     return v;
   }
-  // Per-axis combine ops (F arg) and edges (E arg); index order is the contract,
-  // mirrored in ts/ggggx/Sample.ts (CombineList / EdgeList). Index 0 of edges is
-  // "loop" (the user-facing name; the internal string is SampleOpt::Repeat).
-  inline const std::vector<String> & blitCombines() {
-    static const std::vector<String> v = { SampleOpt::Linear, SampleOpt::Nearest, SampleOpt::Min, SampleOpt::Max, SampleOpt::Add };
+  // Per-axis filter (I arg), minify fold (F arg) and edge (E arg) vocabularies;
+  // index order is the contract, mirrored in ts/ggggx/Sample.ts (FilterList /
+  // FoldList / EdgeList). Index 0 of edges is "loop" (user name; internal string
+  // is SampleOpt::Repeat).
+  inline const std::vector<String> & blitFilters() {
+    static const std::vector<String> v = { SampleOpt::Linear, SampleOpt::Nearest };
+    return v;
+  }
+  inline const std::vector<String> & blitFolds() {
+    static const std::vector<String> v = { SampleOpt::None, SampleOpt::Mean, SampleOpt::Min, SampleOpt::Max, SampleOpt::Add };
     return v;
   }
   inline const std::vector<String> & blitEdges() {
@@ -134,7 +139,8 @@ namespace ggg {
     std::vector<Index> offset;
     std::vector<Index> size;
     String op = "set";
-    std::vector<String> combine;     // F: per-axis combine op (continue-last)
+    std::vector<String> filter;      // I: per-axis filter (continue-last)
+    std::vector<String> fold;        // F: per-axis minify fold (continue-last)
     std::vector<String> edges;       // E: per-axis edge (continue-last)
   };
 
@@ -200,10 +206,10 @@ namespace ggg {
       std::vector<double> pos( (size_t) dimension, 0. );
       pos.insert( pos.end(), src.begin(), src.end() );
 
-      // Sample with the per-axis combine op: magnify (footprint <= 1) interpolates
-      // per `combine`; minify (footprint > 1) folds the footprint per `combine`.
+      // Sample per-axis: filter (I) interpolates the point; a fold (F) reduces the
+      // footprint when minifying. The Jacobian footprint drives magnify vs minify.
       std::vector<double> fp = blitFootprint( H, cNorm, destSpatial, srcSpatial, rank );
-      std::vector<NumberType> sampled = Sample( source, pos, dimension, o.combine, o.edges, fp );
+      std::vector<NumberType> sampled = Sample( source, pos, dimension, o.filter, o.fold, o.edges, fp );
 
       std::vector<double> destPos( (size_t) dimension, 0. );
       destPos.insert( destPos.end(), destCoord.begin(), destCoord.end() );
@@ -231,7 +237,8 @@ namespace ggg {
   }
 
   // G40 -- blit between registers. Args: R/L source, W dest, M coeffs, T mode,
-  // P/S region, D channel dim, Q operator, F per-axis combine, E per-axis edge.
+  // P/S region, D channel dim, Q operator, I per-axis filter, F per-axis minify
+  // fold, E per-axis edge.
   class MatrixBlit : public CommandType {
     MatrixBase *source = nullptr;
     MatrixBase *dest = nullptr;
@@ -249,7 +256,8 @@ namespace ggg {
       addArg( Size, "dest region size", "(n+)" );
       addArg( Dimension, "channel dimension count", "(n)" );
       addArg( Operator, "combine operator into dest cell", "(s)" );
-      addArg( Failure, "per-axis combine op (list): 0 linear / 1 nearest / 2 min / 3 max / 4 add", "(*)" );
+      addArg( 'I', "per-axis filter (list): 0 linear / 1 nearest", "(*)" );
+      addArg( Failure, "per-axis minify fold (list): 0 none / 1 mean / 2 min / 3 max / 4 add", "(*)" );
       addArg( Encoding, "per-axis edge (list): 0 loop / 1 hold / 2 mirror / 3 zero", "(*)" );
     }
 
@@ -268,7 +276,8 @@ namespace ggg {
         case Offset:    opt.offset.push_back( (Index) number ); break;
         case Size:      opt.size.push_back( (Index) number ); break;
         case Dimension: opt.dimension = (Index) number; break;
-        case Failure:   opt.combine.push_back( blitOptionByIndex( blitCombines(), number ) ); break;
+        case 'I':       opt.filter.push_back( blitOptionByIndex( blitFilters(), number ) ); break;
+        case Failure:   opt.fold.push_back( blitOptionByIndex( blitFolds(), number ) ); break;
         case Encoding:  opt.edges.push_back( blitOptionByIndex( blitEdges(), number ) ); break;
         default: break;
       }
@@ -280,7 +289,8 @@ namespace ggg {
         case Target:    dest = machine->resolveRegisterByName( string ); break;
         case Storage:   opt.mode = string; break;
         case Operator:  opt.op = string; break;
-        case Failure:   opt.combine.push_back( string ); break;
+        case 'I':       opt.filter.push_back( string ); break;
+        case Failure:   opt.fold.push_back( string ); break;
         case Encoding:  opt.edges.push_back( string ); break;
         default: break;
       }

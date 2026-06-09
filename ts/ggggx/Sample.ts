@@ -13,17 +13,19 @@ interface ResolvedAxis {
   fraction: FloatT
 }
 
-// Per-axis combine operator -- the `F` arg vocabulary (index order is the
-// contract, mirrored in C++). Each axis combines the source texels its footprint
-// covers:
-//   linear  -- weighted average: fractional lerp when magnifying (footprint <= 1),
-//              box-mean when minifying (footprint > 1).
-//   nearest -- the single nearest texel (point): blocky up, point down.
-//   min/max/add -- fold the covered taps (extrema / sum): pooling.
-export const CombineList: string[] = [ Filter.Linear, Filter.Nearest, "min", "max", "add" ]
+// Per-axis sampler vocabularies (index order is the contract, mirrored in C++).
+//   filter (`I` arg) -- how a sample point reads texels: linear (lerp the two
+//                       neighbours) or nearest (point).
+//   fold   (`F` arg) -- how to reduce the footprint when MINIFYING: none (no
+//                       reduction -- just sample the centre via the filter, which
+//                       aliases), mean (box average), min/max (extrema), add (sum).
+//                       Independent of the filter, so `linear` can minify without
+//                       a forced mean, and `mean` is explicit.
+export const FilterList: string[] = [ Filter.Linear, Filter.Nearest ]
+export const FoldList: string[] = [ "none", "mean", "min", "max", "add" ]
 
-// Edge order for the `E` arg (index order is the contract, mirrored in C++).
-// Index 0 = loop (wrap) -- the default; internal string is still Edge.Repeat.
+// Edge order for the `E` arg. Index 0 = loop (wrap) -- the default; internal
+// string is still Edge.Repeat.
 export const EdgeList: string[] = [ Edge.Repeat, Edge.Hold, Edge.Mirror, Edge.Zero ]
 
 // Cap on taps per spatial axis, so a huge footprint stays deterministic + bounded.
@@ -32,7 +34,8 @@ const EPS = 1e-6
 
 export interface SampleOptions {
   dimension?: IntT
-  combine?: string[]    // per spatial axis (continue-last); default linear
+  filter?: string[]     // per spatial axis (continue-last); default linear
+  fold?: string[]       // per spatial axis (continue-last); default none
   edges?: string[]      // per spatial axis (continue-last); default loop (=repeat)
   footprint?: number[]  // per spatial axis, source-texel extent; default 0 (point)
 }
@@ -44,16 +47,18 @@ function pick( list: string[] | undefined, a: IntT, dflt: string ): string {
 }
 
 //
-// N-D separable sampler: at each spatial axis, combine the source texels the
-// destination cell's footprint covers, per that axis's `combine` op -- interpolate
-// up (linear), pick nearest, or fold down (linear=box-mean / min / max / add).
-// Edge handling is per axis (always normalized coords). The leading `dimension`
-// axes are channels, read as one contiguous block. The sampling primitive under
+// N-D separable sampler: at each spatial axis, either sample a point via the
+// `filter` (linear lerp / nearest), or -- when MINIFYING and a `fold` is set --
+// reduce the footprint by point-sampling its taps and folding them (mean / min /
+// max / add). Filter and fold are independent: `none` fold means a minifying
+// `linear` just lerps the centre (aliases), and `mean` is an explicit fold. Edge
+// handling is per axis (always normalized coords). The leading `dimension` axes
+// are channels, read as one contiguous block. The sampling primitive under
 // MatrixBlit (G40).
 //
 export default function Sample( buffer:Matrix, position:VecArg = 0, options:SampleOptions = {} ):number[] {
   const { dim } = buffer
-  const { dimension = 0, combine, edges, footprint } = options
+  const { dimension = 0, filter, fold, edges, footprint } = options
   const pos = toVector( position ).slice()
 
   let channels = 1
@@ -66,7 +71,8 @@ export default function Sample( buffer:Matrix, position:VecArg = 0, options:Samp
 
   function combineAxis( dimIndex:IntT ):number[] {
     const a = dimIndex - dimension
-    const op = pick( combine, a, Filter.Linear )
+    const filt = pick( filter, a, Filter.Linear )
+    const fld = pick( fold, a, "none" )
     const edge = pick( edges, a, Edge.Repeat )
     const fp = footprint ? ( footprint[a] || 0 ) : 0
     const size = max( 1, dim[dimIndex] )
@@ -74,42 +80,40 @@ export default function Sample( buffer:Matrix, position:VecArg = 0, options:Samp
 
     const inner = ():number[] => dimIndex > dimension ? combineAxis( dimIndex - 1 ) : read()
 
-    // nearest: a single tap at the nearest texel.
-    if ( op === Filter.Nearest ) {
+    // MINIFY fold: point-sample the footprint's taps and reduce them (the filter
+    // governs point sampling, not the fold, so a fold integrates raw texels).
+    if ( fld !== "none" && fp > 1 + EPS ) {
+      const taps = max( 1, min( MAX_TAPS, ceil( fp - EPS ) ) )
+      const fpNorm = fp / size
+      const init = fld === "min" ? Infinity : fld === "max" ? -Infinity : 0
+      const acc = new Array( channels ).fill( init )
+      for ( let t = 0; t < taps; t++ ) {
+        const offset = taps > 1 ? ( t + 0.5 ) / taps - 0.5 : 0
+        pos[dimIndex] = resolveAxis( center + fpNorm * offset, size, Filter.Nearest, edge ).index0
+        const s = inner()
+        for ( let i = 0; i < channels; i++ ) {
+          if ( fld === "min" ) acc[i] = min( acc[i], s[i] )
+          else if ( fld === "max" ) acc[i] = max( acc[i], s[i] )
+          else acc[i] += s[i]
+        }
+      }
+      if ( fld === "mean" ) for ( let i = 0; i < channels; i++ ) acc[i] /= taps
+      return acc
+    }
+
+    // Otherwise sample a single point via the filter.
+    if ( filt === Filter.Nearest ) {
       pos[dimIndex] = resolveAxis( center, size, Filter.Nearest, edge ).index0
       return inner()
     }
-
-    // linear + magnify (footprint <= 1): two-tap fractional lerp.
-    if ( op === Filter.Linear && fp <= 1 + EPS ) {
-      const { index0, index1, fraction } = resolveAxis( center, size, Filter.Linear, edge )
-      pos[dimIndex] = index0
-      const sampA = inner()
-      if ( fraction === 0 || index0 === index1 ) return sampA
-      pos[dimIndex] = index1
-      const sampB = inner()
-      for ( let i = 0; i < channels; i++ ) sampA[i] = sampA[i] * ( 1 - fraction ) + sampB[i] * fraction
-      return sampA
-    }
-
-    // fold: linear(box-mean) when minifying, or min/max/add at any scale.
-    // Point-sample the footprint's taps and fold them.
-    const taps = max( 1, min( MAX_TAPS, ceil( fp - EPS ) ) )
-    const fpNorm = fp / size
-    const init = op === "min" ? Infinity : op === "max" ? -Infinity : 0
-    const acc = new Array( channels ).fill( init )
-    for ( let t = 0; t < taps; t++ ) {
-      const offset = taps > 1 ? ( t + 0.5 ) / taps - 0.5 : 0
-      pos[dimIndex] = resolveAxis( center + fpNorm * offset, size, Filter.Nearest, edge ).index0
-      const s = inner()
-      for ( let i = 0; i < channels; i++ ) {
-        if ( op === "min" ) acc[i] = min( acc[i], s[i] )
-        else if ( op === "max" ) acc[i] = max( acc[i], s[i] )
-        else acc[i] += s[i]
-      }
-    }
-    if ( op === Filter.Linear ) for ( let i = 0; i < channels; i++ ) acc[i] /= taps
-    return acc
+    const { index0, index1, fraction } = resolveAxis( center, size, Filter.Linear, edge )
+    pos[dimIndex] = index0
+    const sampA = inner()
+    if ( fraction === 0 || index0 === index1 ) return sampA
+    pos[dimIndex] = index1
+    const sampB = inner()
+    for ( let i = 0; i < channels; i++ ) sampA[i] = sampA[i] * ( 1 - fraction ) + sampB[i] * fraction
+    return sampA
   }
 
   if ( pos.length === 0 ) return read()

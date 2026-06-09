@@ -610,12 +610,14 @@ void test_sample() {
   TEST_ASSERT_EQUAL_FLOAT( 25, ggg::Sample( line, {0.5}, 0, {"linear"} )[0] );   // lerp px1,px2
   TEST_ASSERT_EQUAL_FLOAT( 20, ggg::Sample( line, {0.5}, 0, {"nearest"} )[0] );
   TEST_ASSERT_EQUAL_FLOAT( 10, ggg::Sample( line, {0.0}, 0, {"nearest"} )[0] );
-  // fold over a footprint covering the whole axis
+  // fold (Sample args: filter, fold, edges, footprint) over a whole-axis footprint
   std::vector<double> fp3 = { 3 };
-  TEST_ASSERT_EQUAL_FLOAT( 30, ggg::Sample( line, {0.5}, 0, {"max"},    {}, fp3 )[0] );
-  TEST_ASSERT_EQUAL_FLOAT( 10, ggg::Sample( line, {0.5}, 0, {"min"},    {}, fp3 )[0] );
-  TEST_ASSERT_EQUAL_FLOAT( 60, ggg::Sample( line, {0.5}, 0, {"add"},    {}, fp3 )[0] );
-  TEST_ASSERT_EQUAL_FLOAT( 20, ggg::Sample( line, {0.5}, 0, {"linear"}, {}, fp3 )[0] ); // box-mean
+  TEST_ASSERT_EQUAL_FLOAT( 30, ggg::Sample( line, {0.5}, 0, {}, {"max"},  {}, fp3 )[0] );
+  TEST_ASSERT_EQUAL_FLOAT( 10, ggg::Sample( line, {0.5}, 0, {}, {"min"},  {}, fp3 )[0] );
+  TEST_ASSERT_EQUAL_FLOAT( 60, ggg::Sample( line, {0.5}, 0, {}, {"add"},  {}, fp3 )[0] );
+  TEST_ASSERT_EQUAL_FLOAT( 20, ggg::Sample( line, {0.5}, 0, {}, {"mean"}, {}, fp3 )[0] );
+  // no fold => the filter just samples the centre, footprint ignored
+  TEST_ASSERT_EQUAL_FLOAT( 20, ggg::Sample( line, {0.5}, 0, {"nearest"}, {}, {}, fp3 )[0] );
 
   // 3x3 [1..9]: the in-place pos-mutation quirk => linear-center is 6.25, not 7.0.
   auto *src = new ggg::Matrix<float,false>( {3,3} );
@@ -623,7 +625,7 @@ void test_sample() {
   src->write( {1,2,3,4,5,6,7,8,9} );
   TEST_ASSERT_EQUAL_FLOAT( 5,    ggg::Sample( src, {0.5,0.5}, 0, {"nearest"} )[0] );
   TEST_ASSERT_EQUAL_FLOAT( 6.25, ggg::Sample( src, {0.5,0.5}, 0, {"linear"} )[0] );
-  // per-axis combine: linear on X, nearest on Y -> 5.5
+  // per-axis filter: linear on X, nearest on Y -> 5.5
   TEST_ASSERT_EQUAL_FLOAT( 5.5,  ggg::Sample( src, {0.5,0.5}, 0, {"linear","nearest"} )[0] );
 
   // multi-channel: 3ch x 3px (dimension 1); linear half px0->px1 = [0.5,0.5,0].
@@ -666,38 +668,38 @@ void test_blit() {
 
   // box sub-region [1,3] x [0,3] stretched, nearest (F1)
   m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
-  m.run( "G40 R0 W1 T\"box\" M1,3,0,3 F1\n" );
+  m.run( "G40 R0 W1 T\"box\" M1,3,0,3 I1\n" );
   expect( subregion );
 
   // box flip: a reversed range [2.5,-0.5] mirrors axis 0 left<->right
   m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
-  m.run( "G40 R0 W1 T\"box\" M2.5,-0.5,0,3 F1\n" );
+  m.run( "G40 R0 W1 T\"box\" M2.5,-0.5,0,3 I1\n" );
   expect( flipx );
 
   // map transpose: dest0<-src1, dest1<-src0
   m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
-  m.run( "G40 R0 W1 T\"map\" M1,0,3,0,0,3 F1\n" );
+  m.run( "G40 R0 W1 T\"map\" M1,0,3,0,0,3 I1\n" );
   expect( transpose );
 
   // map rotate 90 CW: swap axes + reverse the swapped-in range
   m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
-  m.run( "G40 R0 W1 T\"map\" M1,2.5,-0.5,0,0,3 F1\n" );
+  m.run( "G40 R0 W1 T\"map\" M1,2.5,-0.5,0,0,3 I1\n" );
   expect( rotcw );
 
   // half-extent box [0,1.5] nearest magnify (F1 = nearest by index)
   m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
-  m.run( "G40 R0 W1 T\"box\" M0,1.5,0,1.5 F1\n" );
+  m.run( "G40 R0 W1 T\"box\" M0,1.5,0,1.5 I1\n" );
   expect( magnify );
 
-  // per-axis combine F0,1: linear on X, nearest on Y
+  // per-axis filter I0,1: linear on X, nearest on Y
   const float perAxis[9] = { 1, 1.5f, 2, 1, 1.5f, 2, 4, 4.5f, 5 };
   m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
-  m.run( "G40 R0 W1 T\"box\" M0,1.5,0,1.5 F0,1\n" );
+  m.run( "G40 R0 W1 T\"box\" M0,1.5,0,1.5 I0,1\n" );
   expect( perAxis );
 
-  // names compose (comma-separated quoted strings): F"linear","nearest" == F0,1
+  // names compose (comma-separated quoted strings): I"linear","nearest" == I0,1
   m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
-  m.run( "G40 R0 W1 T\"box\" M0,1.5,0,1.5 F\"linear\",\"nearest\"\n" );
+  m.run( "G40 R0 W1 T\"box\" M0,1.5,0,1.5 I\"linear\",\"nearest\"\n" );
   expect( perAxis );
 
   // operator add onto a dest pre-filled with 10 (default full-source blit)
@@ -705,15 +707,21 @@ void test_blit() {
   m.run( "G40 R0 W1 Q\"add\"\n" );
   expect( added );
 
-  // minify: oversized box [0,6], default linear box-mean (anti-alias), hold edge (E1)
+  // minify, lerp with NO fold (1.5x box): footprint ignored, centre is just lerped
   m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
-  m.run( "G40 R0 W1 T\"box\" M0,6,0,6 E1\n" );
-  const float minified[9] = { 1, 2.75f, 3, 5.5f, 7.25f, 7.5f, 7, 8.75f, 9 };
-  expect( minified );
+  m.run( "G40 R0 W1 T\"box\" M0,4.5,0,4.5 E1\n" );
+  const float minLerp[9] = { 1, 2.5f, 3, 5.5f, 7.25f, 7.5f, 7, 8.5f, 9 };
+  expect( minLerp );
 
-  // minify: separable per-axis pool F3,0 = max-pool X, mean-pool Y (hold edge E1)
+  // minify, explicit mean fold (2x box) anti-aliases the footprint
   m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
-  m.run( "G40 R0 W1 T\"box\" M0,6,0,6 F3,0 E1\n" );
+  m.run( "G40 R0 W1 T\"box\" M0,6,0,6 F1 E1\n" );
+  const float minMean[9] = { 1, 2.75f, 3, 5.5f, 7.25f, 7.5f, 7, 8.75f, 9 };
+  expect( minMean );
+
+  // minify: separable per-axis fold F3,1 = max-pool X, mean-pool Y (hold edge E1)
+  m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
+  m.run( "G40 R0 W1 T\"box\" M0,6,0,6 F3,1 E1\n" );
   const float pooled[9] = { 1, 3, 3, 5.5f, 7.5f, 7.5f, 7, 9, 9 };
   expect( pooled );
 
