@@ -1,20 +1,8 @@
 import Matrix from "../ggg/Matrix"
-import Sample, { SampleReduce, ReduceList } from "./Sample"
+import Sample from "./Sample"
 import { OperatorApply } from "./Operators"
 import { DimIterate } from "../ggg/Dim"
 import { isString } from "../common/util"
-import { Filter, Edge, Coord } from "./GXLanguage"
-
-// Sampler option vocabularies (index order); each option accepts an index or a name.
-const FilterList: string[] = [ Filter.Linear, Filter.Nearest ]
-const EdgeList: string[]   = [ Edge.Hold, Edge.Repeat, Edge.Mirror, Edge.Zero ]
-const CoordList: string[]  = [ Coord.Normalized, Coord.Pixel, Coord.Fence ]
-
-function resolveOption( value: string | number | undefined, list: string[] ): string | undefined {
-  if ( value === undefined ) return undefined
-  if ( typeof value === "number" ) return list[ value ]
-  return value
-}
 
 //
 // MatrixBlit: copy from a source matrix into a destination through a spatial
@@ -61,10 +49,8 @@ export interface BlitOptions {
   offset?: number[]               // dest region offset (spatial)
   size?: number[]                 // dest region size (spatial)
   operator?: string | number      // combine sampled value into dest cell (Q)
-  filter?: string | number
-  edge?: string | number
-  coord?: string | number
-  reduce?: string | number        // minification fold (mid/min/max/add); off = point sample
+  combine?: string[]              // per-axis sampler combine op (F): linear/nearest/min/max/add
+  edges?: string[]               // per-axis edge (E): loop/hold/mirror/zero
 }
 
 // Row-major (rank+1) x (rank+1) identity.
@@ -175,13 +161,7 @@ export function Blit( dest: Matrix, source: Matrix, options: BlitOptions = {} ):
   const mode = resolveMode( options.mode )
   const M = options.matrix ?? []
   const operator = options.operator ?? "set"
-  const reduce = resolveOption( options.reduce, ReduceList )
-  const sampleOpts = {
-    dimension,
-    filter: resolveOption( options.filter, FilterList ),
-    edge: resolveOption( options.edge, EdgeList ),
-    coord: resolveOption( options.coord, CoordList ),
-  }
+  const { combine, edges } = options
 
   const rank = dest.dim.length - dimension
   const destSpatial = dest.dim.slice( dimension )
@@ -201,12 +181,10 @@ export function Blit( dest: Matrix, source: Matrix, options: BlitOptions = {} ):
     // Inverse-map to a normalized source coordinate.
     const src = applyHomogeneous( H, c, rank )
 
-    // With a reduce op, integrate the transform-derived footprint (minification);
-    // otherwise point/interpolated sample. SampleReduce degrades to a point
-    // sample when the footprint is <= 1 texel, so no separate branch is needed.
-    const sampled = reduce
-      ? SampleReduce( source, channelPrefix.concat( src ), footprintOf( H, c, destSpatial, srcSpatial, rank ), reduce, sampleOpts )
-      : Sample( source, channelPrefix.concat( src ), sampleOpts ) as number[]
+    // Sample with the per-axis combine op: magnify (footprint <= 1) interpolates
+    // per `combine`; minify (footprint > 1) folds the footprint per `combine`.
+    const footprint = footprintOf( H, c, destSpatial, srcSpatial, rank )
+    const sampled = Sample( source, channelPrefix.concat( src ), { dimension, combine, edges, footprint } )
 
     const destPos = channelPrefix.concat( destCoord )
     for ( let ch = 0; ch < sampled.length; ch++ ) {

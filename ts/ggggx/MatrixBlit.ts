@@ -2,6 +2,7 @@ import { GGG, Hooks, HookArgs } from "../ggg/Language"
 import { isString, isNumber, toInt } from "../common/util"
 import Matrix from "../ggg/Matrix"
 import { Blit, BlitOptions } from "./Blit"
+import { CombineList, EdgeList } from "./Sample"
 
 //
 // MatrixBlit (G40): copy from a SOURCE register into a DESTINATION register
@@ -19,8 +20,11 @@ import { Blit, BlitOptions } from "./Blit"
 //   P / S   -- dest region offset / size (default whole dest spatial extent)
 //   D       -- channel-dimension count (default 0 = all axes spatial)
 //   Q       -- operator combining the sampled value into the dest cell (default set)
-//   E       -- sampler options, positional: [ filter, edge, coord, reduce ]
-//             ( each index | name; reduce = minification fold mid/min/max/add )
+//   F       -- per-axis combine op (list, continue-last): 0 linear / 1 nearest /
+//             2 min / 3 max / 4 add. Interp up, fold (pool) down. (Failure glyph
+//             reused contextually.)
+//   E       -- per-axis edge (list, continue-last): 0 loop / 1 hold / 2 mirror /
+//             3 zero. (Encoding glyph reused contextually -- G40 has no encoding.)
 //
 
 function reset( state: { [key: string]: any } ) {
@@ -32,7 +36,13 @@ function reset( state: { [key: string]: any } ) {
   state.blitSize = []
   state.dimension = undefined
   state.operator = undefined
-  state.eopts = []
+  state.combine = []   // F: per-axis combine op names
+  state.edges = []     // E: per-axis edge names
+}
+
+// Map an arg value (index or name) to an option name via the index-order list.
+function optName( value: number | string, list: string[] ): string {
+  return isNumber( value ) ? ( list[ value ] ?? list[0] ) : ( value as string )
 }
 
 function MatrixBlitHookCommand( arg: HookArgs ) {
@@ -69,8 +79,11 @@ function MatrixBlitHookValue( arg: HookArgs ) {
     case GGG.Operator:
       state.operator = value
       break
-    case GGG.Encoding:
-      state.eopts.push( value )
+    case GGG.Failure:   // F -- per-axis combine op (list)
+      state.combine.push( optName( value, CombineList ) )
+      break
+    case GGG.Encoding:  // E -- per-axis edge (list)
+      state.edges.push( optName( value, EdgeList ) )
       break
   }
 }
@@ -86,7 +99,6 @@ function MatrixBlitHookEnd( arg: HookArgs ) {
     return
   }
 
-  const [ filter, edge, coord, reduce ] = state.eopts
   const options: BlitOptions = {
     dimension: state.dimension,
     mode: state.mode,
@@ -94,10 +106,8 @@ function MatrixBlitHookEnd( arg: HookArgs ) {
     offset: state.blitOffset.length ? state.blitOffset : undefined,
     size: state.blitSize.length ? state.blitSize : undefined,
     operator: state.operator,
-    filter,
-    edge,
-    coord,
-    reduce,
+    combine: state.combine.length ? state.combine : undefined,
+    edges: state.edges.length ? state.edges : undefined,
   }
 
   Blit( dest, source, options )

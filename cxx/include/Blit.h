@@ -38,16 +38,15 @@ namespace ggg {
     static const std::vector<String> v = { "box", "affine", "map" };
     return v;
   }
-  inline const std::vector<String> & blitFilters() {
-    static const std::vector<String> v = { SampleOpt::Linear, SampleOpt::Nearest };
+  // Per-axis combine ops (F arg) and edges (E arg); index order is the contract,
+  // mirrored in ts/ggggx/Sample.ts (CombineList / EdgeList). Index 0 of edges is
+  // "loop" (the user-facing name; the internal string is SampleOpt::Repeat).
+  inline const std::vector<String> & blitCombines() {
+    static const std::vector<String> v = { SampleOpt::Linear, SampleOpt::Nearest, SampleOpt::Min, SampleOpt::Max, SampleOpt::Add };
     return v;
   }
   inline const std::vector<String> & blitEdges() {
-    static const std::vector<String> v = { SampleOpt::Hold, SampleOpt::Repeat, SampleOpt::Mirror, SampleOpt::Zero };
-    return v;
-  }
-  inline const std::vector<String> & blitCoords() {
-    static const std::vector<String> v = { SampleOpt::Normalized, SampleOpt::Pixel, SampleOpt::Fence };
+    static const std::vector<String> v = { SampleOpt::Repeat, SampleOpt::Hold, SampleOpt::Mirror, SampleOpt::Zero };
     return v;
   }
 
@@ -135,8 +134,8 @@ namespace ggg {
     std::vector<Index> offset;
     std::vector<Index> size;
     String op = "set";
-    String filter, edge, coord;
-    String reduce;                   // minification fold; empty => point sample
+    std::vector<String> combine;     // F: per-axis combine op (continue-last)
+    std::vector<String> edges;       // E: per-axis edge (continue-last)
   };
 
   // Footprint (source texels, per spatial axis) covered by one dest texel, via a
@@ -201,15 +200,10 @@ namespace ggg {
       std::vector<double> pos( (size_t) dimension, 0. );
       pos.insert( pos.end(), src.begin(), src.end() );
 
-      // With a reduce op, integrate the transform-derived footprint (minification);
-      // SampleReduce degrades to a point sample when the footprint is <= 1 texel.
-      std::vector<NumberType> sampled;
-      if ( !o.reduce.empty() ) {
-        std::vector<double> fp = blitFootprint( H, cNorm, destSpatial, srcSpatial, rank );
-        sampled = SampleReduce( source, pos, fp, o.reduce, dimension, o.filter, o.edge, o.coord );
-      } else {
-        sampled = Sample( source, pos, dimension, o.filter, o.edge, o.coord );
-      }
+      // Sample with the per-axis combine op: magnify (footprint <= 1) interpolates
+      // per `combine`; minify (footprint > 1) folds the footprint per `combine`.
+      std::vector<double> fp = blitFootprint( H, cNorm, destSpatial, srcSpatial, rank );
+      std::vector<NumberType> sampled = Sample( source, pos, dimension, o.combine, o.edges, fp );
 
       std::vector<double> destPos( (size_t) dimension, 0. );
       destPos.insert( destPos.end(), destCoord.begin(), destCoord.end() );
@@ -237,12 +231,11 @@ namespace ggg {
   }
 
   // G40 -- blit between registers. Args: R/L source, W dest, M coeffs, T mode,
-  // P/S region, D channel dim, Q operator, E sampler options [filter,edge,coord].
+  // P/S region, D channel dim, Q operator, F per-axis combine, E per-axis edge.
   class MatrixBlit : public CommandType {
     MatrixBase *source = nullptr;
     MatrixBase *dest = nullptr;
     BlitOptions opt;
-    int eIndex = 0;
   public:
     MatrixBlit() {
       name = "G40";
@@ -256,23 +249,12 @@ namespace ggg {
       addArg( Size, "dest region size", "(n+)" );
       addArg( Dimension, "channel dimension count", "(n)" );
       addArg( Operator, "combine operator into dest cell", "(s)" );
-      addArg( Encoding, "sampler options: filter, edge, coord, reduce", "(*)" );
+      addArg( Failure, "per-axis combine op (list): 0 linear / 1 nearest / 2 min / 3 max / 4 add", "(*)" );
+      addArg( Encoding, "per-axis edge (list): 0 loop / 1 hold / 2 mirror / 3 zero", "(*)" );
     }
 
     void hookCommand() override {
-      source = nullptr; dest = nullptr; opt = BlitOptions(); eIndex = 0; okay = 1;
-    }
-
-    // E is positional: 0 = filter, 1 = edge, 2 = coord, 3 = reduce (index or name).
-    void applyEOption( bool isNum, double num, const String &str ) {
-      switch ( eIndex ) {
-        case 0: opt.filter = isNum ? blitOptionByIndex( blitFilters(), num )      : str; break;
-        case 1: opt.edge   = isNum ? blitOptionByIndex( blitEdges(), num )        : str; break;
-        case 2: opt.coord  = isNum ? blitOptionByIndex( blitCoords(), num )       : str; break;
-        case 3: opt.reduce = isNum ? blitOptionByIndex( sampleReduceList(), num ) : str; break;
-        default: break;
-      }
-      eIndex++;
+      source = nullptr; dest = nullptr; opt = BlitOptions(); okay = 1;
     }
 
     void hookNumber() override {
@@ -286,7 +268,8 @@ namespace ggg {
         case Offset:    opt.offset.push_back( (Index) number ); break;
         case Size:      opt.size.push_back( (Index) number ); break;
         case Dimension: opt.dimension = (Index) number; break;
-        case Encoding:  applyEOption( true, number, "" ); break;
+        case Failure:   opt.combine.push_back( blitOptionByIndex( blitCombines(), number ) ); break;
+        case Encoding:  opt.edges.push_back( blitOptionByIndex( blitEdges(), number ) ); break;
         default: break;
       }
     }
@@ -297,7 +280,8 @@ namespace ggg {
         case Target:    dest = machine->resolveRegisterByName( string ); break;
         case Storage:   opt.mode = string; break;
         case Operator:  opt.op = string; break;
-        case Encoding:  applyEOption( false, 0, string ); break;
+        case Failure:   opt.combine.push_back( string ); break;
+        case Encoding:  opt.edges.push_back( string ); break;
         default: break;
       }
     }

@@ -602,40 +602,39 @@ void test_flow_iteration() {
 // Note the in-place pos-mutation quirk -- the second descent on an inner axis
 // reads the integer-rounded coordinate, so linear-center is 6.25, not 7.0.
 void test_sample() {
+  // 1-D buffer [10,20,30] (normalized coords; val = pos * size).
+  auto *line = new ggg::Matrix<float,false>( {3} );
+  line->allocate();
+  line->write( {10,20,30} );
+  TEST_ASSERT_EQUAL_FLOAT( 10, ggg::Sample( line, {0.0}, 0, {"linear"} )[0] );
+  TEST_ASSERT_EQUAL_FLOAT( 25, ggg::Sample( line, {0.5}, 0, {"linear"} )[0] );   // lerp px1,px2
+  TEST_ASSERT_EQUAL_FLOAT( 20, ggg::Sample( line, {0.5}, 0, {"nearest"} )[0] );
+  TEST_ASSERT_EQUAL_FLOAT( 10, ggg::Sample( line, {0.0}, 0, {"nearest"} )[0] );
+  // fold over a footprint covering the whole axis
+  std::vector<double> fp3 = { 3 };
+  TEST_ASSERT_EQUAL_FLOAT( 30, ggg::Sample( line, {0.5}, 0, {"max"},    {}, fp3 )[0] );
+  TEST_ASSERT_EQUAL_FLOAT( 10, ggg::Sample( line, {0.5}, 0, {"min"},    {}, fp3 )[0] );
+  TEST_ASSERT_EQUAL_FLOAT( 60, ggg::Sample( line, {0.5}, 0, {"add"},    {}, fp3 )[0] );
+  TEST_ASSERT_EQUAL_FLOAT( 20, ggg::Sample( line, {0.5}, 0, {"linear"}, {}, fp3 )[0] ); // box-mean
+
+  // 3x3 [1..9]: the in-place pos-mutation quirk => linear-center is 6.25, not 7.0.
   auto *src = new ggg::Matrix<float,false>( {3,3} );
   src->allocate();
   src->write( {1,2,3,4,5,6,7,8,9} );
+  TEST_ASSERT_EQUAL_FLOAT( 5,    ggg::Sample( src, {0.5,0.5}, 0, {"nearest"} )[0] );
+  TEST_ASSERT_EQUAL_FLOAT( 6.25, ggg::Sample( src, {0.5,0.5}, 0, {"linear"} )[0] );
+  // per-axis combine: linear on X, nearest on Y -> 5.5
+  TEST_ASSERT_EQUAL_FLOAT( 5.5,  ggg::Sample( src, {0.5,0.5}, 0, {"linear","nearest"} )[0] );
 
-  auto s = [&]( std::vector<double> p, ggg::Index dim, const char *f, const char *e, const char *c ) {
-    return ggg::Sample( src, p, dim, f, e, c );
-  };
-  TEST_ASSERT_EQUAL_FLOAT( 5,      s( {0.5,0.5},   0, "nearest", "repeat", "normalized" )[0] );
-  TEST_ASSERT_EQUAL_FLOAT( 1,      s( {0,0},       0, "nearest", "repeat", "normalized" )[0] );
-  TEST_ASSERT_EQUAL_FLOAT( 6.25,   s( {0.5,0.5},   0, "linear",  "repeat", "normalized" )[0] );
-  TEST_ASSERT_EQUAL_FLOAT( 4.9375, s( {0.25,0.25}, 0, "linear",  "hold",   "normalized" )[0] );
-  TEST_ASSERT_EQUAL_FLOAT( 4.25,   s( {1.5,0.5},   0, "linear",  "hold",   "pixel" )[0] );
-  TEST_ASSERT_EQUAL_FLOAT( 5,      s( {0.5,0.5},   0, "linear",  "hold",   "fence" )[0] );
-  TEST_ASSERT_EQUAL_FLOAT( 1,      s( {-0.5,0},    0, "nearest", "hold",   "normalized" )[0] );
-
-  // 2-channel 1-D image: dim [2,3] = 2ch x 3px; pos = [channel0, x].
-  auto *src2 = new ggg::Matrix<float,false>( {2,3} );
-  src2->allocate();
-  src2->write( {10,11, 20,21, 30,31} );
-  auto r = ggg::Sample( src2, {0,0.5}, 1, "nearest", "repeat", "normalized" );
-  TEST_ASSERT_EQUAL_INT( 2, (int) r.size() );
-  TEST_ASSERT_EQUAL_FLOAT( 20, r[0] );
-  TEST_ASSERT_EQUAL_FLOAT( 21, r[1] );
-  auto r2 = ggg::Sample( src2, {0,0.25}, 1, "linear", "hold", "normalized" );
-  TEST_ASSERT_EQUAL_FLOAT( 17.5, r2[0] );
-  TEST_ASSERT_EQUAL_FLOAT( 18.5, r2[1] );
-
-  // SampleReduce: a [3,3] footprint with nearest covers all 9 cells exactly, so
-  // add=45, mid=5 (mean), max=9, min=1 (hand-verified against the TS SampleReduce).
-  std::vector<double> fp = { 3, 3 };
-  TEST_ASSERT_EQUAL_FLOAT( 45, ggg::SampleReduce( src, {0.5,0.5}, fp, "add", 0, "nearest", "repeat", "normalized" )[0] );
-  TEST_ASSERT_EQUAL_FLOAT( 5,  ggg::SampleReduce( src, {0.5,0.5}, fp, "mid", 0, "nearest", "repeat", "normalized" )[0] );
-  TEST_ASSERT_EQUAL_FLOAT( 9,  ggg::SampleReduce( src, {0.5,0.5}, fp, "max", 0, "nearest", "repeat", "normalized" )[0] );
-  TEST_ASSERT_EQUAL_FLOAT( 1,  ggg::SampleReduce( src, {0.5,0.5}, fp, "min", 0, "nearest", "repeat", "normalized" )[0] );
+  // multi-channel: 3ch x 3px (dimension 1); linear half px0->px1 = [0.5,0.5,0].
+  auto *rgb = new ggg::Matrix<float,false>( {3,3} );
+  rgb->allocate();
+  rgb->write( {1,0,0, 0,1,0, 0,0,1} );
+  auto c = ggg::Sample( rgb, {0, 1.0/6}, 1, {"linear"} );
+  TEST_ASSERT_EQUAL_INT( 3, (int) c.size() );
+  TEST_ASSERT_EQUAL_FLOAT( 0.5, c[0] );
+  TEST_ASSERT_EQUAL_FLOAT( 0.5, c[1] );
+  TEST_ASSERT_EQUAL_FLOAT( 0.0, c[2] );
 }
 
 // MatrixBlit (G40) end-to-end: drive the command and check the destination.
@@ -665,46 +664,53 @@ void test_blit() {
   m.run( "G40 R0 W1\n" );
   expect( ident );
 
-  // box sub-region [1,3] x [0,3] stretched, nearest
+  // box sub-region [1,3] x [0,3] stretched, nearest (F1)
   m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
-  m.run( "G40 R0 W1 T\"box\" M1,3,0,3 E\"nearest\"\n" );
+  m.run( "G40 R0 W1 T\"box\" M1,3,0,3 F1\n" );
   expect( subregion );
 
   // box flip: a reversed range [2.5,-0.5] mirrors axis 0 left<->right
   m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
-  m.run( "G40 R0 W1 T\"box\" M2.5,-0.5,0,3 E\"nearest\"\n" );
+  m.run( "G40 R0 W1 T\"box\" M2.5,-0.5,0,3 F1\n" );
   expect( flipx );
 
   // map transpose: dest0<-src1, dest1<-src0
   m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
-  m.run( "G40 R0 W1 T\"map\" M1,0,3,0,0,3 E\"nearest\"\n" );
+  m.run( "G40 R0 W1 T\"map\" M1,0,3,0,0,3 F1\n" );
   expect( transpose );
 
   // map rotate 90 CW: swap axes + reverse the swapped-in range
   m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
-  m.run( "G40 R0 W1 T\"map\" M1,2.5,-0.5,0,0,3 E\"nearest\"\n" );
+  m.run( "G40 R0 W1 T\"map\" M1,2.5,-0.5,0,0,3 F1\n" );
   expect( rotcw );
 
-  // half-extent box [0,1.5] nearest magnify (filter by name)
+  // half-extent box [0,1.5] nearest magnify (F1 = nearest by index)
   m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
-  m.run( "G40 R0 W1 T\"box\" M0,1.5,0,1.5 E\"nearest\"\n" );
+  m.run( "G40 R0 W1 T\"box\" M0,1.5,0,1.5 F1\n" );
   expect( magnify );
 
-  // box by index (T0) + filter by index (1 = nearest)
+  // per-axis combine F0,1: linear on X, nearest on Y
+  const float perAxis[9] = { 1, 1.5f, 2, 1, 1.5f, 2, 4, 4.5f, 5 };
   m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
-  m.run( "G40 R0 W1 T0 M0,1.5,0,1.5 E1\n" );
-  expect( magnify );
+  m.run( "G40 R0 W1 T\"box\" M0,1.5,0,1.5 F0,1\n" );
+  expect( perAxis );
 
   // operator add onto a dest pre-filled with 10 (default full-source blit)
   m.run( "G20 R1 V10,10,10,10,10,10,10,10,10\n" );
   m.run( "G40 R0 W1 Q\"add\"\n" );
   expect( added );
 
-  // minify: oversized box [0,6] + mid reduce (E0,0,0,0 = linear, hold, normalized, reduce=mid)
+  // minify: oversized box [0,6], default linear box-mean (anti-alias), hold edge (E1)
   m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
-  m.run( "G40 R0 W1 T\"box\" M0,6,0,6 E0,0,0,0\n" );
-  const float minified[9] = { 2.1875f, 3.5625f, 3.75f, 6.6875f, 8.0625f, 8.25f, 7.25f, 8.75f, 9 };
+  m.run( "G40 R0 W1 T\"box\" M0,6,0,6 E1\n" );
+  const float minified[9] = { 1, 2.75f, 3, 5.5f, 7.25f, 7.5f, 7, 8.75f, 9 };
   expect( minified );
+
+  // minify: separable per-axis pool F3,0 = max-pool X, mean-pool Y (hold edge E1)
+  m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
+  m.run( "G40 R0 W1 T\"box\" M0,6,0,6 F3,0 E1\n" );
+  const float pooled[9] = { 1, 3, 3, 5.5f, 7.5f, 7.5f, 7, 9, 9 };
+  expect( pooled );
 
   // missing source register -> OZ
   m.out.clear();

@@ -47,12 +47,6 @@ export enum Edge {
   Zero = "zero",
 }
 
-export enum Coord {
-  Normalized = "normalized",
-  Pixel = "pixel",
-  Fence = "fence",
-}
-
 export enum GXCommandNumbers {
   MatrixList = CC.List,
   MatrixListResponse = CC.ListResponse,

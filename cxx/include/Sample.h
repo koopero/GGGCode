@@ -2,35 +2,34 @@
 
 #include <cmath>
 #include <vector>
+#include <string>
 #include <algorithm>
 #include "./Types.h"
 #include "./Dim.h"
 #include "./Matrix.h"
 
 //
-// N-D separable interpolating sampler -- faithful port of ts/ggggx/Sample.ts.
-// Reads a (possibly multi-channel) sample from a matrix at a fractional
-// position, with selectable Filter (linear/nearest), Edge (hold/repeat/mirror/
-// zero) and Coord (normalized/pixel/fence) behaviour. The leading `dimension`
-// axes are channel axes (read as one contiguous block); the rest are spatial
-// and interpolated. This is the sampling primitive under MatrixBlit (G40).
-//
-// Option names mirror the TS Filter/Edge/Coord enums (ts/ggggx/GXLanguage.ts).
-// Empty string => the TS default (linear / repeat / normalized).
+// N-D separable sampler -- faithful port of ts/ggggx/Sample.ts. At each spatial
+// axis it combines the source texels the destination cell's footprint covers, per
+// that axis's `combine` op: linear interpolates up (footprint <= 1) and box-means
+// down (footprint > 1); nearest is a point; min/max/add fold (pool). Edge handling
+// (loop/hold/mirror/zero) is per axis; coordinates are always normalized. The
+// leading `dimension` axes are channels, read as one contiguous block. This is the
+// sampling primitive under MatrixBlit (G40).
 //
 
 namespace ggg {
 
   namespace SampleOpt {
-    constexpr const char *Linear     = "linear";
-    constexpr const char *Nearest    = "nearest";
-    constexpr const char *Hold       = "hold";
-    constexpr const char *Repeat     = "repeat";
-    constexpr const char *Mirror     = "mirror";
-    constexpr const char *Zero       = "zero";
-    constexpr const char *Normalized = "normalized";
-    constexpr const char *Pixel      = "pixel";
-    constexpr const char *Fence      = "fence";
+    constexpr const char *Linear  = "linear";
+    constexpr const char *Nearest = "nearest";
+    constexpr const char *Hold    = "hold";
+    constexpr const char *Repeat  = "repeat";   // = "loop" (the E arg index-0 name)
+    constexpr const char *Mirror  = "mirror";
+    constexpr const char *Zero    = "zero";
+    constexpr const char *Min     = "min";
+    constexpr const char *Max     = "max";
+    constexpr const char *Add     = "add";
   }
 
   struct ResolvedAxis {
@@ -64,19 +63,14 @@ namespace ggg {
     return offset < 0 ? -1 : (Index) offset;
   }
 
-  inline ResolvedAxis resolveAxis( double val, Index size,
-      const String &filter, const String &edge, const String &coord ) {
+  // Resolve a normalized axis position to texel index(es). `filter` only chooses 1
+  // vs 2 taps (nearest vs linear) + the fraction; `edge` clamps/wraps. Coordinate
+  // modes (pixel/fence) were dropped -- always normalized (norm = size).
+  inline ResolvedAxis resolveAxis( double val, Index size, const String &filter, const String &edge ) {
     ResolvedAxis axis { 0, 0, 0. };
 
     if ( size < 1 ) size = 1;
-
-    double norm = size;
-    if ( coord == SampleOpt::Fence )
-      norm = ( filter == SampleOpt::Linear ) ? (double)( size - 1 ) : (double) size;
-    else if ( coord == SampleOpt::Pixel )
-      norm = 1.;
-
-    val *= norm;
+    val *= size;
     axis.index0 = (Index) std::floor( val );
 
     if ( edge == SampleOpt::Zero ) {
@@ -86,7 +80,7 @@ namespace ggg {
     } else if ( edge == SampleOpt::Mirror ) {
       bool mirrored = ( (long) std::floor( val / size ) ) % 2 == 0;
       axis.index0 = mirrored ? sampleMod( axis.index0, size ) : size - 1 - sampleMod( axis.index0, size );
-    } else { // Repeat (default)
+    } else { // Repeat (loop)
       axis.index0 = sampleMod( axis.index0, size );
     }
 
@@ -103,17 +97,17 @@ namespace ggg {
       } else if ( edge == SampleOpt::Mirror ) {
         bool mirrored = ( (long) std::floor( ( val + 1 ) / size ) ) % 2 == 0;
         axis.index1 = mirrored ? sampleMod( axis.index1, size ) : size - 1 - sampleMod( axis.index1, size );
-      } else { // Repeat (default)
+      } else { // Repeat (loop)
         axis.index1 = sampleMod( axis.index1, size );
+        if ( axis.index1 < 0 ) axis.index1 += size;
       }
     }
 
     return axis;
   }
 
-  // Read `length` contiguous channel scalars from the flat offset of `pos`.
-  // (Out-of-range => 0; the TS Matrix.read leaves the slot at its default, which
-  // for the realistic non-zero-edge paths never happens.)
+  // Read `length` contiguous channel scalars from the flat offset of `pos`
+  // (out-of-range => 0).
   inline void sampleReadChannels( MatrixBase *buffer, const std::vector<double> &pos,
       Index length, std::vector<NumberType> &out ) {
     Index offset = sampleOffset( buffer->dim, pos );
@@ -121,43 +115,88 @@ namespace ggg {
       out[k] = ( offset >= 0 ) ? buffer->readScalarFloat( offset + k, 0. ) : 0.;
   }
 
-  inline std::vector<NumberType> sampleComputeAxis( MatrixBase *buffer, std::vector<double> &pos,
-      Index dimIndex, Index dimension, Index length,
-      const String &filter, const String &edge, const String &coord ) {
-    double position = ( dimIndex >= 0 && dimIndex < (Index) pos.size() ) ? pos[dimIndex] : 0.;
-    Index axisSize = ( dimIndex >= 0 && dimIndex < (Index) buffer->dim.size() ) ? buffer->dim[dimIndex] : 1;
-    ResolvedAxis r = resolveAxis( position, axisSize, filter, edge, coord );
-
-    if ( dimIndex >= 0 ) pos[dimIndex] = r.index0;
-    std::vector<NumberType> sampA( length, 0. );
-    if ( dimIndex > dimension )
-      sampA = sampleComputeAxis( buffer, pos, dimIndex - 1, dimension, length, filter, edge, coord );
-    else
-      sampleReadChannels( buffer, pos, length, sampA );
-
-    if ( r.fraction == 0. || r.index0 == r.index1 )
-      return sampA;
-
-    if ( dimIndex >= 0 ) pos[dimIndex] = r.index1;
-    std::vector<NumberType> sampB( length, 0. );
-    if ( dimIndex > dimension )
-      sampB = sampleComputeAxis( buffer, pos, dimIndex - 1, dimension, length, filter, edge, coord );
-    else
-      sampleReadChannels( buffer, pos, length, sampB );
-
-    for ( Index i = 0; i < length; i++ )
-      sampA[i] = sampA[i] * ( 1. - r.fraction ) + sampB[i] * r.fraction;
-    return sampA;
+  // Continue-last pick from a per-axis option list (one value broadcasts to all).
+  inline const String & samplePick( const std::vector<String> &list, int a, const String &dflt ) {
+    if ( list.empty() ) return dflt;
+    if ( a < 0 ) a = 0;
+    if ( a >= (int) list.size() ) a = (int) list.size() - 1;
+    return list[a];
   }
 
-  // Sample `buffer` at fractional `position`. Returns one value per channel
-  // (channels = product of the leading `dimension` axis sizes; >=1).
-  inline std::vector<NumberType> Sample( MatrixBase *buffer, std::vector<double> position,
-      Index dimension = 1, String filter = "", String edge = "", String coord = "" ) {
-    if ( filter.empty() ) filter = SampleOpt::Linear;
-    if ( edge.empty() ) edge = SampleOpt::Repeat;
-    if ( coord.empty() ) coord = SampleOpt::Normalized;
+  inline std::vector<NumberType> sampleCombineAxis( MatrixBase *buffer, std::vector<double> &pos,
+      Index dimIndex, Index dimension, Index length,
+      const std::vector<String> &combine, const std::vector<String> &edges, const std::vector<double> &footprint ) {
+    static const String dfltCombine = SampleOpt::Linear;
+    static const String dfltEdge = SampleOpt::Repeat;
+    const int MAX_TAPS = 8;
+    const double EPS = 1e-6;
 
+    int a = (int) dimIndex - (int) dimension;
+    const String &op = samplePick( combine, a, dfltCombine );
+    const String &edge = samplePick( edges, a, dfltEdge );
+    double fp = ( a >= 0 && a < (int) footprint.size() ) ? footprint[a] : 0.;
+    Index size = ( dimIndex >= 0 && dimIndex < (Index) buffer->dim.size() ) ? buffer->dim[dimIndex] : 1;
+    if ( size < 1 ) size = 1;
+    double center = ( dimIndex >= 0 && dimIndex < (Index) pos.size() ) ? pos[dimIndex] : 0.;
+
+    auto inner = [&]() -> std::vector<NumberType> {
+      if ( dimIndex > dimension )
+        return sampleCombineAxis( buffer, pos, dimIndex - 1, dimension, length, combine, edges, footprint );
+      std::vector<NumberType> out( length, 0. );
+      sampleReadChannels( buffer, pos, length, out );
+      return out;
+    };
+
+    // nearest: a single tap at the nearest texel.
+    if ( op == SampleOpt::Nearest ) {
+      if ( dimIndex >= 0 ) pos[dimIndex] = resolveAxis( center, size, SampleOpt::Nearest, edge ).index0;
+      return inner();
+    }
+
+    // linear + magnify (footprint <= 1): two-tap fractional lerp.
+    if ( op == SampleOpt::Linear && fp <= 1.0 + EPS ) {
+      ResolvedAxis r = resolveAxis( center, size, SampleOpt::Linear, edge );
+      if ( dimIndex >= 0 ) pos[dimIndex] = r.index0;
+      std::vector<NumberType> sampA = inner();
+      if ( r.fraction == 0. || r.index0 == r.index1 ) return sampA;
+      if ( dimIndex >= 0 ) pos[dimIndex] = r.index1;
+      std::vector<NumberType> sampB = inner();
+      for ( Index i = 0; i < length; i++ )
+        sampA[i] = sampA[i] * ( 1. - r.fraction ) + sampB[i] * r.fraction;
+      return sampA;
+    }
+
+    // fold: linear(box-mean) when minifying, or min/max/add at any scale.
+    int taps = (int) std::ceil( fp - EPS );
+    if ( taps < 1 ) taps = 1;
+    if ( taps > MAX_TAPS ) taps = MAX_TAPS;
+    double fpNorm = fp / size;
+    bool isMin = ( op == SampleOpt::Min ), isMax = ( op == SampleOpt::Max );
+    double init = isMin ? INFINITY : isMax ? -INFINITY : 0.;
+    std::vector<double> acc( (size_t) length, init );
+    for ( int t = 0; t < taps; t++ ) {
+      double offset = taps > 1 ? ( ( t + 0.5 ) / taps - 0.5 ) : 0.;
+      if ( dimIndex >= 0 ) pos[dimIndex] = resolveAxis( center + fpNorm * offset, size, SampleOpt::Nearest, edge ).index0;
+      std::vector<NumberType> s = inner();
+      for ( Index i = 0; i < length; i++ ) {
+        if ( isMin ) acc[i] = std::min( acc[i], (double) s[i] );
+        else if ( isMax ) acc[i] = std::max( acc[i], (double) s[i] );
+        else acc[i] += s[i];
+      }
+    }
+    std::vector<NumberType> out( (size_t) length );
+    if ( op == SampleOpt::Linear )
+      for ( Index i = 0; i < length; i++ ) out[i] = (NumberType)( acc[i] / taps );
+    else
+      for ( Index i = 0; i < length; i++ ) out[i] = (NumberType) acc[i];
+    return out;
+  }
+
+  // Sample `buffer` at `position` with per-axis `combine`/`edges` ops and per-axis
+  // `footprint` (source-texel extent). Returns one value per channel.
+  inline std::vector<NumberType> Sample( MatrixBase *buffer, std::vector<double> position,
+      Index dimension = 0, const std::vector<String> &combine = {},
+      const std::vector<String> &edges = {}, const std::vector<double> &footprint = {} ) {
     Index channels = 1;
     for ( Index d = 0; d < dimension && d < (Index) buffer->dim.size(); d++ )
       channels *= buffer->dim[d];
@@ -169,81 +208,8 @@ namespace ggg {
       return out;
     }
 
-    return sampleComputeAxis( buffer, position, (Index) position.size() - 1,
-        dimension, channels, filter, edge, coord );
-  }
-
-  // Reduce (minification) operators for SampleReduce's footprint fold. Index
-  // order is the contract for the E sampler-options slot 3 (mirrors ts ReduceList).
-  inline const std::vector<String> & sampleReduceList() {
-    static const std::vector<String> v = { "mid", "min", "max", "add" };
-    return v;
-  }
-
-  // Minification: integrate the source over a footprint box around `position`
-  // (extent in source texels, per spatial axis) and fold the covered samples with
-  // a reduce op -- mid (mean) / min / max / add (sum). Walks a taps-per-axis grid
-  // (taps = clamp(ceil(footprint),1,MAX_TAPS)); footprint <= 1 => a single point
-  // sample. Faithful port of ts/ggggx/Sample.ts SampleReduce.
-  inline std::vector<NumberType> SampleReduce( MatrixBase *buffer, std::vector<double> position,
-      const std::vector<double> &footprint, const String &reduce, Index dimension = 0,
-      String filter = "", String edge = "", String coord = "" ) {
-    const int MAX_TAPS = 8;
-
-    Index channels = 1;
-    for ( Index d = 0; d < dimension && d < (Index) buffer->dim.size(); d++ )
-      channels *= buffer->dim[d];
-    if ( channels < 1 ) channels = 1;
-
-    int rank = (int) position.size() - dimension;
-    if ( rank < 0 ) rank = 0;
-
-    std::vector<int> taps( (size_t) rank, 1 );
-    for ( int a = 0; a < rank; a++ ) {
-      double f = ( a < (int) footprint.size() ) ? footprint[a] : 1.;
-      int t = (int) std::ceil( f );
-      if ( t < 1 ) t = 1;
-      if ( t > MAX_TAPS ) t = MAX_TAPS;
-      taps[a] = t;
-    }
-
-    double init = ( reduce == "min" ) ? INFINITY : ( reduce == "max" ) ? -INFINITY : 0.;
-    std::vector<double> acc( (size_t) channels, init );
-    long count = 0;
-
-    std::vector<int> combo( (size_t) rank, 0 );
-    bool more = true;
-    while ( more ) {
-      std::vector<double> pos = position;
-      for ( int a = 0; a < rank; a++ ) {
-        Index srcSize = ( dimension + a < (Index) buffer->dim.size() ) ? buffer->dim[ dimension + a ] : 1;
-        if ( srcSize < 1 ) srcSize = 1;
-        double fpNorm = ( ( a < (int) footprint.size() ) ? footprint[a] : 0. ) / srcSize;
-        double t = taps[a] > 1 ? ( ( combo[a] + 0.5 ) / taps[a] - 0.5 ) : 0.;
-        pos[ dimension + a ] += fpNorm * t;
-      }
-      std::vector<NumberType> s = Sample( buffer, pos, dimension, filter, edge, coord );
-      for ( Index ch = 0; ch < channels; ch++ ) {
-        double v = s[ch];
-        if ( reduce == "min" ) acc[ch] = std::min( acc[ch], v );
-        else if ( reduce == "max" ) acc[ch] = std::max( acc[ch], v );
-        else acc[ch] += v;                                  // add + mid both sum
-      }
-      count++;
-
-      more = false;
-      for ( int i = 0; i < rank; i++ ) {
-        if ( ++combo[i] < taps[i] ) { more = true; break; }
-        combo[i] = 0;
-      }
-    }
-
-    if ( reduce == "mid" && count > 0 )
-      for ( Index ch = 0; ch < channels; ch++ ) acc[ch] /= count;
-
-    std::vector<NumberType> out( (size_t) channels );
-    for ( Index ch = 0; ch < channels; ch++ ) out[ch] = (NumberType) acc[ch];
-    return out;
+    return sampleCombineAxis( buffer, position, (Index) position.size() - 1,
+        dimension, channels, combine, edges, footprint );
   }
 
 }; // namespace ggg

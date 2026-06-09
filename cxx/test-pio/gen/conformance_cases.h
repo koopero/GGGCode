@@ -21,12 +21,13 @@ namespace ggg_conformance {
   static const double values_blit_affine_identity[] = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0 };
   static const double values_blit_mode_by_index[] = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0 };
   static const double values_blit_magnify_nearest[] = { 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 4.0, 4.0, 5.0 };
-  static const double values_blit_filter_by_index[] = { 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 4.0, 4.0, 5.0 };
   static const double values_blit_magnify_linear[] = { 1.0, 1.5000000000000000, 2.0, 2.5000000000000000, 2.7500000000000000, 3.0, 4.0, 4.5000000000000000, 5.0 };
+  static const double values_blit_combine_per_axis[] = { 1.0, 1.5000000000000000, 2.0, 1.0, 1.5000000000000000, 2.0, 4.0, 4.5000000000000000, 5.0 };
   static const double values_blit_translate_hold[] = { 2.0, 3.0, 3.0, 5.0, 6.0, 6.0, 8.0, 9.0, 9.0 };
   static const double values_blit_operator_add[] = { 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0 };
-  static const double values_blit_minify_mid[] = { 2.1875000000000000, 3.5625000000000000, 3.7500000000000000, 6.6875000000000000, 8.0625000000000000, 8.2500000000000000, 7.2500000000000000, 8.7500000000000000, 9.0 };
+  static const double values_blit_minify_linear[] = { 1.0, 2.7500000000000000, 3.0, 5.5000000000000000, 7.2500000000000000, 7.5000000000000000, 7.0, 8.7500000000000000, 9.0 };
   static const double values_blit_minify_max[] = { 1.0, 3.0, 3.0, 7.0, 9.0, 9.0, 7.0, 9.0, 9.0 };
+  static const double values_blit_minify_pool[] = { 1.0, 3.0, 3.0, 5.5000000000000000, 7.5000000000000000, 7.5000000000000000, 7.0, 9.0, 9.0 };
   static const double values_flow_define_run[] = { 42.0 };
   static const double values_flow_nested[] = { 7.0 };
   static const double values_cond_all_true[] = { 42.0 };
@@ -98,25 +99,26 @@ namespace ggg_conformance {
   constexpr Case cases[] = {
     { "blit_box_default", "G40 R\"bs\" W\"bd\"\nG10 R\"bd\"\n", "OK", values_blit_box_default, 9, nullptr },
     { "blit_box_full", "G40 R\"bs\" W\"bd\" T\"box\" M0,3,0,3\nG10 R\"bd\"\n", "OK", values_blit_box_full, 9, nullptr },
-    { "blit_box_subregion", "G40 R\"bs\" W\"bd\" T\"box\" M1,3,0,3 E\"nearest\"\nG10 R\"bd\"\n", "OK", values_blit_box_subregion, 9, nullptr },
-    { "blit_box_flip_x", "G40 R\"bs\" W\"bd\" T\"box\" M2.5,-0.5,0,3 E\"nearest\"\nG10 R\"bd\"\n", "OK", values_blit_box_flip_x, 9, nullptr },
-    { "blit_box_flip_y", "G40 R\"bs\" W\"bd\" T\"box\" M0,3,2.5,-0.5 E\"nearest\"\nG10 R\"bd\"\n", "OK", values_blit_box_flip_y, 9, nullptr },
-    { "blit_box_flip_180", "G40 R\"bs\" W\"bd\" T\"box\" M2.5,-0.5,2.5,-0.5 E\"nearest\"\nG10 R\"bd\"\n", "OK", values_blit_box_flip_180, 9, nullptr },
-    { "blit_map_axes", "G40 R\"bs\" W\"bd\" T\"map\" M0,0,3,1,1,3 E\"nearest\"\nG10 R\"bd\"\n", "OK", values_blit_map_axes, 9, nullptr },
+    { "blit_box_subregion", "G40 R\"bs\" W\"bd\" T\"box\" M1,3,0,3 F1\nG10 R\"bd\"\n", "OK", values_blit_box_subregion, 9, nullptr },
+    { "blit_box_flip_x", "G40 R\"bs\" W\"bd\" T\"box\" M2.5,-0.5,0,3 F1\nG10 R\"bd\"\n", "OK", values_blit_box_flip_x, 9, nullptr },
+    { "blit_box_flip_y", "G40 R\"bs\" W\"bd\" T\"box\" M0,3,2.5,-0.5 F1\nG10 R\"bd\"\n", "OK", values_blit_box_flip_y, 9, nullptr },
+    { "blit_box_flip_180", "G40 R\"bs\" W\"bd\" T\"box\" M2.5,-0.5,2.5,-0.5 F1\nG10 R\"bd\"\n", "OK", values_blit_box_flip_180, 9, nullptr },
+    { "blit_map_axes", "G40 R\"bs\" W\"bd\" T\"map\" M0,0,3,1,1,3 F1\nG10 R\"bd\"\n", "OK", values_blit_map_axes, 9, nullptr },
     { "blit_map_default", "G40 R\"bs\" W\"bd\" T\"map\"\nG10 R\"bd\"\n", "OK", values_blit_map_default, 9, nullptr },
-    { "blit_map_transpose", "G40 R\"bs\" W\"bd\" T\"map\" M1,0,3,0,0,3 E\"nearest\"\nG10 R\"bd\"\n", "OK", values_blit_map_transpose, 9, nullptr },
-    { "blit_map_rotate_cw", "G40 R\"bs\" W\"bd\" T\"map\" M1,2.5,-0.5,0,0,3 E\"nearest\"\nG10 R\"bd\"\n", "OK", values_blit_map_rotate_cw, 9, nullptr },
-    { "blit_map_rotate_ccw", "G40 R\"bs\" W\"bd\" T\"map\" M1,0,3,0,2.5,-0.5 E\"nearest\"\nG10 R\"bd\"\n", "OK", values_blit_map_rotate_ccw, 9, nullptr },
-    { "blit_map_by_index", "G40 R\"bs\" W\"bd\" T2 M0,1,3 E\"nearest\"\nG10 R\"bd\"\n", "OK", values_blit_map_by_index, 9, nullptr },
+    { "blit_map_transpose", "G40 R\"bs\" W\"bd\" T\"map\" M1,0,3,0,0,3 F1\nG10 R\"bd\"\n", "OK", values_blit_map_transpose, 9, nullptr },
+    { "blit_map_rotate_cw", "G40 R\"bs\" W\"bd\" T\"map\" M1,2.5,-0.5,0,0,3 F1\nG10 R\"bd\"\n", "OK", values_blit_map_rotate_cw, 9, nullptr },
+    { "blit_map_rotate_ccw", "G40 R\"bs\" W\"bd\" T\"map\" M1,0,3,0,2.5,-0.5 F1\nG10 R\"bd\"\n", "OK", values_blit_map_rotate_ccw, 9, nullptr },
+    { "blit_map_by_index", "G40 R\"bs\" W\"bd\" T2 M0,1,3 F1\nG10 R\"bd\"\n", "OK", values_blit_map_by_index, 9, nullptr },
     { "blit_affine_identity", "G40 R\"bs\" W\"bd\" T\"affine\" M1,0,0,0,1,0\nG10 R\"bd\"\n", "OK", values_blit_affine_identity, 9, nullptr },
     { "blit_mode_by_index", "G40 R\"bs\" W\"bd\" T1 M1,0,0,0,1,0\nG10 R\"bd\"\n", "OK", values_blit_mode_by_index, 9, nullptr },
-    { "blit_magnify_nearest", "G40 R\"bs\" W\"bd\" T\"box\" M0,1.5,0,1.5 E\"nearest\"\nG10 R\"bd\"\n", "OK", values_blit_magnify_nearest, 9, nullptr },
-    { "blit_filter_by_index", "G40 R\"bs\" W\"bd\" T0 M0,1.5,0,1.5 E1\nG10 R\"bd\"\n", "OK", values_blit_filter_by_index, 9, nullptr },
+    { "blit_magnify_nearest", "G40 R\"bs\" W\"bd\" T\"box\" M0,1.5,0,1.5 F1\nG10 R\"bd\"\n", "OK", values_blit_magnify_nearest, 9, nullptr },
     { "blit_magnify_linear", "G40 R\"bs\" W\"bd\" T\"box\" M0,1.5,0,1.5\nG10 R\"bd\"\n", "OK", values_blit_magnify_linear, 9, nullptr },
-    { "blit_translate_hold", "G40 R\"bs\" W\"bd\" T\"box\" M1.2,4.2,0,3 E1,0\nG10 R\"bd\"\n", "OK", values_blit_translate_hold, 9, nullptr },
+    { "blit_combine_per_axis", "G40 R\"bs\" W\"bd\" T\"box\" M0,1.5,0,1.5 F0,1\nG10 R\"bd\"\n", "OK", values_blit_combine_per_axis, 9, nullptr },
+    { "blit_translate_hold", "G40 R\"bs\" W\"bd\" T\"box\" M1.2,4.2,0,3 F1 E1\nG10 R\"bd\"\n", "OK", values_blit_translate_hold, 9, nullptr },
     { "blit_operator_add", "G20 R\"bd\" V10,10,10,10,10,10,10,10,10\nG40 R\"bs\" W\"bd\" Q\"add\"\nG10 R\"bd\"\n", "OK", values_blit_operator_add, 9, nullptr },
-    { "blit_minify_mid", "G40 R\"bs\" W\"bd\" T\"box\" M0,6,0,6 E0,0,0,0\nG10 R\"bd\"\n", "OK", values_blit_minify_mid, 9, nullptr },
-    { "blit_minify_max", "G40 R\"bs\" W\"bd\" T\"box\" M0,6,0,6 E1,0,0,2\nG10 R\"bd\"\n", "OK", values_blit_minify_max, 9, nullptr },
+    { "blit_minify_linear", "G40 R\"bs\" W\"bd\" T\"box\" M0,6,0,6 E1\nG10 R\"bd\"\n", "OK", values_blit_minify_linear, 9, nullptr },
+    { "blit_minify_max", "G40 R\"bs\" W\"bd\" T\"box\" M0,6,0,6 F3 E1\nG10 R\"bd\"\n", "OK", values_blit_minify_max, 9, nullptr },
+    { "blit_minify_pool", "G40 R\"bs\" W\"bd\" T\"box\" M0,6,0,6 F3,0 E1\nG10 R\"bd\"\n", "OK", values_blit_minify_pool, 9, nullptr },
     { "flow_define_only", "T10 L\"p\"\nP10 V42\nT0\n", "", nullptr, 0, nullptr },
     { "flow_define_run", "T10 L\"p\"\nP10 V42\nT0\nT11 L\"p\"\n", "OK", values_flow_define_run, 1, nullptr },
     { "flow_unknown", "T11 L\"nope\"\n", "OZ", nullptr, 0, nullptr },

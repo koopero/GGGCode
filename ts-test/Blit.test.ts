@@ -1,7 +1,6 @@
 import { describe, test, expect } from "@jest/globals"
 import Matrix from "../ts/ggg/Matrix"
 import { Blit, buildTransform, applyHomogeneous } from "../ts/ggggx/Blit"
-import { SampleReduce } from "../ts/ggggx/Sample"
 
 function mk( dim: number[], data?: number[] ) {
   return new Matrix( { dim, data: data ?? new Array( dim.reduce( ( a, b ) => a * b, 1 ) ).fill( 0 ) } )
@@ -43,63 +42,55 @@ describe( "Blit", () => {
 
   test( "half-extent box [0,1.5] nearest magnifies the top-left", () => {
     const d = mk( [ 3, 3 ] )
-    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "box", matrix: [ 0, 1.5, 0, 1.5 ], filter: "nearest" } )
+    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "box", matrix: [ 0, 1.5, 0, 1.5 ], combine: [ "nearest" ] } )
     expect( d.data ).toEqual( [ 1, 1, 2, 1, 1, 2, 4, 4, 5 ] )
   } )
 
   test( "box sub-region [1,3] selects + stretches source columns 1..3 (nearest)", () => {
     const d = mk( [ 3, 3 ] )
-    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "box", matrix: [ 1, 3, 0, 3 ], filter: "nearest" } )
+    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "box", matrix: [ 1, 3, 0, 3 ], combine: [ "nearest" ] } )
     expect( d.data ).toEqual( [ 2, 2, 3, 5, 5, 6, 8, 8, 9 ] )
   } )
 
   test( "map points each dest axis at a source axis (srcAxis,min,max) -- generalizes box", () => {
     // dest0<-src0 full, dest1<-src1 [1,3]  ==  box [0,3,1,3]
     const a = mk( [ 3, 3 ] )
-    Blit( a, mk( [ 3, 3 ], srcData ), { mode: "map", matrix: [ 0, 0, 3, 1, 1, 3 ], filter: "nearest" } )
+    Blit( a, mk( [ 3, 3 ], srcData ), { mode: "map", matrix: [ 0, 0, 3, 1, 1, 3 ], combine: [ "nearest" ] } )
     expect( a.data ).toEqual( [ 4, 5, 6, 4, 5, 6, 7, 8, 9 ] )
   } )
 
   test( "map swaps axes -> transpose, and swap+reverse -> a quarter-turn rotation", () => {
     const t = mk( [ 3, 3 ] )           // dest0<-src1, dest1<-src0 = transpose
-    Blit( t, mk( [ 3, 3 ], srcData ), { mode: "map", matrix: [ 1, 0, 3, 0, 0, 3 ], filter: "nearest" } )
+    Blit( t, mk( [ 3, 3 ], srcData ), { mode: "map", matrix: [ 1, 0, 3, 0, 0, 3 ], combine: [ "nearest" ] } )
     expect( t.data ).toEqual( [ 1, 4, 7, 2, 5, 8, 3, 6, 9 ] )
     const r = mk( [ 3, 3 ] )           // dest0<-src1 reversed, dest1<-src0 = 90 deg CW
-    Blit( r, mk( [ 3, 3 ], srcData ), { mode: "map", matrix: [ 1, 2.5, -0.5, 0, 0, 3 ], filter: "nearest" } )
+    Blit( r, mk( [ 3, 3 ], srcData ), { mode: "map", matrix: [ 1, 2.5, -0.5, 0, 0, 3 ], combine: [ "nearest" ] } )
     expect( r.data ).toEqual( [ 7, 4, 1, 8, 5, 2, 9, 6, 3 ] )
   } )
 
   test( "axis-0 shifted box (nearest, hold) shifts along the innermost axis", () => {
     const d = mk( [ 3, 3 ] )
     // box [1.2,4.2] on axis 0 == old scale 1 + translate 0.4 (1.2/3); held at edge.
-    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "box", matrix: [ 1.2, 4.2, 0, 3 ], filter: "nearest", edge: "hold" } )
+    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "box", matrix: [ 1.2, 4.2, 0, 3 ], combine: [ "nearest" ], edges: [ "hold" ] } )
     expect( d.data ).toEqual( [ 2, 3, 3, 5, 6, 6, 8, 9, 9 ] )
   } )
 
-  test( "oversized box [0,6] + mid reduce minifies (mean over a 2-texel footprint)", () => {
+  test( "per-axis combine: linear on X, nearest on Y (F0,1) -- smooth columns, stepped rows", () => {
     const d = mk( [ 3, 3 ] )
-    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "box", matrix: [ 0, 6, 0, 6 ], edge: "hold", reduce: "mid" } )
-    expect( d.data.map( ( v: number ) => +v.toFixed( 4 ) ) )
-      .toEqual( [ 2.1875, 3.5625, 3.75, 6.6875, 8.0625, 8.25, 7.25, 8.75, 9 ] )
+    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "box", matrix: [ 0, 1.5, 0, 1.5 ], combine: [ "linear", "nearest" ] } )
+    expect( d.data ).toEqual( [ 1, 1.5, 2, 1, 1.5, 2, 4, 4.5, 5 ] )
   } )
 
-  describe( "SampleReduce", () => {
-    // taps cover the whole image (footprint [3,3], nearest) -> the 9 cells exactly.
-    const src = mk( [ 3, 3 ], srcData )
-    const opt = { dimension: 0, filter: "nearest", edge: "repeat", coord: "normalized" }
-    test( "add sums the footprint", () => {
-      expect( SampleReduce( src, [ 0.5, 0.5 ], [ 3, 3 ], "add", opt ) ).toEqual( [ 45 ] )
-    } )
-    test( "mid is the arithmetic mean", () => {
-      expect( SampleReduce( src, [ 0.5, 0.5 ], [ 3, 3 ], "mid", opt ) ).toEqual( [ 5 ] )
-    } )
-    test( "max / min are the extrema", () => {
-      expect( SampleReduce( src, [ 0.5, 0.5 ], [ 3, 3 ], "max", opt ) ).toEqual( [ 9 ] )
-      expect( SampleReduce( src, [ 0.5, 0.5 ], [ 3, 3 ], "min", opt ) ).toEqual( [ 1 ] )
-    } )
-    test( "footprint <= 1 degrades to a point sample", () => {
-      expect( SampleReduce( src, [ 0.5, 0.5 ], [ 1, 1 ], "mid", opt ) ).toEqual( [ 5 ] )
-    } )
+  test( "minify: linear box-means the footprint (anti-aliases) on a 2x oversized box", () => {
+    const d = mk( [ 3, 3 ] )
+    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "box", matrix: [ 0, 6, 0, 6 ], edges: [ "hold" ] } )
+    expect( d.data ).toEqual( [ 1, 2.75, 3, 5.5, 7.25, 7.5, 7, 8.75, 9 ] )
+  } )
+
+  test( "minify: separable per-axis pool F3,0 -- max-pool X, mean-pool Y", () => {
+    const d = mk( [ 3, 3 ] )
+    Blit( d, mk( [ 3, 3 ], srcData ), { mode: "box", matrix: [ 0, 6, 0, 6 ], combine: [ "max", "linear" ], edges: [ "hold" ] } )
+    expect( d.data ).toEqual( [ 1, 3, 3, 5.5, 7.5, 7.5, 7, 9, 9 ] )
   } )
 
   test( "buildTransform / applyHomogeneous: box maps the pixel rect to normalized source", () => {

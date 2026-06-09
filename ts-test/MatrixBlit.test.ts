@@ -42,30 +42,29 @@ describe( "MatrixBlit (G40)", () => {
       .toEqual( [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ] )
   } )
 
-  test( "box sub-region [1,3] selects + stretches source columns (nearest)", async () => {
-    expect( await blit( 'G40 R0 W1 T"box" M1,3,0,3 E"nearest"' ) )
+  test( "box sub-region [1,3] selects + stretches source columns (nearest, F1)", async () => {
+    expect( await blit( 'G40 R0 W1 T"box" M1,3,0,3 F1' ) )
       .toEqual( [ 2, 2, 3, 5, 5, 6, 8, 8, 9 ] )
   } )
 
   test( "map transposes by pointing each dest axis at the other source axis", async () => {
-    expect( await blit( 'G40 R0 W1 T"map" M1,0,3,0,0,3 E"nearest"' ) )
+    expect( await blit( 'G40 R0 W1 T"map" M1,0,3,0,0,3 F1' ) )
       .toEqual( [ 1, 4, 7, 2, 5, 8, 3, 6, 9 ] )
   } )
 
   test( "map rotates a quarter turn (swap axes + reverse one range)", async () => {
-    expect( await blit( 'G40 R0 W1 T"map" M1,2.5,-0.5,0,0,3 E"nearest"' ) )
+    expect( await blit( 'G40 R0 W1 T"map" M1,2.5,-0.5,0,0,3 F1' ) )
       .toEqual( [ 7, 4, 1, 8, 5, 2, 9, 6, 3 ] )
   } )
 
-  test( "half-extent box [0,1.5] nearest magnifies the top-left (filter by name)", async () => {
-    // E positional: [ filter, edge, coord ]; nearest filter.
-    expect( await blit( 'G40 R0 W1 T"box" M0,1.5,0,1.5 E"nearest"' ) )
+  test( "half-extent box [0,1.5] nearest magnifies the top-left (F1 = nearest)", async () => {
+    expect( await blit( 'G40 R0 W1 T"box" M0,1.5,0,1.5 F1' ) )
       .toEqual( [ 1, 1, 2, 1, 1, 2, 4, 4, 5 ] )
   } )
 
-  test( "filter by index (1 = nearest) magnifies; box by index (T0)", async () => {
-    expect( await blit( "G40 R0 W1 T0 M0,1.5,0,1.5 E1" ) )
-      .toEqual( [ 1, 1, 2, 1, 1, 2, 4, 4, 5 ] )
+  test( "per-axis combine F0,1: linear on X, nearest on Y", async () => {
+    expect( await blit( 'G40 R0 W1 T"box" M0,1.5,0,1.5 F0,1' ) )
+      .toEqual( [ 1, 1.5, 2, 1, 1.5, 2, 4, 4.5, 5 ] )
   } )
 
   test( "operator add accumulates onto the destination", async () => {
@@ -82,11 +81,13 @@ describe( "MatrixBlit (G40)", () => {
     expect( [ ...dest.data ] ).toEqual( [ 11, 12, 13, 14, 15, 16, 17, 18, 19 ] )
   } )
 
-  test( "oversized box [0,6] + mid reduce minifies (E slot 3 = reduce, by index)", async () => {
-    // E0,0,0,0 = linear, hold, normalized, reduce=mid (ReduceList index 0).
-    expect( await blit( 'G40 R0 W1 T"box" M0,6,0,6 E0,0,0,0' )
-      .then( d => d.map( v => +v.toFixed( 4 ) ) ) )
-      .toEqual( [ 2.1875, 3.5625, 3.75, 6.6875, 8.0625, 8.25, 7.25, 8.75, 9 ] )
+  test( "minify: default linear box-means; F3 max-pools; F3,0 pools per axis (hold edge E1)", async () => {
+    expect( await blit( 'G40 R0 W1 T"box" M0,6,0,6 E1' ) )
+      .toEqual( [ 1, 2.75, 3, 5.5, 7.25, 7.5, 7, 8.75, 9 ] )
+    expect( await blit( 'G40 R0 W1 T"box" M0,6,0,6 F3 E1' ) )
+      .toEqual( [ 1, 3, 3, 7, 9, 9, 7, 9, 9 ] )
+    expect( await blit( 'G40 R0 W1 T"box" M0,6,0,6 F3,0 E1' ) )
+      .toEqual( [ 1, 3, 3, 5.5, 7.5, 7.5, 7, 9, 9 ] )
   } )
 
   test( "missing source register reports OZ", async () => {
