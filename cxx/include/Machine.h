@@ -241,6 +241,16 @@ namespace ggg {
         return;
       }
 
+      // A comma here can only follow a just-closed quoted string (a string value
+      // is delivered at its closing quote, leaving Code mode). Continue the value
+      // list under the same code, so E"a","b" delivers both strings -- mirrors the
+      // TS parser + the number-list comma in parseEndOfNumber. Without this the
+      // comma and everything after it are dropped.
+      if ( _char == Comma ) {
+        resetEncoding();
+        return;
+      }
+
       if (( _char >= 'a' && _char <= 'z' ) || ( _char >= 'A' && _char <= 'Z' )) {
         _char = std::toupper(_char);
         state.code = _char;

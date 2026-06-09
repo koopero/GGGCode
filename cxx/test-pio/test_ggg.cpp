@@ -695,6 +695,11 @@ void test_blit() {
   m.run( "G40 R0 W1 T\"box\" M0,1.5,0,1.5 F0,1\n" );
   expect( perAxis );
 
+  // names compose (comma-separated quoted strings): F"linear","nearest" == F0,1
+  m.run( "G20 R1 V0,0,0,0,0,0,0,0,0\n" );
+  m.run( "G40 R0 W1 T\"box\" M0,1.5,0,1.5 F\"linear\",\"nearest\"\n" );
+  expect( perAxis );
+
   // operator add onto a dest pre-filled with 10 (default full-source blit)
   m.run( "G20 R1 V10,10,10,10,10,10,10,10,10\n" );
   m.run( "G40 R0 W1 Q\"add\"\n" );

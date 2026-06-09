@@ -23,6 +23,7 @@ namespace ggg_conformance {
   static const double values_blit_magnify_nearest[] = { 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 4.0, 4.0, 5.0 };
   static const double values_blit_magnify_linear[] = { 1.0, 1.5000000000000000, 2.0, 2.5000000000000000, 2.7500000000000000, 3.0, 4.0, 4.5000000000000000, 5.0 };
   static const double values_blit_combine_per_axis[] = { 1.0, 1.5000000000000000, 2.0, 1.0, 1.5000000000000000, 2.0, 4.0, 4.5000000000000000, 5.0 };
+  static const double values_blit_combine_by_name[] = { 1.0, 1.5000000000000000, 2.0, 1.0, 1.5000000000000000, 2.0, 4.0, 4.5000000000000000, 5.0 };
   static const double values_blit_translate_hold[] = { 2.0, 3.0, 3.0, 5.0, 6.0, 6.0, 8.0, 9.0, 9.0 };
   static const double values_blit_operator_add[] = { 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0 };
   static const double values_blit_minify_linear[] = { 1.0, 2.7500000000000000, 3.0, 5.5000000000000000, 7.2500000000000000, 7.5000000000000000, 7.0, 8.7500000000000000, 9.0 };
@@ -114,6 +115,7 @@ namespace ggg_conformance {
     { "blit_magnify_nearest", "G40 R\"bs\" W\"bd\" T\"box\" M0,1.5,0,1.5 F1\nG10 R\"bd\"\n", "OK", values_blit_magnify_nearest, 9, nullptr },
     { "blit_magnify_linear", "G40 R\"bs\" W\"bd\" T\"box\" M0,1.5,0,1.5\nG10 R\"bd\"\n", "OK", values_blit_magnify_linear, 9, nullptr },
     { "blit_combine_per_axis", "G40 R\"bs\" W\"bd\" T\"box\" M0,1.5,0,1.5 F0,1\nG10 R\"bd\"\n", "OK", values_blit_combine_per_axis, 9, nullptr },
+    { "blit_combine_by_name", "G40 R\"bs\" W\"bd\" T\"box\" M0,1.5,0,1.5 F\"linear\",\"nearest\"\nG10 R\"bd\"\n", "OK", values_blit_combine_by_name, 9, nullptr },
     { "blit_translate_hold", "G40 R\"bs\" W\"bd\" T\"box\" M1.2,4.2,0,3 F1 E1\nG10 R\"bd\"\n", "OK", values_blit_translate_hold, 9, nullptr },
     { "blit_operator_add", "G20 R\"bd\" V10,10,10,10,10,10,10,10,10\nG40 R\"bs\" W\"bd\" Q\"add\"\nG10 R\"bd\"\n", "OK", values_blit_operator_add, 9, nullptr },
     { "blit_minify_linear", "G40 R\"bs\" W\"bd\" T\"box\" M0,6,0,6 E1\nG10 R\"bd\"\n", "OK", values_blit_minify_linear, 9, nullptr },

@@ -4,11 +4,11 @@
 
 Each case is one artifact wearing four hats: a behavioural **spec**, a piece of **documentation**, a runnable **example**, and a cross-engine conformance **test**. The contract is the decoded `values` stream within a global epsilon; `status` is the control response. Cases are grouped below by `tag` (a case appears under each tag it carries).
 
-95 cases across 23 tags.
+96 cases across 23 tags.
 
 ## Tags
 
-- [blit](#blit) (22)
+- [blit](#blit) (23)
 - [conditionals](#conditionals) (6)
 - [decimals](#decimals) (7)
 - [flip](#flip) (3)
@@ -232,6 +232,18 @@ F is per-axis: F0,1 = linear on X (smooth, fractional), nearest on Y (blocky) --
 
 ```
 G40 R"bs" W"bd" T"box" M0,1.5,0,1.5 F0,1
+G10 R"bd"
+```
+
+- values: `[1,1.5,2,1,1.5,2,4,4.5,5]`
+- needs: `ggggx`
+
+### blit_combine_by_name
+
+Per-axis options also take names: F"linear","nearest" == F0,1 (a comma-separated quoted-string list, which parses identically in both engines).
+
+```
+G40 R"bs" W"bd" T"box" M0,1.5,0,1.5 F"linear","nearest"
 G10 R"bd"
 ```
 
