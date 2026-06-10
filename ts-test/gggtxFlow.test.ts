@@ -54,9 +54,9 @@ describe( "gggtx procedures", () => {
     expect( out ).toEqual( "V2\nOK" )
   } )
 
-  test( "running an unknown procedure returns O0", async () => {
+  test( "running an unknown procedure reports failure", async () => {
     const out = await runFlow( 'T11 L"nope"' )
-    expect( out ).toEqual( "OZ" )
+    expect( out ).toEqual( "OK F6" )   // OK (id 1) + F6 = GGGFail.ProcedureNotFound
   } )
 
   test( "nested definition is captured as source and runs only when outer runs", async () => {
@@ -119,7 +119,7 @@ describe( "gggtx procedures", () => {
       "T0",
       'T11 L"big"',
     ].join( "\n" ) )
-    expect( normalizeOutput( out ) ).toEqual( "OZ" )
+    expect( normalizeOutput( out ) ).toEqual( "OK F2" )   // OK (id 1) + F2 = GGGFail.QueueOverflow
   } )
 } )
 
@@ -137,9 +137,9 @@ describe( "gggtx conditionals", () => {
     expect( await runFlow( "T9 A1,0\nP10 V42\nT0" ) ).toEqual( "" )
   } )
 
-  test( "T9 O runs if any value is truthy", async () => {
-    expect( await runFlow( "T9 O0,0,1\nP10 V42\nT0" ) ).toEqual( "V42\nOK" )
-    expect( await runFlow( "T9 O0,0,0\nP10 V42\nT0" ) ).toEqual( "" )
+  test( "T9 Y runs if any value is truthy", async () => {
+    expect( await runFlow( "T9 Y0,0,1\nP10 V42\nT0" ) ).toEqual( "V42\nOK" )
+    expect( await runFlow( "T9 Y0,0,0\nP10 V42\nT0" ) ).toEqual( "" )
   } )
 
   test( "a skipped conditional consumes a nested block", async () => {

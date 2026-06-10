@@ -49,12 +49,6 @@ namespace ggg {
     virtual void hookNumber() { }
     virtual void hookArg() { }
     virtual void hookFinish() {  }
-
-    void hookNumberOkay() {
-      if ( code == GGG::Okay ) {
-        okay = number;
-      }
-    }
   };
 
 

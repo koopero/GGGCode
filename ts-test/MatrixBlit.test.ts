@@ -96,11 +96,13 @@ describe( "MatrixBlit (G40)", () => {
       .toEqual( [ 1, 3, 3, 5.5, 7.5, 7.5, 7, 9, 9 ] )
   } )
 
-  test( "missing source register reports OZ", async () => {
+  test( "missing source register reports failure", async () => {
     const machine = ggggxMachine()
     await machine.run( "G30 R1 S3,3\n" )
     const out = await machine.run( 'G40 R0 W1\n' )
     const last = out[ out.length - 1 ]
-    expect( last.code ).toEqual( "OZ" )
+    // Failure now rides on an F<code> arg; the O<id> terminator stays OK (id 1).
+    expect( last.code ).toEqual( "OK" )
+    expect( last.args?.[ 0 ]?.code ).toEqual( "F5" )   // GGGFail.BufferNotFound
   } )
 } )

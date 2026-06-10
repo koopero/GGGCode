@@ -103,7 +103,15 @@ export function decodeOutput( text: string ): { values: number[], statuses: stri
   const statuses: string[] = []
   for ( const line of text.split( "\n" ) ) {
     if ( line === "" ) continue
-    if ( line[0] === GGG.Okay ) { statuses.push( line ); continue }
+    if ( line[0] === GGG.Okay ) {
+      // Canonicalize the return to OK / OZ so a case's abstract status compares
+      // cleanly regardless of the echoed O<id> or any comment. Failure is
+      // signalled by an F<code> arg (before the comment), not by the id.
+      const beforeComment = line.split( GGG.Comment )[0]
+      const failed = beforeComment.trim().split( " " ).some( a => a[0] === GGG.Failure )
+      statuses.push( failed ? "OZ" : "OK" )
+      continue
+    }
     for ( const arg of line.split( " " ) ) {
       if ( arg.length < 2 ) continue
       if ( arg[0] !== GGG.Value ) continue          // value slot only

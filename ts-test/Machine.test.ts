@@ -62,5 +62,27 @@ describe("Machine", () => {
     expect( result ).toEqual( [] )
   })
 
+  test("echoes the O<id> request id on the return", async () => {
+    const machine = new Machine()
+    machine.addCommands( {
+      Q1: { [Hooks.End]: ( arg ) => arg.machine.outputOk() },
+    } )
+    // No O arg -> default id 1 -> OK.
+    expect( await machine.run( "Q1 V2\n" ) ).toEqual( [ { code: "OK", eol: true } ] )
+    // Explicit O<id> -> echoed on the terminator (and never seen as command data).
+    expect( await machine.run( "Q1 V2 O7\n" ) ).toEqual( [ { code: "O7", eol: true } ] )
+  })
+
+  test("failure return carries an F<code> arg alongside the echoed id", async () => {
+    const machine = new Machine()
+    machine.addCommands( {
+      Q1: { [Hooks.End]: ( arg ) => arg.machine.outputFail( 5, "nope" ) },
+    } )
+    const [ ret ] = await machine.run( "Q1 O3\n" )
+    expect( ret.code ).toEqual( "O3" )              // id echoed
+    expect( ret.args?.[ 0 ]?.code ).toEqual( "F5" ) // failure code (the F arg = failure)
+    expect( ret.comment ).toEqual( "nope" )
+  })
+
 })
 

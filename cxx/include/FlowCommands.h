@@ -109,12 +109,12 @@ namespace ggg {
 
   // T9: the block combinator. With V it iterates the body once per value
   // (writing each into the R register so the body reads it as $name/$index);
-  // otherwise it is a one-shot conditional (A = all truthy, O = any). The body
+  // otherwise it is a one-shot conditional (A = all truthy, Y = any). The body
   // is always captured first (so nested blocks compose). Re-evaluatable looping
   // (G) is a deliberate follow-up, not built here.
   class Conditional : public CommandType {
   public:
-    bool hasA, hasO, allTruthy, anyTruthy;
+    bool hasA, hasY, allTruthy, anyTruthy;
     std::vector<NumberType> iterValues;
     bool hasReg, regByName;
     String regName;
@@ -123,18 +123,18 @@ namespace ggg {
       name = FlowConditional;
       description = "Block combinator: V iterates, A/O run once if a condition holds";
       addArg( 'A', "run if all values are truthy", "(n+)" );
-      addArg( 'O', "run if any value is truthy", "(n+)" );
+      addArg( 'Y', "run if any value is truthy", "(n+)" );
       addArg( GGG::Value, "iterate the body once per value", "(n+)" );
       addArg( GGG::Register, "iteration register (name or index)", "" );
     }
     void hookCommand() override {
-      hasA = false; hasO = false; allTruthy = true; anyTruthy = false;
+      hasA = false; hasY = false; allTruthy = true; anyTruthy = false;
       iterValues.clear(); hasReg = false; regByName = false; regName.clear(); regIndex = 0;
     }
     void hookNumber() override {
       bool truthy = number != 0;
       if ( code == 'A' ) { hasA = true; allTruthy = allTruthy && truthy; }
-      else if ( code == 'O' ) { hasO = true; anyTruthy = anyTruthy || truthy; }
+      else if ( code == 'Y' ) { hasY = true; anyTruthy = anyTruthy || truthy; }
       else if ( code == GGG::Value ) { iterValues.push_back( number ); }
       else if ( code == GGG::Register ) { hasReg = true; regByName = false; regIndex = (Index) number; }
     }
@@ -153,8 +153,8 @@ namespace ggg {
       } else {
         bool cond = true;
         if ( hasA ) cond = cond && allTruthy;
-        if ( hasO ) cond = cond && anyTruthy;
-        if ( !hasA && !hasO ) cond = false;    // no condition -> skip
+        if ( hasY ) cond = cond && anyTruthy;
+        if ( !hasA && !hasY ) cond = false;    // no condition -> skip
         frame->cond = cond;
       }
       machine->pushFrame( frame );
@@ -175,7 +175,7 @@ namespace ggg {
     void hookFinish() override {
       TProcedure * reg = machine->getProcedure( procName, false );
       if ( reg ) machine->enqueueLines( reg->lines );
-      else machine->outputOK( 0 );
+      else machine->outputFail( (Int) GGGFail::ProcedureNotFound );
     }
   };
 

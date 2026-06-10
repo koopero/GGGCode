@@ -46,7 +46,7 @@ namespace ggg {
 
     void hookFinish() override {
       machine->output( End );
-      machine->outputOK( okay );
+      machine->outputOK();
     }
   };
 

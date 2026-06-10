@@ -1,6 +1,6 @@
 
 import { isString } from "../common/util"
-import { GGG, Hooks, Command, Commands, CommandDecision, ArgType, HookArgs } from "../ggg/Language"
+import { GGG, GGGFail, Hooks, Command, Commands, CommandDecision, ArgType, HookArgs } from "../ggg/Language"
 
 const gggtxFlowPrefix = "T"
 
@@ -98,21 +98,21 @@ const ProcedureInitCommand : Command = {
 
 // T9: the block combinator. With V it iterates the body once per value (writing
 // each into the R register so the body can read it as $name/$index); otherwise
-// it is a one-shot conditional (A = all values truthy, O = any). The body is
+// it is a one-shot conditional (A = all values truthy, Y = any). The body is
 // always captured first (so nested blocks compose). Re-evaluatable looping (G)
 // is a deliberate follow-up, not built here.
 const ConditionalCommand : Command = {
-  description: "Block combinator: V iterates, A/O run once if a condition holds",
+  description: "Block combinator: V iterates, A/Y run once if a condition holds",
   args: {
     "A": { description: "run if all values are truthy", type: ArgType.Number },
-    "O": { description: "run if any value is truthy", type: ArgType.Number },
+    "Y": { description: "run if any value is truthy", type: ArgType.Number },
     [GGG.Value]: { description: "iterate the body once per value", type: ArgType.Number },
     [GGG.Register]: { description: "iteration register (name or index)", type: ArgType.Any },
   },
   [Hooks.Command]: ( args ) => {
     const { state } = args
     state.condA = null
-    state.condO = null
+    state.condY = null
     state.iterValues = []
     state.iterReg = undefined
   },
@@ -120,7 +120,7 @@ const ConditionalCommand : Command = {
     const { state, code, value } = args
     const truthy = ( typeof value === "number" ) && value !== 0
     if ( code === "A" ) state.condA = ( state.condA === null ? true : state.condA ) && truthy
-    else if ( code === "O" ) state.condO = ( state.condO === null ? false : state.condO ) || truthy
+    else if ( code === "Y" ) state.condY = ( state.condY === null ? false : state.condY ) || truthy
     else if ( code === GGG.Value && typeof value === "number" ) state.iterValues.push( value )
     else if ( code === GGG.Register ) state.iterReg = value
   },
@@ -139,8 +139,8 @@ const ConditionalCommand : Command = {
     // Conditional mode.
     let bool = true
     if ( state.condA !== null ) bool = bool && state.condA
-    if ( state.condO !== null ) bool = bool && state.condO
-    if ( state.condA === null && state.condO === null ) bool = false  // no condition → skip
+    if ( state.condY !== null ) bool = bool && state.condY
+    if ( state.condA === null && state.condY === null ) bool = false  // no condition → skip
     machine.pushFrame( {
       command: ConditionalCommand,
       state: { iter: false, bool },
@@ -172,7 +172,7 @@ const ProcedureRunCommand : Command = {
     if ( reg && reg.lines ) {
       machine.enqueueLines( reg.lines )
     } else {
-      machine.outputOk( 0 )
+      machine.outputFail( GGGFail.ProcedureNotFound )
     }
   },
 }

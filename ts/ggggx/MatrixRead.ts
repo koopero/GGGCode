@@ -1,4 +1,4 @@
-import { GGG, HookArgs, Hooks, Token } from "../ggg/Language"
+import { GGG, GGGFail, HookArgs, Hooks, Token } from "../ggg/Language"
 import { TargetHookCommand, TargetHookValue, TargetResolveNumbers } from "./Target"
 import { GXCode, GXCommandNumbers, GXFails, GXNamespace, GXNamespaceArg } from "./GXLanguage"
 import { RegionsAdd } from "./Regions"
@@ -108,7 +108,7 @@ export function MatrixReadForNamespace( namespace?: GXNamespaceArg ) {
     const { buffer } = TargetResolveNumbers( arg )
 
     if ( !buffer )
-      return machine.outputOk( 0, GXFails.BufferNotFound )
+      return machine.outputFail( GGGFail.BufferNotFound, GXFails.BufferNotFound )
 
     // Encoding is a representation concern, defaulted from the buffer's storage
     // (the C++ peer needs none); it never gates locating the buffer.

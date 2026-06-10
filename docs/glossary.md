@@ -511,7 +511,7 @@ The runtime execution engine. Parses GGGCode text, dispatches commands to regist
 - **Execution**: `run(code)` parses lines, queues them, and returns `Promise<Token[]>` containing all output.
 - **State**: `state` is a global dictionary; `commandState` holds per-command scratch space.
 - **Value expansion**: `solve(arg, options)` is a generator that calls `Solve` and resolves `Reference` objects against the register map.
-- **Output**: `output(tokens)` emits response tokens; `outputOk(okay, comment)` emits an `O` (OK) or `F` (Failure) response.
+- **Output**: `output(tokens)` emits response tokens; `outputOk(comment)` emits the `O<id>` return (the request id, default 1 → `OK`), and `outputFail(code, comment)` adds an `F<code>` arg to mark failure.
 
 **Hook dispatch order for each command:**
 

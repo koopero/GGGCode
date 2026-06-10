@@ -1,4 +1,4 @@
-import { GGG, Hooks, Token, TokenArg, Command, Commands, HookArgs, CasedString, Primitive, CommandDecision } from "./Language"
+import { GGG, GGGFail, Hooks, Token, TokenArg, Command, Commands, HookArgs, CasedString, Primitive, CommandDecision } from "./Language"
 import ParseLines, { ParseLinesArgs } from "./ParseLines"
 import { EventEmitter } from "../common/events"
 import { isArray, isNumber, isString, isBoolean, isDefined } from "../common/util"
@@ -71,6 +71,9 @@ export default class Machine extends EventEmitter  {
   queue:QueueItem[] = []
   queuePointer:number = 0
   runningCommand:Command|null = null
+  // Request id (the O<id> arg) echoed on this line's return so it can be
+  // correlated; defaults to 1, which renders the terminator as OK.
+  requestId:number = 1
   registers:Map<object,NamedList<gggRegister>> = new Map<object,NamedList<gggRegister>>()
 
   timeout:ReturnType<typeof setTimeout>|null = null
@@ -106,9 +109,21 @@ export default class Machine extends EventEmitter  {
     }
   }
 
-  outputOk( okay:number = 1, comment?:string ) {
-    const code = GGG.Okay
-    this.output( { code: `${code}${FormatOkayNumber(okay)}`, comment, eol: true } )
+  // Success return: the O<id> terminator. The id renders via FormatOkayNumber,
+  // so the default id 1 still reads OK.
+  outputOk( comment?:string ) {
+    this.output( { code: `${GGG.Okay}${FormatOkayNumber( this.requestId )}`, comment, eol: true } )
+  }
+
+  // Failure return: the same O<id> terminator plus an F<code> arg (and optional
+  // comment). The presence of the F arg -- not the id -- is what signals failure.
+  outputFail( code:number, comment?:string ) {
+    this.output( {
+      code: `${GGG.Okay}${FormatOkayNumber( this.requestId )}`,
+      args: [ { code: `${GGG.Failure}${code}` } ],
+      comment,
+      eol: true,
+    } )
   }
 
   tick() {
@@ -160,13 +175,13 @@ export default class Machine extends EventEmitter  {
 
   // Splice parsed source lines into the queue so they run immediately after the
   // current item. Bounded by limits.maxQueue to keep recursion/queue growth in
-  // check; on overflow the lines are dropped and O0 is emitted.
+  // check; on overflow the lines are dropped and a failure return is emitted.
   enqueueLines( lines:string[] ) {
     const { queue, queuePointer, limits } = this
     const parsed = ParseLines( lines.join( GGG.End ) )
     const items:QueueItem[] = parsed.map( line => ( { line } ) )
     if ( limits.maxQueue && queue.length + items.length > limits.maxQueue ) {
-      this.outputOk( 0 )
+      this.outputFail( GGGFail.QueueOverflow )
       return
     }
     queue.splice( queuePointer + 1, 0, ...items )
@@ -203,7 +218,7 @@ export default class Machine extends EventEmitter  {
       }
     }
     if ( limits.maxQueue && queue.length + items.length > limits.maxQueue ) {
-      this.outputOk( 0 )
+      this.outputFail( GGGFail.LoopOverflow )
       return
     }
     queue.splice( queuePointer + 1, 0, ...items )
@@ -256,8 +271,14 @@ export default class Machine extends EventEmitter  {
     const machine = this
     if ( line.command ) {
       const command = line.command
-      if ( isBlankCommand( command ) ) 
+      if ( isBlankCommand( command ) )
         return
+
+      // Universal request id: an O<id> arg tags this command so its return can
+      // be correlated; defaults to 1 so the terminator reads OK. Reset per line
+      // here -- the O arg itself is read in the dispatch block below, where we
+      // can tell whether the command instead claims O as its own data arg.
+      this.requestId = 1
 
       // Command gate: ask the top control frame what to do with this
       // now-formalized command before dispatching it.
@@ -279,7 +300,7 @@ export default class Machine extends EventEmitter  {
         return
       }
       if ( decision === CommandDecision.Error ) {
-        this.outputOk( 0 )
+        this.outputFail( GGGFail.StackError )
         return
       }
 
@@ -287,12 +308,27 @@ export default class Machine extends EventEmitter  {
       if ( impl ) {
         this.runningCommand = impl
         const state = this.commandState[command] = this.commandState[command] || {}
+
+        // A trailing O<id> is the universal request id: capture it here (and skip
+        // dispatching it below) so the command never sees the id as data. O is
+        // reserved for this -- no command uses O as an arg code.
+        if ( line.args ) {
+          for ( const arg of line.args ) {
+            if ( arg.code === GGG.Okay && isDefined( arg.data ) ) {
+              for ( const value of this.solve( arg.data, { solveStrings: false } ) ) {
+                if ( isNumber( value ) ) { this.requestId = Math.floor( value ); break }
+              }
+            }
+          }
+        }
+
         await this.execCommandHook( Hooks.Command, { machine, command, state } )
 
         const { args } = line
         if ( args ) {
           for ( const arg of args ) {
             const { code, data } = arg
+            if ( code === GGG.Okay ) continue   // universal request id, captured above
             await this.execCommandHook( Hooks.Code, { machine, command, state, code } )
 
             if ( data || data === 0 ) {
@@ -305,7 +341,7 @@ export default class Machine extends EventEmitter  {
         }
         await this.execCommandHook( Hooks.End, { machine, state, command } )
       } else if ( !isBlankCommand( command ) ) {
-        this.outputOk( 0, gggMessage.CommandNotFound )
+        this.outputFail( GGGFail.CommandNotFound, gggMessage.CommandNotFound )
       }
     }
   }

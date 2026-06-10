@@ -1,4 +1,4 @@
-import { GGG, Hooks, HookArgs } from "../ggg/Language"
+import { GGG, GGGFail, Hooks, HookArgs } from "../ggg/Language"
 import { isString, isNumber, toInt } from "../common/util"
 import Matrix from "../ggg/Matrix"
 import { Blit, BlitOptions } from "./Blit"
@@ -96,7 +96,7 @@ function MatrixBlitHookEnd( arg: HookArgs ) {
   const dest = machine.getMatrix( state.destRef ) as Matrix | undefined
 
   if ( !source || !dest ) {
-    machine.outputOk( 0 )
+    machine.outputFail( GGGFail.BufferNotFound )
     return
   }
 

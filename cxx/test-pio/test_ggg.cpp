@@ -212,7 +212,19 @@ static Decoded decodeOutput( const std::string &text ) {
     std::string line = ( nl == std::string::npos ) ? text.substr( start ) : text.substr( start, nl - start );
     if ( !line.empty() ) {
       if ( line[0] == ggg::GGG::Okay ) {
-        d.statuses.push_back( line );
+        // Canonicalize to OK / OZ (mirrors decodeOutput in ts/cxx/cases.ts):
+        // failure is signalled by an F<code> arg before any comment, not by the
+        // echoed id.
+        std::string head = line.substr( 0, line.find( (char) ggg::GGG::Comment ) );
+        bool failed = false;
+        for ( size_t a = 0; a < head.size(); ) {
+          size_t sp = head.find( ' ', a );
+          std::string arg = head.substr( a, sp == std::string::npos ? std::string::npos : sp - a );
+          if ( !arg.empty() && arg[0] == (char) ggg::GGG::Failure ) { failed = true; break; }
+          if ( sp == std::string::npos ) break;
+          a = sp + 1;
+        }
+        d.statuses.push_back( failed ? "OZ" : "OK" );
       } else {
         size_t a = 0;
         while ( a < line.size() ) {
@@ -439,11 +451,11 @@ void test_flow_procedures() {
     TEST_ASSERT_EQUAL_STRING( "V2\nOK\n", m.out.c_str() );
   }
 
-  // Running an unknown procedure returns O0 (rendered OZ).
+  // Running an unknown procedure reports failure (OK id + F6 = ProcedureNotFound).
   {
     FlowMachine m; m.setup();
     m.run( "T11 L\"nope\"\n" );
-    TEST_ASSERT_EQUAL_STRING( "OZ\n", m.out.c_str() );
+    TEST_ASSERT_EQUAL_STRING( "OK F6\n", m.out.c_str() );
   }
 
   // Nested definition is captured as source; inner defined only when outer runs.
@@ -538,7 +550,7 @@ void test_flow_conditionals() {
     m.run( "T9 A0\nP10 V42\nT0\n" );
     TEST_ASSERT_EQUAL_STRING( "", m.out.c_str() );
   }
-  // A requires all truthy; O requires any truthy.
+  // A requires all truthy; Y requires any truthy.
   {
     FlowMachine m; m.setup();
     m.run( "T9 A1,0\nP10 V42\nT0\n" );
@@ -546,7 +558,7 @@ void test_flow_conditionals() {
   }
   {
     FlowMachine m; m.setup();
-    m.run( "T9 O0,0,1\nP10 V42\nT0\n" );
+    m.run( "T9 Y0,0,1\nP10 V42\nT0\n" );
     TEST_ASSERT_EQUAL_STRING( "V42\nOK\n", m.out.c_str() );
   }
   // A skipped conditional swallows a nested block; execution resumes after.
@@ -725,10 +737,10 @@ void test_blit() {
   const float pooled[9] = { 1, 3, 3, 5.5f, 7.5f, 7.5f, 7, 9, 9 };
   expect( pooled );
 
-  // missing source register -> OZ
+  // missing source register -> failure (OK id + F5 = BufferNotFound)
   m.out.clear();
   m.run( "G40 R5 W1\n" );
-  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "OZ" ) );
+  TEST_ASSERT_EQUAL_STRING( "OK F5\n", m.out.c_str() );
 
   delete src;
   delete dst;

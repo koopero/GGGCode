@@ -56,6 +56,17 @@ namespace ggg {
   constexpr char EncodedMinusOne = 'N';
 };
 
+namespace ggg { enum class GGGFail : int {
+  CommandNotFound = 1,
+  QueueOverflow = 2,
+  LoopOverflow = 3,
+  StackError = 4,
+  BufferNotFound = 5,
+  ProcedureNotFound = 6,
+  BadOperator = 7,
+  BlitFailed = 8
+}; };
+
 // Strings
 #define PrintPrefix "P"
 #define PrintNumbersName "P10"

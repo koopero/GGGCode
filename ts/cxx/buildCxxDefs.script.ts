@@ -1,4 +1,4 @@
-import { GGG, CommandConvention, HexEncodings, UnitaryNames } from "../ggg/Language"
+import { GGG, GGGFail, CommandConvention, HexEncodings, UnitaryNames } from "../ggg/Language"
 import { StorageTypes } from "../ggggx/Storage"
 import Operators from "../ggggx/Operators"
 import Strings from "./CxxStrings"
@@ -87,8 +87,20 @@ function makeEncodedUnitary() {
   return str
 }
 
+// Failure codes (Language.ts GGGFail) carried by the F<code> arg on a return.
+// Numeric TS enums carry a reverse map (value -> name); keep only the forward
+// (name -> value) entries.
+function makeFailCodes() {
+  const entries = Object.entries( GGGFail )
+    .filter( ( [ key ] ) => isNaN( Number( key ) ) ) as [ string, number ][]
+  let str = "namespace ggg { enum class GGGFail : int {\n"
+  str += entries.map( ( [ key, value ] ) => `  ${key} = ${value}` ).join( ",\n" ) + "\n"
+  str += "}; };\n\n"
+  return str
+}
+
 function emitAutogen() {
-  return BANNER + makeGGGEnum() + makeHexEncodings() + makeEncodedUnitary() + makeStringDefines()
+  return BANNER + makeGGGEnum() + makeHexEncodings() + makeEncodedUnitary() + makeFailCodes() + makeStringDefines()
 }
 
 // Command numbers (Language.ts CommandConvention). Numeric TS enums carry a

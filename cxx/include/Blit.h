@@ -289,9 +289,10 @@ namespace ggg {
     }
 
     void hookFinish() override {
-      if ( !source || !dest ) { machine->outputOK( 0 ); return; }
+      if ( !source || !dest ) { machine->outputFail( (Int) GGGFail::BufferNotFound ); return; }
       bool ok = Blit( dest, source, opt );
-      machine->outputOK( ok ? okay : 0 );
+      if ( ok ) machine->outputOK();
+      else machine->outputFail( (Int) GGGFail::BlitFailed );
     }
   };
 

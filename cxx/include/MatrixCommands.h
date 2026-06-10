@@ -65,7 +65,8 @@ namespace ggg {
     }
 
     void hookFinish() override {
-      machine->outputOK( okay );
+      if ( okay ) machine->outputOK();
+      else machine->outputFail( (Int) GGGFail::BadOperator );
     }
   };
 
@@ -124,7 +125,8 @@ namespace ggg {
         }
         machine->output( (Char) End );
       }
-      machine->outputOK( okay );
+      if ( okay ) machine->outputOK();
+      else machine->outputFail( (Int) GGGFail::BufferNotFound );
     }
   };
 

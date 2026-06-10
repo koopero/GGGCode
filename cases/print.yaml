@@ -8,6 +8,14 @@
   program: "P10 V42"
   values: [ 42 ]
 
+- name: print_request_id
+  description: "A trailing O<id> arg tags the command; the id echoes on the return (here O7). With no O arg the id defaults to 1, rendering the familiar OK."
+  needs: [ gggpx ]
+  tags: [ decimals ]
+  exact: true
+  program: "P10 V42 O7"
+  values: [ 42 ]
+
 - name: print_list
   description: "A comma-separated value list echoes each value in order."
   needs: [ gggpx ]

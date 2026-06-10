@@ -27,7 +27,7 @@
   values: [ 42 ]
 
 - name: flow_unknown
-  description: "Running an undefined procedure reports failure (OZ)."
+  description: "Running an undefined procedure reports failure (an F<code> arg on the return)."
   needs: [ gggtx ]
   tags: [ flow, procedures ]
   status: "OZ"
@@ -82,22 +82,22 @@
   values: []
 
 - name: cond_any_true
-  description: "T9 O runs the block when any value is truthy."
+  description: "T9 Y runs the block when any value is truthy."
   needs: [ gggpx, gggtx ]
   tags: [ flow, conditionals ]
   program: |
-    T9 O0,0,1
+    T9 Y0,0,1
     P10 V42
     T0
   values: [ 42 ]
 
 - name: cond_any_false
-  description: "T9 O skips the block when no value is truthy."
+  description: "T9 Y skips the block when no value is truthy."
   needs: [ gggpx, gggtx ]
   tags: [ flow, conditionals ]
   status: ""
   program: |
-    T9 O0,0,0
+    T9 Y0,0,0
     P10 V42
     T0
   values: []

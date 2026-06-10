@@ -60,6 +60,9 @@ namespace ggg {
     MachineLimits limits;
     MachineState state;
     CommandType *command = nullptr;
+    // Request id (the O<id> arg) echoed on this line's return so it can be
+    // correlated; defaults to 1, which renders the terminator as OK.
+    Int requestId = 1;
     // Register table of matrices addressed by index (R) or name (L). Populated
     // by addRegister() -- e.g. grizzlar appends one entry per published buffer.
     List<MatrixBase> *registers = new List<MatrixBase>();
@@ -87,6 +90,7 @@ namespace ggg {
       state.utf8Accum = 0;
       state.utf8Remaining = 0;
       command = nullptr;
+      requestId = 1;
       state.lineMode = GGG::Command;
       state.expressionMode = GGG::Code;
       state.argBuffer.clear();
@@ -254,7 +258,9 @@ namespace ggg {
       if (( _char >= 'a' && _char <= 'z' ) || ( _char >= 'A' && _char <= 'Z' )) {
         _char = std::toupper(_char);
         state.code = _char;
-        if ( state.lineMode == GGG::Argument && command ) {
+        // A trailing O<id> is the universal request id (captured in dataAppend),
+        // so don't dispatch it to the command. O is reserved for this.
+        if ( state.lineMode == GGG::Argument && command && _char != GGG::Okay ) {
           command->code = _char;
           command->hookCode();
         }
@@ -752,6 +758,13 @@ namespace ggg {
         return;
       }
 
+      // Universal request id: a trailing O<id> tags the command's return. O is
+      // reserved for this -- no command uses O as an arg code.
+      if ( state.code == GGG::Okay ) {
+        requestId = (Int) value;
+        return;
+      }
+
       if ( command ) {
         command->code = state.code;
         command->number = value;
@@ -793,7 +806,7 @@ namespace ggg {
           CommandDecision decision = frames.back()->beforeCommand( *this, view );
           if ( decision != CommandDecision::Run ) {
             if ( decision == CommandDecision::Capture ) state.captureLine = true;
-            else if ( decision == CommandDecision::Error ) outputOK( 0 );
+            else if ( decision == CommandDecision::Error ) outputFail( (Int) GGGFail::StackError );
             command = nullptr;
             state.lineMode = GGG::Skip;
             return;
@@ -809,15 +822,20 @@ namespace ggg {
           state.lineMode = GGG::Argument;
           return;
         } else {
-          // TODO: Command not found
+          // An O-prefixed "command" is a return line echoed back as input (OK,
+          // O7, OZ, OK F6 ...). Skip the whole line so its trailing args (e.g.
+          // F6) are not re-parsed as commands -- mirrors the TS isBlankCommand
+          // suppression.
+          if ( state.code == GGG::Okay ) {
+            command = nullptr;
+            state.lineMode = GGG::Skip;
+            return;
+          }
 
-          if ( commandName != "O1" ) {
-            output( "; ");
-            output( commandName );
-            output( " ; command not found\n" );
-            outputOK();
-          } 
-
+          output( "; " );
+          output( commandName );
+          output( " ; command not found\n" );
+          outputFail( (Int) GGGFail::CommandNotFound );
           command = nullptr;
         }
       }
@@ -868,7 +886,7 @@ namespace ggg {
     // right order, mirroring the TS splice-after-current. Bounded by maxQueue.
     void enqueueLines( const std::vector<String> & lines ) {
       if ( limits.maxQueue && (Int)( pending.size() + lines.size() ) > limits.maxQueue ) {
-        outputOK( 0 );
+        outputFail( (Int) GGGFail::QueueOverflow );
         return;
       }
       std::vector<PendingItem> items;
@@ -891,7 +909,7 @@ namespace ggg {
         for ( const String & l : body ) items.push_back( { false, l, {} } );
       }
       if ( limits.maxQueue && (Int)( pending.size() + items.size() ) > limits.maxQueue ) {
-        outputOK( 0 );
+        outputFail( (Int) GGGFail::LoopOverflow );
         return;
       }
       pending.insert( pending.begin(), items.begin(), items.end() );
@@ -950,8 +968,9 @@ namespace ggg {
       write( std::to_string( value ) );
     }
 
-    void outputOK( Int value = 1 ) {
-      output( GGG::Okay );
+    // Render the O<id> head: the id via the unitary encoding (1->K, 0->Z, -1->N,
+    // else the integer), so the default id 1 reads OK.
+    void outputOkayValue( Int value ) {
       if ( value == 1 ) {
         output( GGG::EncodedOne );
       } else if ( value == 0 ) {
@@ -960,6 +979,27 @@ namespace ggg {
         output( EncodedMinusOne );
       } else {
         outputInteger( value );
+      }
+    }
+
+    // Success return: the O<id> terminator (default id 1 -> OK).
+    void outputOK() {
+      output( GGG::Okay );
+      outputOkayValue( requestId );
+      output( GGG::End );
+    }
+
+    // Failure return: the same O<id> terminator plus an F<code> arg (and optional
+    // comment). The presence of the F arg -- not the id -- is what signals failure.
+    void outputFail( Int code, const char* comment = nullptr ) {
+      output( GGG::Okay );
+      outputOkayValue( requestId );
+      output( GGG::EndArgument );
+      output( GGG::Failure );
+      outputInteger( code );
+      if ( comment && comment[0] ) {
+        output( String( "; " ) );
+        output( String( comment ) );
       }
       output( GGG::End );
     }

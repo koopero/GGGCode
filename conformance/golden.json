@@ -649,7 +649,7 @@
   },
   {
     "name": "flow_unknown",
-    "description": "Running an undefined procedure reports failure (OZ).",
+    "description": "Running an undefined procedure reports failure (an F<code> arg on the return).",
     "needs": [
       "gggtx"
     ],
@@ -661,7 +661,7 @@
     "status": "OZ",
     "values": [],
     "exact": false,
-    "expected": "OZ"
+    "expected": "OK F6"
   },
   {
     "name": "flow_nested",
@@ -737,7 +737,7 @@
   },
   {
     "name": "cond_any_true",
-    "description": "T9 O runs the block when any value is truthy.",
+    "description": "T9 Y runs the block when any value is truthy.",
     "needs": [
       "gggpx",
       "gggtx"
@@ -746,7 +746,7 @@
       "flow",
       "conditionals"
     ],
-    "program": "T9 O0,0,1\nP10 V42\nT0",
+    "program": "T9 Y0,0,1\nP10 V42\nT0",
     "status": "OK",
     "values": [
       42
@@ -756,7 +756,7 @@
   },
   {
     "name": "cond_any_false",
-    "description": "T9 O skips the block when no value is truthy.",
+    "description": "T9 Y skips the block when no value is truthy.",
     "needs": [
       "gggpx",
       "gggtx"
@@ -765,7 +765,7 @@
       "flow",
       "conditionals"
     ],
-    "program": "T9 O0,0,0\nP10 V42\nT0",
+    "program": "T9 Y0,0,0\nP10 V42\nT0",
     "status": "",
     "values": [],
     "exact": false,
@@ -1179,6 +1179,23 @@
     ],
     "exact": false,
     "expected": "V42\nOK"
+  },
+  {
+    "name": "print_request_id",
+    "description": "A trailing O<id> arg tags the command; the id echoes on the return (here O7). With no O arg the id defaults to 1, rendering the familiar OK.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "decimals"
+    ],
+    "program": "P10 V42 O7",
+    "status": "OK",
+    "values": [
+      42
+    ],
+    "exact": true,
+    "expected": "V42\nO7"
   },
   {
     "name": "print_list",

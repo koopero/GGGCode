@@ -1,5 +1,5 @@
 import { isArray, isNumber, isString, isUndefined } from "../common/util"
-import { GGG, Hooks, HookArgs, VecArg } from "../ggg/Language"
+import { GGG, GGGFail, Hooks, HookArgs, VecArg } from "../ggg/Language"
 import { Matrix } from "../ggggx"
 import Operators, { OperatorApply, Ops } from "./Operators"
 import { TargetHookCode, TargetHookCommand, TargetHookValue, TargetResolveNumbers } from "./Target"
@@ -99,7 +99,7 @@ function MatrixWriteHookEnd( arg:HookArgs ) {
   if ( buffer ) {
     machine.outputOk()
   } else {
-    machine.outputOk(0)
+    machine.outputFail( GGGFail.BufferNotFound )
   }
 }
 

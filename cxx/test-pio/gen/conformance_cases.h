@@ -55,6 +55,7 @@ namespace ggg_conformance {
   static const double values_op_neg[] = { -10.0, -20.0, -30.0 };
   static const double values_op_sqrt[] = { 3.1622776601683795 };
   static const double values_print_single[] = { 42.0 };
+  static const double values_print_request_id[] = { 42.0 };
   static const double values_print_list[] = { 1.0, 2.0, 3.0 };
   static const double values_print_zero[] = { 0.0 };
   static const double values_print_negatives[] = { -5.0, -10.0, 15.0 };
@@ -130,8 +131,8 @@ namespace ggg_conformance {
     { "cond_all_true", "T9 A1\nP10 V42\nT0\n", "OK", values_cond_all_true, 1, nullptr },
     { "cond_all_false", "T9 A0\nP10 V42\nT0\n", "", nullptr, 0, nullptr },
     { "cond_all_mixed", "T9 A1,0\nP10 V42\nT0\n", "", nullptr, 0, nullptr },
-    { "cond_any_true", "T9 O0,0,1\nP10 V42\nT0\n", "OK", values_cond_any_true, 1, nullptr },
-    { "cond_any_false", "T9 O0,0,0\nP10 V42\nT0\n", "", nullptr, 0, nullptr },
+    { "cond_any_true", "T9 Y0,0,1\nP10 V42\nT0\n", "OK", values_cond_any_true, 1, nullptr },
+    { "cond_any_false", "T9 Y0,0,0\nP10 V42\nT0\n", "", nullptr, 0, nullptr },
     { "cond_nested_skip", "T9 A0\nT9 A1\nP10 V1\nT0\nT0\nP10 V2\n", "OK", values_cond_nested_skip, 1, nullptr },
     { "iter_single", "T9 V5 R\"it\"\nP10 V$it\nT0\n", "OK", values_iter_single, 1, nullptr },
     { "iter_zero", "T9 V$x R\"it\"\nP10 V$it\nT0\n", "", nullptr, 0, nullptr },
@@ -154,6 +155,7 @@ namespace ggg_conformance {
     { "op_neg", "G20 R0 P0 Q\"neg\" V0,0,0\nG10 R0 P0 S3\n", "OK", values_op_neg, 3, nullptr },
     { "op_sqrt", "G20 R0 P0 Q\"sqrt\" V0\nG10 R0 P0 S1\n", "OK", values_op_sqrt, 1, nullptr },
     { "print_single", "P10 V42\n", "OK", values_print_single, 1, nullptr },
+    { "print_request_id", "P10 V42 O7\n", "OK", values_print_request_id, 1, "V42\nO7" },
     { "print_list", "P10 V1,2,3\n", "OK", values_print_list, 3, nullptr },
     { "print_zero", "P10 V0\n", "OK", values_print_zero, 1, nullptr },
     { "print_negatives", "P10 V-5,-10,15\n", "OK", values_print_negatives, 3, nullptr },

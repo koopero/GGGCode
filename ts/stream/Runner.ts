@@ -16,7 +16,7 @@ import ParseLine from "../ggg/ParseLine"
 
 type LineQuery = boolean | string | number | RegExp | (( key: string ) => boolean )
 
-export type RunStatus = "ok" | "timeout"
+export type RunStatus = "ok" | "fail" | "timeout"
 
 export type RunOptions = {
   timeout?: number              // ms; 0 disables the timeout
@@ -154,7 +154,13 @@ export class Runner extends EventEmitter {
 
     if ( codeMatches( key, running.endFilter ) ) {
       // Terminator: end the command without collecting it as a result line.
-      this.finish( running, "ok" )
+      // A failure return carries an F<code> arg (before any comment); its
+      // presence -- not the echoed O<id> -- is what marks failure. The id is
+      // available on the terminator for future out-of-order correlation, which
+      // would replace this FIFO `running` with an id lookup.
+      const beforeComment = raw.split( GGG.Comment )[0]
+      const failed = beforeComment.trim().split( " " ).some( a => a[0] === GGG.Failure )
+      this.finish( running, failed ? "fail" : "ok" )
       return
     }
 

@@ -4,13 +4,13 @@
 
 Each case is one artifact wearing four hats: a behavioural **spec**, a piece of **documentation**, a runnable **example**, and a cross-engine conformance **test**. The contract is the decoded `values` stream within a global epsilon; `status` is the control response. Cases are grouped below by `tag` (a case appears under each tag it carries).
 
-97 cases across 23 tags.
+98 cases across 23 tags.
 
 ## Tags
 
 - [blit](#blit) (24)
 - [conditionals](#conditionals) (6)
-- [decimals](#decimals) (7)
+- [decimals](#decimals) (8)
 - [flip](#flip) (3)
 - [flow](#flow) (12)
 - [hex](#hex) (7)
@@ -368,10 +368,10 @@ T0
 
 ### cond_any_true
 
-T9 O runs the block when any value is truthy.
+T9 Y runs the block when any value is truthy.
 
 ```
-T9 O0,0,1
+T9 Y0,0,1
 P10 V42
 T0
 ```
@@ -381,10 +381,10 @@ T0
 
 ### cond_any_false
 
-T9 O skips the block when no value is truthy.
+T9 Y skips the block when no value is truthy.
 
 ```
-T9 O0,0,0
+T9 Y0,0,0
 P10 V42
 T0
 ```
@@ -421,6 +421,18 @@ P10 V42
 
 - values: `[42]`
 - needs: `gggpx`
+
+### print_request_id
+
+A trailing O<id> arg tags the command; the id echoes on the return (here O7). With no O arg the id defaults to 1, rendering the familiar OK.
+
+```
+P10 V42 O7
+```
+
+- values: `[42]`
+- needs: `gggpx`
+- byte-exact (formatting is part of the contract)
 
 ### print_list
 
@@ -558,7 +570,7 @@ T11 L"p"
 
 ### flow_unknown
 
-Running an undefined procedure reports failure (OZ).
+Running an undefined procedure reports failure (an F<code> arg on the return).
 
 ```
 T11 L"nope"
@@ -628,10 +640,10 @@ T0
 
 ### cond_any_true
 
-T9 O runs the block when any value is truthy.
+T9 Y runs the block when any value is truthy.
 
 ```
-T9 O0,0,1
+T9 Y0,0,1
 P10 V42
 T0
 ```
@@ -641,10 +653,10 @@ T0
 
 ### cond_any_false
 
-T9 O skips the block when no value is truthy.
+T9 Y skips the block when no value is truthy.
 
 ```
-T9 O0,0,0
+T9 Y0,0,0
 P10 V42
 T0
 ```
@@ -1317,7 +1329,7 @@ T11 L"p"
 
 ### flow_unknown
 
-Running an undefined procedure reports failure (OZ).
+Running an undefined procedure reports failure (an F<code> arg on the return).
 
 ```
 T11 L"nope"
