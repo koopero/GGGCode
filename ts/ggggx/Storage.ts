@@ -62,6 +62,9 @@ export const StorageTypes = new NamedList<StorageType>( [
   { index: 10, name: StorageTypeNames.Int8, dataClass: Int8Array, encoding: HexEncodings.HexNorm2, norm1: 1, range: RangeI8, cxxStorage: "int8_t" },
   { index: 11, name: StorageTypeNames.UNorm4, dataClass: Uint8Array, encoding: HexEncodings.HexNorm2, norm1: 16, range: RangeU8, cxxStorage: "uint8_t" },
   { index: 12, name: StorageTypeNames.Norm4, dataClass: Int8Array, encoding: HexEncodings.HexNorm2, norm1: 8, range: RangeI8, cxxStorage: "int8_t" },
+  // Signed 16-bit normalized (q15: OneValue 2^15-1). Float-text wire encoding for
+  // now -- HexNorm* only cover 1 byte; 16-bit hex serialization is a follow-up.
+  { index: 16, name: StorageTypeNames.Norm16, dataClass: Int16Array, encoding: GGG.Value, norm1: 32767, range: RangeI16, cxxStorage: "int16_t" },
 ] )
 
 
