@@ -19,3 +19,7 @@ export { GGG, Hooks }
 import { Runner } from "./stream/Runner"
 export { Runner }
 export type { RunResult, RunOptions, RunnerOptions, RunStatus } from "./stream/Runner"
+
+import { Storage, StorageTypes, StorageTypeNames, StorageValueNorm, StorageNormValue } from "./ggggx/Storage"
+export { Storage, StorageTypes, StorageTypeNames, StorageValueNorm, StorageNormValue }
+export type { StorageType, StorageProps } from "./ggggx/Storage"

@@ -4,7 +4,6 @@
 #include <type_traits>
 #include <cmath>
 #include <algorithm>
-#include <iostream>
 
 template <typename StorageType, StorageType OneValue, typename WorkingType>
 class NormalizedNumber {
@@ -138,8 +137,6 @@ public:
 	}
 
 	constexpr NormalizedNumber& operator/=(double scalar) noexcept {
-		// Handle
-		std::cout << "Divide by " << scalar << std::endl;
 		setNormalized(getNormalized() / scalar);
 		return *this;
 	}
@@ -171,9 +168,20 @@ public:
 		return left;
 	}
 
-	constexpr friend NormalizedNumber operator*(NormalizedNumber number, double scalar) noexcept {
-		number *= scalar;
-		return number;
+	// Native same-type multiply: multiply raws in WorkType, renormalize by OneValue.
+	constexpr friend NormalizedNumber operator*(NormalizedNumber left, const NormalizedNumber& right) noexcept {
+		WorkType val = static_cast<WorkType>(left.getRaw()) * static_cast<WorkType>(right.getRaw()) / OneValue;
+		left.setRaw(val);
+		return left;
+	}
+
+	// Mixing with a real scalar promotes to the real type (does NOT narrow/clamp
+	// back to normalized -- the old footgun where e.g. value * 2.0 clamped to 1.0).
+	constexpr friend double operator*(const NormalizedNumber& number, double scalar) noexcept {
+		return number.getNormalized() * scalar;
+	}
+	constexpr friend double operator*(double scalar, const NormalizedNumber& number) noexcept {
+		return scalar * number.getNormalized();
 	}
 
 	constexpr friend NormalizedNumber operator/(NormalizedNumber number, double scalar) noexcept {
