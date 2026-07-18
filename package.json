@@ -2,42 +2,69 @@
   "name": "gggcode",
   "version": "0.1.0",
   "description": "G Code like general purpose meta-language.",
+  "keywords": [
+    "gcode",
+    "g-code",
+    "meta-language",
+    "dsl",
+    "parser",
+    "language",
+    "matrix",
+    "graphics"
+  ],
+  "homepage": "https://github.com/koopero/GGGCode#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koopero/GGGCode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koopero/GGGCode/issues"
+  },
   "main": "dist/node/index.js",
+  "types": "dist/node/index.d.ts",
   "bin": {
     "ggg": "./bin/ggg.js"
   },
+  "files": [
+    "bin/",
+    "dist/node/",
+    "dist/browser/",
+    "README.md",
+    "LICENSE"
+  ],
   "exports": {
     ".": {
+      "types": "./dist/node/index.d.ts",
       "browser": "./dist/browser/index.js",
       "import": "./dist/node/index.js",
       "require": "./dist/node/index.js"
     },
     "./ggg": {
+      "types": "./dist/node/ggg.d.ts",
       "browser": "./dist/browser/ggg.js",
       "import": "./dist/node/ggg.js",
       "require": "./dist/node/ggg.js"
     },
     "./ggggx": {
+      "types": "./dist/node/ggggx.d.ts",
       "browser": "./dist/browser/ggggx.js",
       "import": "./dist/node/ggggx.js",
       "require": "./dist/node/ggggx.js"
     },
-    "./ggggxCLI": {
-      "browser": "./dist/browser/ggggx-cli.js",
-      "import": "./dist/node/ggggx-cli.js",
-      "require": "./dist/node/ggggx-cli.js"
-    },
     "./math": {
+      "types": "./dist/node/common/math.d.ts",
       "browser": "./dist/browser/common/math.js",
       "import": "./dist/node/common/math.js",
       "require": "./dist/node/common/math.js"
     },
     "./SavePNG": {
+      "types": "./dist/node/ggggx/SavePNG.d.ts",
       "browser": "./dist/browser/ggggx/SavePNG.js",
       "import": "./dist/node/ggggx/SavePNG.js",
       "require": "./dist/node/ggggx/SavePNG.js"
     },
     "./LoadPNG": {
+      "types": "./dist/node/ggggx/LoadPNG.d.ts",
       "browser": "./dist/browser/ggggx/LoadPNG.js",
       "import": "./dist/node/ggggx/LoadPNG.js",
       "require": "./dist/node/ggggx/LoadPNG.js"
@@ -45,6 +72,7 @@
   },
   "scripts": {
     "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build:ts",
     "build": "npm run build:ts && npm run build:pio",
     "build:pio": "npm run build:cxx_defs && npm run build:conformance && bun run ts/cxx/buildPlatformio.script.ts",
     "build:cxx_defs": "bun run ts/cxx/buildCxxDefs.script.ts",
