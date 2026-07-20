@@ -53,9 +53,37 @@
   program: "P10 Vτ"
   values: [ 6.283185307179586 ]
 
-- name: unitary_e
-  description: "e decodes to Euler's number."
+
+- name: unitary_before_number
+  # A unitary is a complete value: the number after it starts a new value rather
+  # than joining the unitary's axis.
+  description: "A unitary directly followed by a number is two values."
   needs: [ gggpx ]
-  tags: [ unitary, irrational ]
-  program: "P10 Ve"
-  values: [ 2.718281828459045 ]
+  tags: [ unitary, lists ]
+  program: "P10 VK5"
+  values: [ 1, 5 ]
+
+- name: unitary_after_number
+  # The mirror case: a unitary completes the number it follows.
+  description: "A number directly followed by a unitary is two values."
+  needs: [ gggpx ]
+  tags: [ unitary, lists ]
+  program: "P10 V5K"
+  values: [ 5, 1 ]
+
+- name: unitary_pair
+  # Two adjacent unitaries are likewise two separate values.
+  description: "Adjacent unitaries are separate values."
+  needs: [ gggpx ]
+  tags: [ unitary, lists ]
+  program: "P10 VKZ"
+  values: [ 1, 0 ]
+
+- name: unitary_exponent_unaffected
+  # "e" is only ever the exponent marker, so it keeps accumulating into the
+  # number rather than completing it.
+  description: "Scientific notation is unaffected by unitary completion."
+  needs: [ gggpx ]
+  tags: [ unitary, ranges ]
+  program: "P10 V5e4"
+  values: [ 50000 ]

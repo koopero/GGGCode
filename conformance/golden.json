@@ -2157,21 +2157,78 @@
     "expected": "V6.283185307179586\nOK"
   },
   {
-    "name": "unitary_e",
-    "description": "e decodes to Euler's number.",
+    "name": "unitary_before_number",
+    "description": "A unitary directly followed by a number is two values.",
     "needs": [
       "gggpx"
     ],
     "tags": [
       "unitary",
-      "irrational"
+      "lists"
     ],
-    "program": "P10 Ve",
+    "program": "P10 VK5",
     "status": "OK",
     "values": [
-      2.718281828459045
+      1,
+      5
     ],
     "exact": false,
-    "expected": "V2.718281828459045\nOK"
+    "expected": "V1,5\nOK"
+  },
+  {
+    "name": "unitary_after_number",
+    "description": "A number directly followed by a unitary is two values.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "unitary",
+      "lists"
+    ],
+    "program": "P10 V5K",
+    "status": "OK",
+    "values": [
+      5,
+      1
+    ],
+    "exact": false,
+    "expected": "V5,1\nOK"
+  },
+  {
+    "name": "unitary_pair",
+    "description": "Adjacent unitaries are separate values.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "unitary",
+      "lists"
+    ],
+    "program": "P10 VKZ",
+    "status": "OK",
+    "values": [
+      1,
+      0
+    ],
+    "exact": false,
+    "expected": "V1,0\nOK"
+  },
+  {
+    "name": "unitary_exponent_unaffected",
+    "description": "Scientific notation is unaffected by unitary completion.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "unitary",
+      "ranges"
+    ],
+    "program": "P10 V5e4",
+    "status": "OK",
+    "values": [
+      50000
+    ],
+    "exact": false,
+    "expected": "V50000\nOK"
   }
 ]

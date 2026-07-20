@@ -50,7 +50,6 @@ export enum UnitaryNames {
   MinusOne = "N",
   Pi = "π",
   TwoPi = "τ",
-  Euler = "e",
   GoldenRatio = "φ",
   EulerMascheroni = "γ",
 }
@@ -69,7 +68,6 @@ export const UnitaryValues = {
   [UnitaryNames.MinusOne]: -1,
   [UnitaryNames.Pi]: Math.PI,
   [UnitaryNames.TwoPi]: Math.PI * 2,
-  [UnitaryNames.Euler]: Math.E,
   [UnitaryNames.GoldenRatio]: (1 + Math.sqrt(5)) / 2,
   [UnitaryNames.EulerMascheroni]: 0.5772156649,
 }

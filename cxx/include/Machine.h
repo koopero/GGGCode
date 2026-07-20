@@ -174,16 +174,7 @@ namespace ggg {
                 // Both kinds feed the compound (state.numbers) rather than being
                 // appended immediately, so a code point works as a range bound
                 // exactly like a symbolic unitary does -- "V☃:9735" sweeps.
-                //
-                // A single-char value landing directly after another with no
-                // separator starts a NEW value (the reference parser completes a
-                // value when the next one starts). Without this, buildAxes has no
-                // preceding symbol to route the second number by and silently
-                // drops it, so "V☃你" would yield only the first code point.
-                if ( !state.numbers.empty() && state.symbols.size() < state.numbers.size() ) {
-                  finishCompound();
-                }
-                state.numbers.push_back( uval );
+                pushCompoundNumber( uval );
               }
             } else {
               state.utf8Remaining = 0;
@@ -233,17 +224,25 @@ namespace ggg {
 
     // Symbolic unitary constants — map a Unicode code point to its value (mirrors
     // the irrational entries of UnitaryValues in ts/ggg/Language.ts). π/τ/φ/γ enter
-    // as multi-byte UTF-8 code points; e/E (Euler) arrive as ASCII. K/Z/N are the
+    // as multi-byte UTF-8 code points. K/Z/N are the
     // exact unitaries and are handled separately. NumberType is float, so values
     // round to float precision and rely on the conformance value-tolerance to agree
     // with the TS double reference.
+    // The ASCII unitary letters (K/Z/N). A number is COMPLETE when one arrives:
+    // "5K" is two values, not the number "5K". Euler's e was retired precisely
+    // so no unitary collides with the exponent marker, which must keep
+    // accumulating into the number ("5e4" is 50000, not 5 then e).
+    static bool isUnitaryAscii( Char _char ) {
+      const Char u = CasedString( _char );
+      return u == GGG::EncodedOne || u == EncodedZero || u == EncodedMinusOne;
+    }
+
     static bool unitaryValue( uint32_t codepoint, NumberType &out ) {
       switch ( codepoint ) {
         case 0x03C0: out = (NumberType) 3.141592653589793;  return true;  // π  pi
         case 0x03C4: out = (NumberType) 6.283185307179586;  return true;  // τ  2π
         case 0x03C6: out = (NumberType) 1.618033988749895;  return true;  // φ  golden ratio
         case 0x03B3: out = (NumberType) 0.5772156649;       return true;  // γ  Euler–Mascheroni
-        case 'e': case 'E': out = (NumberType) 2.718281828459045; return true; // Euler's number
         default: return false;
       }
     }
@@ -306,21 +305,21 @@ namespace ggg {
       } else if ( _char == GGG::StringToEOL ) {
         startStringToEOL();
       } else {
-        // Unitary constants (K=1, Z=0, N=-1, and the ASCII symbolic e=Euler) are
+        // Unitary constants (K=1, Z=0, N=-1) are
         // values like any number: push them into the compound so they can be a
         // range/axis bound (K:5, Z>10), not emitted immediately. A following
         // separator is handled by the parseEndOfNumber() at the top of parseEncoding().
         NumberType uval;
         if ( unitaryValue( (uint32_t)(uint8_t)_char, uval ) ) {
-          state.numbers.push_back( uval );
+          pushCompoundNumber( uval );
         } else {
           _char = CasedString( _char );
           if ( _char == GGG::EncodedOne ) {
-            state.numbers.push_back( 1. );
+            pushCompoundNumber( 1. );
           } else if ( _char == EncodedZero ) {
-            state.numbers.push_back( 0. );
+            pushCompoundNumber( 0. );
           } else if ( _char == EncodedMinusOne ) {
-            state.numbers.push_back( -1. );
+            pushCompoundNumber( -1. );
           }
         }
       }
@@ -373,7 +372,14 @@ namespace ggg {
       } else if ( state.dataMode == GGG::Zero ) {
         parseAfterZero( _char );
       } else if ( state.dataMode == GGG::Number ) {
-        bufferAppend( _char );
+        if ( isUnitaryAscii( _char ) ) {
+          // Completes the number, then the unitary is parsed as its own value.
+          finishNumber();
+          state.expressionMode = GGG::Encoding;
+          parseEncoding( _char );
+        } else {
+          bufferAppend( _char );
+        }
       } else if ( state.dataMode == HexNumber ) {
         parseHex( _char );
       }
@@ -621,19 +627,39 @@ namespace ggg {
         if ( state.hexNormalize ) {
           value /= float( (1 << ( state.hexDigit * 4 )) - 1 );
         }
-        state.numbers.push_back( value );
+        pushCompoundNumber( value );
       } else if ( !state.argBuffer.empty() && ( state.dataMode == GGG::Number || state.dataMode == GGG::Zero ) ) {
         std::stringstream ss(state.argBuffer);
         NumberType value;
         if (ss >> value) {
-          state.numbers.push_back( value );
+          pushCompoundNumber( value );
         }
         state.argBuffer.clear();
       }
     }
 
+    // Feed a value into the compound. A value arriving with NO separator recorded
+    // for its position starts a new value -- the reference parser completes a
+    // value when the next one starts. Without this, buildAxes has no symbolBefore
+    // to route the number by and silently drops it ("VK5", "V5K", "V<char><char>").
+    void pushCompoundNumber( NumberType value ) {
+      if ( !state.numbers.empty() && state.symbols.size() < state.numbers.size() ) {
+        // emitCompound, NOT finishCompound: this can be reached from inside
+        // finishNumber, and finishCompound would re-enter it with the number
+        // still buffered.
+        emitCompound();
+      }
+      state.numbers.push_back( value );
+    }
+
     void finishCompound() {
       finishNumber();
+      emitCompound();
+    }
+
+    // Flush whatever is already accumulated. Split out of finishCompound so the
+    // adjacency guard can flush without re-running finishNumber.
+    void emitCompound() {
       if ( state.numbers.empty() && state.symbols.empty() ) {
         return;
       }

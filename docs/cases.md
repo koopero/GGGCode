@@ -6,7 +6,7 @@ Each case is one artifact wearing four hats: a behavioural **spec**, a piece of 
 
 See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) · [runtime](runtime.md).
 
-107 cases across 23 tags.
+110 cases across 23 tags.
 
 ## Tags
 
@@ -16,9 +16,9 @@ See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) 
 - [flip](#flip) (3)
 - [flow](#flow) (12)
 - [hex](#hex) (7)
-- [irrational](#irrational) (3)
+- [irrational](#irrational) (2)
 - [iteration](#iteration) (2)
-- [lists](#lists) (6)
+- [lists](#lists) (9)
 - [map](#map) (6)
 - [matrix](#matrix) (11)
 - [multiaxis](#multiaxis) (4)
@@ -26,13 +26,13 @@ See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) 
 - [offset](#offset) (5)
 - [operator](#operator) (6)
 - [procedures](#procedures) (4)
-- [ranges](#ranges) (14)
+- [ranges](#ranges) (15)
 - [references](#references) (16)
 - [rotate](#rotate) (3)
 - [signs](#signs) (1)
 - [subscript](#subscript) (8)
 - [unicode](#unicode) (9)
-- [unitary](#unitary) (8)
+- [unitary](#unitary) (11)
 
 ## blit
 
@@ -883,17 +883,6 @@ P10 Vτ
 - values: `[6.283185307179586]`
 - needs: `gggpx`
 
-### unitary_e
-
-e decodes to Euler's number.
-
-```
-P10 Ve
-```
-
-- values: `[2.718281828459045]`
-- needs: `gggpx`
-
 ## iteration
 
 ### iter_single
@@ -1002,6 +991,45 @@ P10 V☃你
 ![unicode_adjacent: 9731, 20320](img/unicode_adjacent.svg)
 
 - values: `[9731,20320]`
+- needs: `gggpx`
+
+### unitary_before_number
+
+A unitary directly followed by a number is two values.
+
+```
+P10 VK5
+```
+
+![unitary_before_number: 1, 5](img/unitary_before_number.svg)
+
+- values: `[1,5]`
+- needs: `gggpx`
+
+### unitary_after_number
+
+A number directly followed by a unitary is two values.
+
+```
+P10 V5K
+```
+
+![unitary_after_number: 5, 1](img/unitary_after_number.svg)
+
+- values: `[5,1]`
+- needs: `gggpx`
+
+### unitary_pair
+
+Adjacent unitaries are separate values.
+
+```
+P10 VKZ
+```
+
+![unitary_pair: 1, 0](img/unitary_pair.svg)
+
+- values: `[1,0]`
 - needs: `gggpx`
 
 ## map
@@ -1681,6 +1709,19 @@ P10 VZ>10
 - values: `[0,1,2,3,4,5,6,7,8,9]`
 - needs: `gggpx`
 
+### unitary_exponent_unaffected
+
+Scientific notation is unaffected by unitary completion.
+
+```
+P10 V5e4
+```
+
+![unitary_exponent_unaffected: 50000](img/unitary_exponent_unaffected.svg)
+
+- values: `[50000]`
+- needs: `gggpx`
+
 ## references
 
 ### ref_bare
@@ -2199,14 +2240,55 @@ P10 Vτ
 - values: `[6.283185307179586]`
 - needs: `gggpx`
 
-### unitary_e
+### unitary_before_number
 
-e decodes to Euler's number.
+A unitary directly followed by a number is two values.
 
 ```
-P10 Ve
+P10 VK5
 ```
 
-- values: `[2.718281828459045]`
+![unitary_before_number: 1, 5](img/unitary_before_number.svg)
+
+- values: `[1,5]`
+- needs: `gggpx`
+
+### unitary_after_number
+
+A number directly followed by a unitary is two values.
+
+```
+P10 V5K
+```
+
+![unitary_after_number: 5, 1](img/unitary_after_number.svg)
+
+- values: `[5,1]`
+- needs: `gggpx`
+
+### unitary_pair
+
+Adjacent unitaries are separate values.
+
+```
+P10 VKZ
+```
+
+![unitary_pair: 1, 0](img/unitary_pair.svg)
+
+- values: `[1,0]`
+- needs: `gggpx`
+
+### unitary_exponent_unaffected
+
+Scientific notation is unaffected by unitary completion.
+
+```
+P10 V5e4
+```
+
+![unitary_exponent_unaffected: 50000](img/unitary_exponent_unaffected.svg)
+
+- values: `[50000]`
 - needs: `gggpx`
 

@@ -73,7 +73,7 @@ See the [tour](docs/tour.md) for the full progression, with diagrams.
   - Quoted: `"Hello, world!"`
   - To end of line: `` `Rest of line becomes string``
 - **Unitary constants** — named numeric literals (ASCII forms case-insensitive):
-  `K`=1, `Z`=0, `N`=−1, `π`=Pi, `τ`=2π, `e`=Euler's number, `φ`=golden ratio, `γ`=Euler–Mascheroni
+  `K`=1, `Z`=0, `N`=−1, `π`=Pi, `τ`=2π, `φ`=golden ratio, `γ`=Euler–Mascheroni
 - **Unicode characters** — every *other* non-ASCII character is a numeric literal
   for its Unicode code point, and lists like any other value:
 

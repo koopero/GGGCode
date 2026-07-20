@@ -167,12 +167,11 @@ describe("ParseArg", () => {
       }
     )
 
-    test("lowercase ASCII variants (z, k, n, e) parse correctly", () => {
+    test("lowercase ASCII variants (z, k, n) parse correctly", () => {
       const cases: [string, number][] = [
         ["z", UnitaryValues[UnitaryNames.Zero]],
         ["k", UnitaryValues[UnitaryNames.One]],
         ["n", UnitaryValues[UnitaryNames.MinusOne]],
-        ["e", UnitaryValues[UnitaryNames.Euler]],
       ]
       for ( const [char, expected] of cases ) {
         const [ token ] = ParseArg( `G${char}` )

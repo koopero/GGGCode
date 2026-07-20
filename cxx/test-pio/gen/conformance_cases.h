@@ -105,7 +105,10 @@ namespace ggg_conformance {
   static const double values_unitary_range_excl[] = { 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0 };
   static const double values_unitary_pi[] = { 3.1415926535897931 };
   static const double values_unitary_tau[] = { 6.2831853071795862 };
-  static const double values_unitary_e[] = { 2.7182818284590451 };
+  static const double values_unitary_before_number[] = { 1.0, 5.0 };
+  static const double values_unitary_after_number[] = { 5.0, 1.0 };
+  static const double values_unitary_pair[] = { 1.0, 0.0 };
+  static const double values_unitary_exponent_unaffected[] = { 50000.0 };
   struct Case {
     const char* name; const char* program; const char* status;
     const double* values; int valueCount; const char* expected;
@@ -217,7 +220,10 @@ namespace ggg_conformance {
     { "unitary_range_excl", "P10 VZ>10\n", "OK", values_unitary_range_excl, 10, nullptr },
     { "unitary_pi", "P10 Vπ\n", "OK", values_unitary_pi, 1, nullptr },
     { "unitary_tau", "P10 Vτ\n", "OK", values_unitary_tau, 1, nullptr },
-    { "unitary_e", "P10 Ve\n", "OK", values_unitary_e, 1, nullptr }
+    { "unitary_before_number", "P10 VK5\n", "OK", values_unitary_before_number, 2, nullptr },
+    { "unitary_after_number", "P10 V5K\n", "OK", values_unitary_after_number, 2, nullptr },
+    { "unitary_pair", "P10 VKZ\n", "OK", values_unitary_pair, 2, nullptr },
+    { "unitary_exponent_unaffected", "P10 V5e4\n", "OK", values_unitary_exponent_unaffected, 1, nullptr }
   };
   constexpr int caseCount = sizeof( cases ) / sizeof( cases[0] );
 }

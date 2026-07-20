@@ -18,7 +18,14 @@ describe("README", () => {
     test("unicode math constants", () => {
       expect( ParseArg("Vπ")?.[0]?.data ).toEqual([Math.PI])
       expect( ParseArg("Vτ")?.[0]?.data ).toEqual([Math.PI * 2])
-      expect( ParseArg("Ve")?.[0]?.data ).toEqual([Math.E])
+      expect( ParseArg("Vφ")?.[0]?.data ).toEqual([(1 + Math.sqrt(5)) / 2])
+    })
+
+    // "e" is the exponent marker, never a constant -- it was retired as Euler's
+    // number so that no unitary collides with scientific notation.
+    test("e is scientific notation, not a constant", () => {
+      expect( ParseArg("V5e4")?.[0]?.data ).toEqual([50000])
+      expect( ParseArg("V1.23e-4")?.[0]?.data ).toEqual([0.000123])
     })
 
     test("unitary constants in a range: N:K", () => {

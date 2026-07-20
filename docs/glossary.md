@@ -116,7 +116,6 @@ Named numeric literals that can appear as data values. Case-insensitive for ASCI
 | `N`   | -1                         |
 | `π`   | π ≈ 3.14159                |
 | `τ`   | 2π ≈ 6.28318               |
-| `e`   | Euler's number ≈ 2.71828   |
 | `φ`   | Golden ratio ≈ 1.61803     |
 | `γ`   | Euler-Mascheroni ≈ 0.57722 |
 
