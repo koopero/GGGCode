@@ -115,3 +115,20 @@
   exact: true
   program: "P10 V-0x10"
   values: [ 0 ]
+
+- name: number_leading_dot
+  # A number may start with the decimal point; the leading zero is optional.
+  description: "A leading decimal point starts a number (.5 is 0.5)."
+  needs: [ gggpx ]
+  tags: [ decimals ]
+  program: "P10 V.5,1"
+  values: [ 0.5, 1 ]
+
+- name: number_second_dot
+  # A second decimal point cannot extend the number, so it begins another value
+  # under the same code, the same way a sign does.
+  description: "A second decimal point begins another value."
+  needs: [ gggpx ]
+  tags: [ decimals, lists ]
+  program: "P10 V1.2.3"
+  values: [ 1.2, 0.3 ]

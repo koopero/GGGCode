@@ -6,19 +6,19 @@ Each case is one artifact wearing four hats: a behavioural **spec**, a piece of 
 
 See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) · [runtime](runtime.md).
 
-115 cases across 23 tags.
+117 cases across 23 tags.
 
 ## Tags
 
 - [blit](#blit) (24)
 - [conditionals](#conditionals) (6)
-- [decimals](#decimals) (13)
+- [decimals](#decimals) (15)
 - [flip](#flip) (3)
 - [flow](#flow) (12)
 - [hex](#hex) (8)
 - [irrational](#irrational) (2)
 - [iteration](#iteration) (2)
-- [lists](#lists) (10)
+- [lists](#lists) (11)
 - [map](#map) (6)
 - [matrix](#matrix) (11)
 - [multiaxis](#multiaxis) (4)
@@ -613,6 +613,30 @@ P10 V-0x10
 - needs: `gggpx`
 - byte-exact (formatting is part of the contract)
 
+### number_leading_dot
+
+A leading decimal point starts a number (.5 is 0.5).
+
+```
+P10 V.5,1
+```
+
+- values: `[0.5,1]`
+- needs: `gggpx`
+
+### number_second_dot
+
+A second decimal point begins another value.
+
+```
+P10 V1.2.3
+```
+
+![number_second_dot: 1.2, 0.3](img/number_second_dot.svg)
+
+- values: `[1.2,0.3]`
+- needs: `gggpx`
+
 ## flip
 
 ### blit_box_flip_x
@@ -1040,6 +1064,19 @@ P10 V5-3
 ![number_ends_at_sign: 5, -3](img/number_ends_at_sign.svg)
 
 - values: `[5,-3]`
+- needs: `gggpx`
+
+### number_second_dot
+
+A second decimal point begins another value.
+
+```
+P10 V1.2.3
+```
+
+![number_second_dot: 1.2, 0.3](img/number_second_dot.svg)
+
+- values: `[1.2,0.3]`
 - needs: `gggpx`
 
 ### range_in_list

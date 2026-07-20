@@ -1418,6 +1418,43 @@
     "expected": "V0 X10\nOK"
   },
   {
+    "name": "number_leading_dot",
+    "description": "A leading decimal point starts a number (.5 is 0.5).",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "decimals"
+    ],
+    "program": "P10 V.5,1",
+    "status": "OK",
+    "values": [
+      0.5,
+      1
+    ],
+    "exact": false,
+    "expected": "V0.5,1\nOK"
+  },
+  {
+    "name": "number_second_dot",
+    "description": "A second decimal point begins another value.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "decimals",
+      "lists"
+    ],
+    "program": "P10 V1.2.3",
+    "status": "OK",
+    "values": [
+      1.2,
+      0.3
+    ],
+    "exact": false,
+    "expected": "V1.2,0.3\nOK"
+  },
+  {
     "name": "range_incl",
     "description": "a:b expands to an inclusive integer sweep.",
     "needs": [

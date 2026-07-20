@@ -68,6 +68,8 @@ namespace ggg_conformance {
   static const double values_number_ends_at_letter[] = { 5.0 };
   static const double values_number_ends_at_sign[] = { 5.0, -3.0 };
   static const double values_number_hex_prefix_not_absorbed[] = { 0.0 };
+  static const double values_number_leading_dot[] = { 0.50000000000000000, 1.0 };
+  static const double values_number_second_dot[] = { 1.2000000000000000, 0.29999999999999999 };
   static const double values_range_incl[] = { 1.0, 2.0, 3.0, 4.0, 5.0 };
   static const double values_range_excl[] = { 1.0, 2.0, 3.0, 4.0 };
   static const double values_range_count[] = { 0.0, 2.5000000000000000, 5.0, 7.5000000000000000, 10.0 };
@@ -187,6 +189,8 @@ namespace ggg_conformance {
     { "number_ends_at_letter", "P10 V5X10\n", "OK", values_number_ends_at_letter, 1, "V5 X10\nOK" },
     { "number_ends_at_sign", "P10 V5-3\n", "OK", values_number_ends_at_sign, 2, nullptr },
     { "number_hex_prefix_not_absorbed", "P10 V-0x10\n", "OK", values_number_hex_prefix_not_absorbed, 1, "V0 X10\nOK" },
+    { "number_leading_dot", "P10 V.5,1\n", "OK", values_number_leading_dot, 2, nullptr },
+    { "number_second_dot", "P10 V1.2.3\n", "OK", values_number_second_dot, 2, nullptr },
     { "range_incl", "P10 V1:5\n", "OK", values_range_incl, 5, nullptr },
     { "range_excl", "P10 V1>5\n", "OK", values_range_excl, 4, nullptr },
     { "range_count", "P10 V0:10/5\n", "OK", values_range_count, 5, nullptr },

@@ -413,8 +413,9 @@ namespace ggg {
           // Code mode and fires the completed argument's hook.
           finishArg();
           parseCode( _char );
-        } else if ( _char == '-' || _char == '+' ) {
-          // A sign begins another value under the same code (an implicit list).
+        } else if ( _char == '-' || _char == '+' || _char == GGG::Period ) {
+          // A sign, or a second decimal point, begins another value under the
+          // same code (an implicit list): "1.2.3" is 1.2 then .3.
           finishCompound();
           resetEncoding();
           parseEncoding( _char );

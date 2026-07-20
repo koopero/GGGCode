@@ -5,7 +5,10 @@ import { HexModifiers, HexModifier } from "./hexlist"
 const hexPrefixCodes = HexEncodings.HexList1 + HexEncodings.HexList2 + HexEncodings.HexNorm1 + HexEncodings.HexNorm2 + HexEncodings.HexNumber
 const hexNumberPattern = `^0[${hexPrefixCodes}][0-9a-f]+`
 const hexNumber = new RegExp( hexNumberPattern, "i" )
-const decimalNumber = /^[+-]?(\d+(\.\d+)?)([Ee][+-]?\d+)?/
+// The `\.\d+` alternative accepts a leading decimal point (".5" is 0.5). Without
+// it a number had to start with a digit, so ".5" matched nothing at all and was
+// dropped -- silently, even mid-list ("V1,.5" yielded just 1).
+const decimalNumber = /^[+-]?(\d+(\.\d+)?|\.\d+)([Ee][+-]?\d+)?/
 const doubleQuotedString = /^((""|".*?[^\\]"))/
 
 const RegexEscape = ( str:string ) => str.replace( /[-/\\^$*+?.()|[\]{}]/g, "\\$&" )
