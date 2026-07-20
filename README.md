@@ -13,7 +13,6 @@ There is a TypeScript reference implementation (`ts/`) and a C++ port (`cxx/`); 
 | [docs/commands.md](docs/commands.md) | Per-command reference: arguments, responses, and example links (generated from the command definitions). |
 | [docs/glossary.md](docs/glossary.md) | Definitions for language concepts, argument codes, and the TypeScript API. |
 | [docs/runtime.md](docs/runtime.md) | How the runtime executes: machine, parse pipeline, hooks, `Solve`, matrix registers. |
-| [docs/review.md](docs/review.md) | A design review essay. |
 
 ## Basic syntax
 

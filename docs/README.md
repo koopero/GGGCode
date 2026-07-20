@@ -6,7 +6,6 @@ Start with the **[tour](tour.md)** for a guided introduction, then use the refer
 
 - **[tour.md](tour.md)** — a guided walk through the language: numbers & encodings → ranges & sweeps → references → matrices → blit → flow control. Every snippet links to a live, tested case.
 - **[runtime.md](runtime.md)** — how the runtime executes: the machine, the parse pipeline, the hook lifecycle, the lazy `Solve` generator, and matrix registers.
-- **[review.md](review.md)** — a design review essay (strengths, limits, and a speculative live-coding angle).
 
 ## Reference
 
