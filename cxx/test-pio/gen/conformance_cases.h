@@ -95,6 +95,9 @@ namespace ggg_conformance {
   static const double values_unicode_euro[] = { 8364.0 };
   static const double values_unicode_emoji[] = { 128512.0 };
   static const double values_unicode_list[] = { 9731.0, 20320.0 };
+  static const double values_unicode_range[] = { 9731.0, 9732.0, 9733.0, 9734.0, 9735.0 };
+  static const double values_unicode_range_multi[] = { 30051.0 };
+  static const double values_unicode_adjacent[] = { 9731.0, 20320.0 };
   static const double values_unitary_one[] = { 1.0 };
   static const double values_unitary_zero[] = { 0.0 };
   static const double values_unitary_minusone[] = { -1.0 };
@@ -204,6 +207,9 @@ namespace ggg_conformance {
     { "unicode_euro", "P10 V€\n", "OK", values_unicode_euro, 1, nullptr },
     { "unicode_emoji", "P10 V😀\n", "OK", values_unicode_emoji, 1, nullptr },
     { "unicode_list", "P10 V☃,你\n", "OK", values_unicode_list, 2, nullptr },
+    { "unicode_range", "P10 V☃:9735\n", "OK", values_unicode_range, 5, nullptr },
+    { "unicode_range_multi", "P10 V☃|你\n", "OK", values_unicode_range_multi, 1, nullptr },
+    { "unicode_adjacent", "P10 V☃你\n", "OK", values_unicode_adjacent, 2, nullptr },
     { "unitary_one", "P10 VK\n", "OK", values_unitary_one, 1, nullptr },
     { "unitary_zero", "P10 VZ\n", "OK", values_unitary_zero, 1, nullptr },
     { "unitary_minusone", "P10 VN\n", "OK", values_unitary_minusone, 1, nullptr },

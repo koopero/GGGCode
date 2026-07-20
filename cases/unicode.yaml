@@ -41,3 +41,28 @@
   tags: [ unicode, lists ]
   program: "P10 V☃,你"
   values: [ 9731, 20320 ]
+
+- name: unicode_range
+  # A code point is an ordinary numeric value, so it works as a range bound.
+  description: "A Unicode character can be the start of a range."
+  needs: [ gggpx ]
+  tags: [ unicode, ranges ]
+  program: "P10 V☃:9735"
+  values: [ 9731, 9732, 9733, 9734, 9735 ]
+
+- name: unicode_range_multi
+  # Multi-axis over code points adds coordinate-wise, like any other values.
+  description: "Unicode code points combine on multiple axes."
+  needs: [ gggpx ]
+  tags: [ unicode, multiaxis ]
+  program: "P10 V☃|你"
+  values: [ 30051 ]
+
+- name: unicode_adjacent
+  # Two single-character values with no separator are two values, not one: the
+  # second starts a new value rather than joining the first's axis.
+  description: "Adjacent Unicode characters are separate values."
+  needs: [ gggpx ]
+  tags: [ unicode, lists ]
+  program: "P10 V☃你"
+  values: [ 9731, 20320 ]

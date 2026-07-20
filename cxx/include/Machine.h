@@ -167,14 +167,23 @@ namespace ggg {
               if ( state.utf8Remaining == 0 ) {
                 state.expressionMode = GGG::Encoding;
                 NumberType uval;
-                if ( unitaryValue( state.utf8Accum, uval ) ) {
-                  // Symbolic unitary (π/τ/φ/γ): a value / range bound, like K/Z/N.
-                  state.numbers.push_back( uval );
-                } else {
+                if ( !unitaryValue( state.utf8Accum, uval ) ) {
                   // Any other character decodes to its code point.
-                  finishCompound();
-                  dataAppend( (NumberType)state.utf8Accum );
+                  uval = (NumberType) state.utf8Accum;
                 }
+                // Both kinds feed the compound (state.numbers) rather than being
+                // appended immediately, so a code point works as a range bound
+                // exactly like a symbolic unitary does -- "V☃:9735" sweeps.
+                //
+                // A single-char value landing directly after another with no
+                // separator starts a NEW value (the reference parser completes a
+                // value when the next one starts). Without this, buildAxes has no
+                // preceding symbol to route the second number by and silently
+                // drops it, so "V☃你" would yield only the first code point.
+                if ( !state.numbers.empty() && state.symbols.size() < state.numbers.size() ) {
+                  finishCompound();
+                }
+                state.numbers.push_back( uval );
               }
             } else {
               state.utf8Remaining = 0;

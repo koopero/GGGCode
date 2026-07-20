@@ -6,7 +6,7 @@ Each case is one artifact wearing four hats: a behavioural **spec**, a piece of 
 
 See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) · [runtime](runtime.md).
 
-104 cases across 23 tags.
+107 cases across 23 tags.
 
 ## Tags
 
@@ -18,20 +18,20 @@ See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) 
 - [hex](#hex) (7)
 - [irrational](#irrational) (3)
 - [iteration](#iteration) (2)
-- [lists](#lists) (5)
+- [lists](#lists) (6)
 - [map](#map) (6)
 - [matrix](#matrix) (11)
-- [multiaxis](#multiaxis) (3)
+- [multiaxis](#multiaxis) (4)
 - [normalized](#normalized) (2)
 - [offset](#offset) (5)
 - [operator](#operator) (6)
 - [procedures](#procedures) (4)
-- [ranges](#ranges) (13)
+- [ranges](#ranges) (14)
 - [references](#references) (16)
 - [rotate](#rotate) (3)
 - [signs](#signs) (1)
 - [subscript](#subscript) (8)
-- [unicode](#unicode) (6)
+- [unicode](#unicode) (9)
 - [unitary](#unitary) (8)
 
 ## blit
@@ -991,6 +991,19 @@ P10 V☃,你
 - values: `[9731,20320]`
 - needs: `gggpx`
 
+### unicode_adjacent
+
+Adjacent Unicode characters are separate values.
+
+```
+P10 V☃你
+```
+
+![unicode_adjacent: 9731, 20320](img/unicode_adjacent.svg)
+
+- values: `[9731,20320]`
+- needs: `gggpx`
+
 ## map
 
 ### blit_map_axes
@@ -1251,6 +1264,19 @@ P10 V1|2*10|3*100
 ![multiaxis_multiplier: 321](img/multiaxis_multiplier.svg)
 
 - values: `[321]`
+- needs: `gggpx`
+
+### unicode_range_multi
+
+Unicode code points combine on multiple axes.
+
+```
+P10 V☃|你
+```
+
+![unicode_range_multi: 30051](img/unicode_range_multi.svg)
+
+- values: `[30051]`
 - needs: `gggpx`
 
 ## normalized
@@ -1614,6 +1640,19 @@ P10 V1:
 ![range_open_no_register: 1](img/range_open_no_register.svg)
 
 - values: `[1]`
+- needs: `gggpx`
+
+### unicode_range
+
+A Unicode character can be the start of a range.
+
+```
+P10 V☃:9735
+```
+
+![unicode_range: 9731, 9732, 9733, 9734, 9735](img/unicode_range.svg)
+
+- values: `[9731,9732,9733,9734,9735]`
 - needs: `gggpx`
 
 ### unitary_range
@@ -2034,6 +2073,45 @@ P10 V☃,你
 ```
 
 ![unicode_list: 9731, 20320](img/unicode_list.svg)
+
+- values: `[9731,20320]`
+- needs: `gggpx`
+
+### unicode_range
+
+A Unicode character can be the start of a range.
+
+```
+P10 V☃:9735
+```
+
+![unicode_range: 9731, 9732, 9733, 9734, 9735](img/unicode_range.svg)
+
+- values: `[9731,9732,9733,9734,9735]`
+- needs: `gggpx`
+
+### unicode_range_multi
+
+Unicode code points combine on multiple axes.
+
+```
+P10 V☃|你
+```
+
+![unicode_range_multi: 30051](img/unicode_range_multi.svg)
+
+- values: `[30051]`
+- needs: `gggpx`
+
+### unicode_adjacent
+
+Adjacent Unicode characters are separate values.
+
+```
+P10 V☃你
+```
+
+![unicode_adjacent: 9731, 20320](img/unicode_adjacent.svg)
 
 - values: `[9731,20320]`
 - needs: `gggpx`

@@ -1962,6 +1962,65 @@
     "expected": "V9731,20320\nOK"
   },
   {
+    "name": "unicode_range",
+    "description": "A Unicode character can be the start of a range.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "unicode",
+      "ranges"
+    ],
+    "program": "P10 V☃:9735",
+    "status": "OK",
+    "values": [
+      9731,
+      9732,
+      9733,
+      9734,
+      9735
+    ],
+    "exact": false,
+    "expected": "V9731,9732,9733,9734,9735\nOK"
+  },
+  {
+    "name": "unicode_range_multi",
+    "description": "Unicode code points combine on multiple axes.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "unicode",
+      "multiaxis"
+    ],
+    "program": "P10 V☃|你",
+    "status": "OK",
+    "values": [
+      30051
+    ],
+    "exact": false,
+    "expected": "V30051\nOK"
+  },
+  {
+    "name": "unicode_adjacent",
+    "description": "Adjacent Unicode characters are separate values.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "unicode",
+      "lists"
+    ],
+    "program": "P10 V☃你",
+    "status": "OK",
+    "values": [
+      9731,
+      20320
+    ],
+    "exact": false,
+    "expected": "V9731,20320\nOK"
+  },
+  {
     "name": "unitary_one",
     "description": "K is the unitary constant one.",
     "needs": [
