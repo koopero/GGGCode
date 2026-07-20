@@ -358,17 +358,21 @@ namespace ggg {
         // range/axis bound (K:5, Z>10), not emitted immediately. A following
         // separator is handled by the parseEndOfNumber() at the top of parseEncoding().
         NumberType uval;
+        const Char cased = CasedString( _char );
         if ( unitaryValue( (uint32_t)(uint8_t)_char, uval ) ) {
           pushCompoundNumber( uval * takePendingSign() );
-        } else {
-          _char = CasedString( _char );
-          if ( _char == GGG::EncodedOne ) {
-            pushCompoundNumber( 1. * takePendingSign() );
-          } else if ( _char == EncodedZero ) {
-            pushCompoundNumber( 0. * takePendingSign() );
-          } else if ( _char == EncodedMinusOne ) {
-            pushCompoundNumber( -1. * takePendingSign() );
-          }
+        } else if ( cased == GGG::EncodedOne ) {
+          pushCompoundNumber( 1. * takePendingSign() );
+        } else if ( cased == EncodedZero ) {
+          pushCompoundNumber( 0. * takePendingSign() );
+        } else if ( cased == EncodedMinusOne ) {
+          pushCompoundNumber( -1. * takePendingSign() );
+        } else if ( ( _char >= 'a' && _char <= 'z' ) || ( _char >= 'A' && _char <= 'Z' ) ) {
+          // Any other letter where a value was expected is the CODE of the next
+          // argument, exactly as it is once a number has started (see parseData).
+          // "Vinf" is the empty argument V, then I carrying the unitary n.
+          finishArg();
+          parseCode( _char );
         }
       }
     }

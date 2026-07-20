@@ -770,6 +770,18 @@ void test_unitary_infinity() {
   m.out.clear();
   m.run( "P10 V1e309\n" );                             // overflow renders alike
   TEST_ASSERT_EQUAL_STRING( "VInfinity\nOK\n", m.out.c_str() );
+
+  // A letter where a value was expected is the CODE of the next argument, so V
+  // is empty and Q carries the 5. Not a conformance case: the corpus decoder
+  // reads values from V args, so it cannot express this output.
+  m.out.clear();
+  m.run( "P10 VQ5\n" );
+  TEST_ASSERT_EQUAL_STRING( "Q5\nOK\n", m.out.c_str() );
+
+  // "inf" is not GGG: V is empty, I takes the unitary n (-1), F is empty.
+  m.out.clear();
+  m.run( "P10 Vinf\n" );
+  TEST_ASSERT_EQUAL_STRING( "I-1\nOK\n", m.out.c_str() );
 }
 
 // Run all tests
