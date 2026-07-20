@@ -126,8 +126,30 @@ The host owns the clock and the cadence — `machine.poll( millis() )` from an A
   interval elapsed, the procedure fires *once* and the next deadline is rebased on `now`.
   A host that polls every 10s with `S100` gets one fire per poll, not a hundred.
 - **Bodies are bounded.** A fired body goes through the same queue as `T11`, capped by
-  `maxQueue`, so runaway recursion inside one body fails with `QueueOverflow` rather than
+  the work budget below, so runaway recursion fails with `QueueOverflow` rather than
   spinning.
+
+### The recursion guard
+
+A procedure may run itself (`T11` inside its own body, directly or through a cycle), so
+both engines bound it — and bound it *identically*:
+
+- **`maxQueue` (default 1024) is a budget of machine-enqueued work per host drive**, not a
+  queue depth. Depth is useless here: both engines splice a body in at the *front* to keep
+  nested calls ordered, so during recursion the queue stays about two items deep no matter
+  how long it runs.
+- **Only work the machine enqueued counts.** Lines the host feeds are exempt, so where the
+  budget trips does not shift with the size of the program that triggered it. This is what
+  makes the two engines agree: C++ feeds host input straight to `parse()` and never sees it
+  in the queue either.
+- On exhaustion the queued work is dropped and `QueueOverflow` (`F2`) is emitted. The
+  machine stays responsive.
+- **The defaults are live.** The guards read `if ( limits.maxQueue && … )`, so an absent
+  limit disables them — TS therefore ships real defaults matching the generated C++ ones
+  rather than an empty object.
+
+Given the same `maxQueue`, both engines produce byte-identical output for a self-running
+procedure, asserted in `ts-test/gggtxFlow.test.ts` and cxx `test_flow_procedures`.
 
 This is what makes the language Turing complete — an unbounded export that reads and
 writes registers and conditionally re-exports itself is a Turing machine — while keeping

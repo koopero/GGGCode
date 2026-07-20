@@ -20,6 +20,46 @@ async function runFlow( program: string ): Promise<string> {
   return normalizeOutput( out )
 }
 
+// Runaway recursion: a procedure that runs ITSELF. Both engines bound this by
+// the work budget and must spend it at the SAME point -- the identical assertion
+// lives in cxx test_flow_procedures. Depth-first re-insertion keeps the queue
+// shallow, so a depth check alone never catches this; and the budget counts only
+// machine-enqueued work, so host input does not shift where it trips.
+describe( "gggtx recursion guard", () => {
+  test( "a self-running procedure terminates at the work budget", async () => {
+    const machine = new Machine( {
+      commands: { ...PrintCommands, ...gggtxFlowCommands },
+      limits: { maxQueue: 10 },
+    } )
+    let out = ""
+    machine.on( "output", ( line: any ) => { out += Format( line ) } )
+    await machine.run( [
+      'T10 L"boom"',
+      "P10 V1",
+      'T11 L"boom"',
+      "T0",
+      'T11 L"boom"',
+    ].join( "\n" ) )
+    expect( out ).toEqual( "V1\nOK\nV1\nOK\nV1\nOK\nV1\nOK\nV1\nOK\nOK F2\n" )
+  } )
+
+  test( "the guard is on by default, without the embedder asking", async () => {
+    const machine = new Machine( { commands: { ...PrintCommands, ...gggtxFlowCommands } } )
+    let lines = 0
+    machine.on( "output", () => lines++ )
+    await machine.run( [
+      'T10 L"boom"',
+      "P10 V1",
+      'T11 L"boom"',
+      "T0",
+      'T11 L"boom"',
+    ].join( "\n" ) )
+    // Terminates at all -- the point of the default. 1024 bodies -> ~2k lines.
+    expect( lines ).toBeGreaterThan( 0 )
+    expect( lines ).toBeLessThan( 2100 )
+  } )
+} )
+
 describe( "gggtx procedures", () => {
   test( "defining a procedure does not execute its body", async () => {
     const out = await runFlow( [

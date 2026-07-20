@@ -453,12 +453,15 @@ void test_flow_procedures() {
   // never fires -- without the total-work bound in drainPending this spins
   // forever, which on embedded means until reset. If this regresses the suite
   // HANGS rather than failing, so treat a timeout here as this bug.
+  // The exact output is asserted identically in ts-test/gggtxFlow.test.ts: the
+  // two engines must spend the budget at the SAME point, which is only true
+  // because both count machine-enqueued work and ignore host input.
   {
     FlowMachine m; m.setup();
-    m.limits.maxQueue = 20;
+    m.limits.maxQueue = 10;
     m.run( "T10 L\"boom\"\nP10 V1\nT11 L\"boom\"\nT0\nT11 L\"boom\"\n" );
-    TEST_ASSERT_TRUE( m.out.size() > 0 );
-    TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "F2" ) );   // QueueOverflow
+    TEST_ASSERT_EQUAL_STRING(
+      "V1\nOK\nV1\nOK\nV1\nOK\nV1\nOK\nV1\nOK\nOK F2\n", m.out.c_str() );
   }
 
   // Redefining a procedure overwrites the previous body.

@@ -10,6 +10,11 @@ type QueueItem = {
   line?: Token
   running?: Promise<any>|null
   ref?: object
+  // Enqueued by the MACHINE (a procedure body), not fed by the host. Only this
+  // counts against the work budget, so the budget measures re-entrant work in
+  // both engines: C++ feeds host input straight to parse(), so its counter
+  // never sees it either.
+  work?: boolean
 }
 
 type StackItem = {
@@ -87,6 +92,11 @@ export default class Machine extends EventEmitter  {
   stack:StackItem[] = []
   queue:QueueItem[] = []
   queuePointer:number = 0
+  // Work executed since the host last fed the machine. Depth-first re-insertion
+  // keeps the queue SHALLOW during recursion, so a depth check alone never
+  // catches a procedure that runs itself -- the total-work budget does. Reset
+  // per drive (run/poll); mirrors the `processed` counter in C++ drainPending.
+  queueWork:number = 0
   runningCommand:Command|null = null
   // Request id (the O<id> arg) echoed on this line's return so it can be
   // correlated; defaults to 1, which renders the terminator as OK.
@@ -106,7 +116,10 @@ export default class Machine extends EventEmitter  {
     }
 
     this.state = props.state ? props.state : {}
-    this.limits = props.limits ? props.limits : {}
+    // Defaults matter: the guards are written `if ( limits.maxQueue && ... )`,
+    // so an absent limit silently DISABLES them. These mirror the generated C++
+    // defaults in cxx/include/ggg/Limits.h (source: ts/cxx/CxxLimits.ts).
+    this.limits = { maxQueue: 1024, maxAsync: 16, ...( props.limits || {} ) }
   }
 
 
@@ -166,6 +179,22 @@ export default class Machine extends EventEmitter  {
         return next()
       }
 
+      const { limits } = this
+      if ( line && item.work && limits.maxQueue && ++this.queueWork > limits.maxQueue ) {
+        // Budget spent: drop the queued WORK and report, rather than letting a
+        // self-running procedure spin forever. Callbacks are kept -- run()/poll()
+        // resolve through a sentinel callback, so removing those would swap a
+        // spin for a promise that never settles.
+        for ( let i = queue.length - 1; i >= queuePointer; i-- ) {
+          if ( queue[i].line ) queue.splice( i, 1 )
+        }
+        this.queueWork = 0
+        this.outputFail( GGGFail.QueueOverflow )
+        // queuePointer now addresses the next surviving item; keep draining it.
+        if ( !this.timeout ) this.timeout = setTimeout( () => this.tick(), 0 )
+        return
+      }
+
       if ( line ) {
         item.running = new Promise<void>( ( resolve ) => {
           this.execLine( line )
@@ -200,8 +229,11 @@ export default class Machine extends EventEmitter  {
   enqueueLines( lines:string[] ) {
     const { queue, queuePointer, limits } = this
     const parsed = ParseLines( lines.join( GGG.End ) )
-    const items:QueueItem[] = parsed.map( line => ( { line } ) )
-    if ( limits.maxQueue && queue.length + items.length > limits.maxQueue ) {
+    const items:QueueItem[] = parsed.map( line => ( { line, work: true } ) )
+    // Outstanding depth, not queue.length: consumed items are never removed from
+    // the array (queuePointer just advances), so length is a lifetime total and
+    // would cap a long session. Mirrors the C++ pending.size() check.
+    if ( limits.maxQueue && ( queue.length - queuePointer ) + items.length > limits.maxQueue ) {
       this.outputFail( GGGFail.QueueOverflow )
       return
     }
@@ -235,10 +267,10 @@ export default class Machine extends EventEmitter  {
         items.push( { callback: () => this.setIterRegister( regId, value ) } )
       }
       for ( const line of bodyLines ) {
-        items.push( { line } )
+        items.push( { line, work: true } )
       }
     }
-    if ( limits.maxQueue && queue.length + items.length > limits.maxQueue ) {
+    if ( limits.maxQueue && ( queue.length - queuePointer ) + items.length > limits.maxQueue ) {
       this.outputFail( GGGFail.LoopOverflow )
       return
     }
@@ -276,6 +308,7 @@ export default class Machine extends EventEmitter  {
   // long gap the next deadline is rebased on `now` rather than catching up, so a
   // late host cannot trigger a burst of queued bodies.
   async poll( now:number ) : Promise<number> {
+    this.queueWork = 0            // fresh budget per host drive
     let fired = 0
 
     for ( const entry of this.schedule.slice() ) {
@@ -447,6 +480,7 @@ export default class Machine extends EventEmitter  {
 
   async run( code:ParseLinesArgs ) : Promise<Token[]> {
     const { queue } = this
+    this.queueWork = 0            // fresh budget per host drive
     const lines = ParseLines( code )
     const result = new Promise<Token[]>( resolve => {
       const output : Token[] = []
