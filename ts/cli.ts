@@ -63,7 +63,7 @@ export function addStandardOptions( parser ) {
       type: "boolean",
     },
     "image": {
-      alias: "i",
+      alias: "o",
       describe: "Image file output",
       type: "string",
     },
@@ -116,7 +116,8 @@ export function runCLI() {
   }
 
   if ( options.version ) {
-    console.log( "0.0.1" )
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    console.log( require("../../package.json").version )
     process.exit(0)
   }
 
