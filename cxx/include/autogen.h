@@ -44,7 +44,6 @@ namespace ggg { typedef enum {
 
 namespace ggg { typedef enum {
   HexNumber = 'X',
-  HexFraction = 'Y',
   HexList1 = 'I',
   HexList2 = 'G',
   HexNorm1 = 'J',

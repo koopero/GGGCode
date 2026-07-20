@@ -6,7 +6,7 @@ Each case is one artifact wearing four hats: a behavioural **spec**, a piece of 
 
 See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) · [runtime](runtime.md).
 
-101 cases across 23 tags.
+104 cases across 23 tags.
 
 ## Tags
 
@@ -26,11 +26,11 @@ See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) 
 - [offset](#offset) (5)
 - [operator](#operator) (6)
 - [procedures](#procedures) (4)
-- [ranges](#ranges) (12)
-- [references](#references) (14)
+- [ranges](#ranges) (13)
+- [references](#references) (16)
 - [rotate](#rotate) (3)
 - [signs](#signs) (1)
-- [subscript](#subscript) (6)
+- [subscript](#subscript) (8)
 - [unicode](#unicode) (6)
 - [unitary](#unitary) (8)
 
@@ -1603,6 +1603,19 @@ P10 V1|2*10|3*100
 - values: `[321]`
 - needs: `gggpx`
 
+### range_open_no_register
+
+Without a register an open range has no dimension and is one point.
+
+```
+P10 V1:
+```
+
+![range_open_no_register: 1](img/range_open_no_register.svg)
+
+- values: `[1]`
+- needs: `gggpx`
+
 ### unitary_range
 
 A unitary constant acts as a range bound like any number.
@@ -1700,13 +1713,35 @@ P10 V$r[0,2]
 
 ### ref_sub_open
 
-$name[a:] reads a single index (subscripts resolve register-less).
+$name[a:] runs from a to the end of the register.
 
 ```
 P10 V$r[1:]
 ```
 
-- values: `[20]`
+- values: `[20,30]`
+- needs: `gggpx`
+
+### ref_sub_open_excl
+
+$name[a>] also runs to the end, excluding the dimension itself.
+
+```
+P10 V$r[1>]
+```
+
+- values: `[20,30]`
+- needs: `gggpx`
+
+### ref_sub_open_full
+
+$name[0:] reads the whole register.
+
+```
+P10 V$r[0:]
+```
+
+- values: `[10,20,30]`
 - needs: `gggpx`
 
 ### ref_sub_multi
@@ -1880,13 +1915,35 @@ P10 V$r[0,2]
 
 ### ref_sub_open
 
-$name[a:] reads a single index (subscripts resolve register-less).
+$name[a:] runs from a to the end of the register.
 
 ```
 P10 V$r[1:]
 ```
 
-- values: `[20]`
+- values: `[20,30]`
+- needs: `gggpx`
+
+### ref_sub_open_excl
+
+$name[a>] also runs to the end, excluding the dimension itself.
+
+```
+P10 V$r[1>]
+```
+
+- values: `[20,30]`
+- needs: `gggpx`
+
+### ref_sub_open_full
+
+$name[0:] reads the whole register.
+
+```
+P10 V$r[0:]
+```
+
+- values: `[10,20,30]`
 - needs: `gggpx`
 
 ### ref_sub_multi

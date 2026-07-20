@@ -57,7 +57,6 @@ export enum UnitaryNames {
 
 export enum HexEncodings {
   HexNumber = "X",
-  HexFraction = "Y",
   HexList1 = "I",
   HexList2 = "G",
   HexNorm1 = "J",
@@ -148,6 +147,11 @@ export type RangeAxis = {
   count:number
   multiplier:number
   inclusive:boolean
+  // True when the axis was written with a trailing range symbol and no end
+  // ("1:", "1>") -- an OPEN range, which runs to the dimension it is resolved
+  // against. Distinguishes those from a lone axis value ("1" in "1|2|3"), which
+  // parses identically otherwise and must stay a single point.
+  open?:boolean
 }
 
 export type RangeAxes = {

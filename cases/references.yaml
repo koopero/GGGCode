@@ -47,13 +47,31 @@
   values: [ 10, 30 ]
 
 - name: ref_sub_open
-  # Subscripts resolve register-less (dimension 1), so an open `a:` is an
-  # inclusive single-point range -- it reads just index a, not "a to the end".
-  description: "$name[a:] reads a single index (subscripts resolve register-less)."
+  # An open range inside a subscript runs to the register's dimension: r is 3
+  # long, so `1:` is indices 1..2. Coordinates stay register-less (stride 1 per
+  # axis) -- only the open END consults the register.
+  description: "$name[a:] runs from a to the end of the register."
   needs: [ gggpx ]
   tags: [ references, subscript ]
   program: "P10 V$r[1:]"
-  values: [ 20 ]
+  values: [ 20, 30 ]
+
+- name: ref_sub_open_excl
+  # `a>` is the exclusive spelling of the same open range: it stops before the
+  # dimension rather than at the last index, which lands on the same values.
+  description: "$name[a>] also runs to the end, excluding the dimension itself."
+  needs: [ gggpx ]
+  tags: [ references, subscript ]
+  program: "P10 V$r[1>]"
+  values: [ 20, 30 ]
+
+- name: ref_sub_open_full
+  # An open range from 0 is the whole register, same as a bare $r.
+  description: "$name[0:] reads the whole register."
+  needs: [ gggpx ]
+  tags: [ references, subscript ]
+  program: "P10 V$r[0:]"
+  values: [ 10, 20, 30 ]
 
 - name: ref_sub_multi
   # Multi-axis subscript: a|b expands coordinate-wise into flat indices

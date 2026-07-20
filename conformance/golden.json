@@ -1535,6 +1535,23 @@
     "expected": "V321\nOK"
   },
   {
+    "name": "range_open_no_register",
+    "description": "Without a register an open range has no dimension and is one point.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "ranges"
+    ],
+    "program": "P10 V1:",
+    "status": "OK",
+    "values": [
+      1
+    ],
+    "exact": false,
+    "expected": "V1\nOK"
+  },
+  {
     "name": "ref_bare",
     "description": "A bare $name reads the whole register in order.",
     "needs": [
@@ -1649,7 +1666,7 @@
   },
   {
     "name": "ref_sub_open",
-    "description": "$name[a:] reads a single index (subscripts resolve register-less).",
+    "description": "$name[a:] runs from a to the end of the register.",
     "needs": [
       "gggpx"
     ],
@@ -1660,10 +1677,50 @@
     "program": "P10 V$r[1:]",
     "status": "OK",
     "values": [
-      20
+      20,
+      30
     ],
     "exact": false,
-    "expected": "V20\nOK"
+    "expected": "V20,30\nOK"
+  },
+  {
+    "name": "ref_sub_open_excl",
+    "description": "$name[a>] also runs to the end, excluding the dimension itself.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "references",
+      "subscript"
+    ],
+    "program": "P10 V$r[1>]",
+    "status": "OK",
+    "values": [
+      20,
+      30
+    ],
+    "exact": false,
+    "expected": "V20,30\nOK"
+  },
+  {
+    "name": "ref_sub_open_full",
+    "description": "$name[0:] reads the whole register.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "references",
+      "subscript"
+    ],
+    "program": "P10 V$r[0:]",
+    "status": "OK",
+    "values": [
+      10,
+      20,
+      30
+    ],
+    "exact": false,
+    "expected": "V10,20,30\nOK"
   },
   {
     "name": "ref_sub_multi",

@@ -53,9 +53,22 @@ See the [tour](docs/tour.md) for the full progression, with diagrams.
 
 - **Numbers**
   - Decimal: `123`, `-45.67`, `1.23e-4`
-  - Hex integer: `0X1F`
-  - Fixed-width hex lists: `0I5A` (1 nibble per value), `0G5A3B` (2 nibbles per value)
-  - Normalized hex (mapped to 0..1): `0J8` (1 nibble), `0H80` (2 nibbles)
+  - Hex integer: `0X1F` → `31`. Any width, read as one number (`0X100` → `256`).
+  - **Hex lists** — everything after the prefix is split into fixed-width groups of
+    hex digits, *one value per group*, so a single token carries a whole list of
+    numbers. The prefix picks the group width and whether values are raw or
+    normalized to 0..1:
+
+    | prefix | digits per value | value range | example |
+    | --- | --- | --- | --- |
+    | `0I` | 1 | `0`–`15` | `0I5A` → `5, 10` |
+    | `0G` | 2 | `0`–`255` | `0G5A3B` → `90, 59` |
+    | `0J` | 1 | `0`–`1` (*n*/15) | `0J8` → `0.5333` |
+    | `0H` | 2 | `0`–`1` (*n*/255) | `0H80` → `0.5020` |
+
+    So `0I` and `0G` decode raw integers, while `0J` and `0H` divide by the widest
+    value the group can hold — `0JF` and `0HFF` are both exactly `1`. The list is
+    as long as you make it: `0IFF00` → `15, 15, 0, 0`.
 - **Strings**
   - Quoted: `"Hello, world!"`
   - To end of line: `` `Rest of line becomes string``
@@ -63,14 +76,38 @@ See the [tour](docs/tour.md) for the full progression, with diagrams.
   `K`=1, `Z`=0, `N`=−1, `π`=Pi, `τ`=2π, `e`=Euler's number, `φ`=golden ratio, `γ`=Euler–Mascheroni
 - **References** into named buffers: `$name`, indexed `$name[1]`, ranged `$name[0:2]`, multi-axis `$name[a|b]`, or offsets `$name@[...]`
 
-### Value modifiers
+### Ranges
 
-- **Ranges**: `1:10` (inclusive), `1>10` (exclusive end)
+- **Inclusive / exclusive**: `1:10` (includes 10), `1>10` (stops before 10)
+- **Open-ended**: `1:` or `1>` — an omitted end runs to the dimension of the
+  matrix the range is resolved against, so it sweeps to the end of that buffer.
+  The two spellings differ only in whether the endpoint itself is included, which
+  lands on the same values:
+
+  ```
+  P10 V$q[1:]       ; -> 20,30,40,50   (index 1 through the last element)
+  P10 V$q[1>]       ; -> 20,30,40,50
+  P10 V$q[0:]       ; -> 10,20,30,40,50
+  ```
+
+  An open range needs a dimension to run to. In a plain value context there is no
+  matrix, so it has no extent and stays a single point:
+
+  ```
+  P10 V1:           ; -> 1
+  ```
+
+  Only the open *end* consults the matrix — coordinates stay register-less, so
+  `$q[a|b]` remains a flat coordinate-wise expansion.
 - **Count**: `1:10/4` (range divided into 4 points)
 - **Step**: `0:10:2`
 - **Multiplier**: `5*3`
 - **Multi-axis**: `1|2|3` (axes combined coordinate-wise)
 - **Lists**: `1,2,3`
+
+Each component is routed by the symbol in front of it rather than by position, so
+components can be skipped: `2*10` is a multiplier with no range, and `10:30:4:3`
+fills end, step and multiplier in turn.
 
 ## Extensions
 

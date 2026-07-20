@@ -73,12 +73,15 @@ namespace ggg_conformance {
   static const double values_multiaxis[] = { 6.0 };
   static const double values_multiaxis_range[] = { 111.0, 112.0, 121.0, 122.0, 211.0, 212.0, 221.0, 222.0 };
   static const double values_multiaxis_multiplier[] = { 321.0 };
+  static const double values_range_open_no_register[] = { 1.0 };
   static const double values_ref_bare[] = { 10.0, 20.0, 30.0 };
   static const double values_ref_two[] = { 10.0, 20.0, 30.0, 10.0, 20.0, 30.0 };
   static const double values_ref_subscript[] = { 20.0 };
   static const double values_ref_sub_range[] = { 10.0, 20.0, 30.0 };
   static const double values_ref_sub_list[] = { 10.0, 30.0 };
-  static const double values_ref_sub_open[] = { 20.0 };
+  static const double values_ref_sub_open[] = { 20.0, 30.0 };
+  static const double values_ref_sub_open_excl[] = { 20.0, 30.0 };
+  static const double values_ref_sub_open_full[] = { 10.0, 20.0, 30.0 };
   static const double values_ref_sub_multi[] = { 10.0, 20.0, 20.0, 30.0 };
   static const double values_ref_sub_multi_lone[] = { 30.0 };
   static const double values_off_origin[] = { 0.0 };
@@ -178,13 +181,16 @@ namespace ggg_conformance {
     { "multiaxis", "P10 V1|2|3\n", "OK", values_multiaxis, 1, nullptr },
     { "multiaxis_range", "P10 V1:2|10:20/2|100:200/2\n", "OK", values_multiaxis_range, 8, nullptr },
     { "multiaxis_multiplier", "P10 V1|2*10|3*100\n", "OK", values_multiaxis_multiplier, 1, nullptr },
+    { "range_open_no_register", "P10 V1:\n", "OK", values_range_open_no_register, 1, nullptr },
     { "ref_bare", "P10 V$r\n", "OK", values_ref_bare, 3, nullptr },
     { "ref_two", "P10 V$r V$r\n", "OK", values_ref_two, 6, "V10,20,30 V10,20,30\nOK" },
     { "ref_unknown", "P10 V$x\n", "OK", nullptr, 0, nullptr },
     { "ref_subscript", "P10 V$r[1]\n", "OK", values_ref_subscript, 1, nullptr },
     { "ref_sub_range", "P10 V$r[0:2]\n", "OK", values_ref_sub_range, 3, nullptr },
     { "ref_sub_list", "P10 V$r[0,2]\n", "OK", values_ref_sub_list, 2, nullptr },
-    { "ref_sub_open", "P10 V$r[1:]\n", "OK", values_ref_sub_open, 1, nullptr },
+    { "ref_sub_open", "P10 V$r[1:]\n", "OK", values_ref_sub_open, 2, nullptr },
+    { "ref_sub_open_excl", "P10 V$r[1>]\n", "OK", values_ref_sub_open_excl, 2, nullptr },
+    { "ref_sub_open_full", "P10 V$r[0:]\n", "OK", values_ref_sub_open_full, 3, nullptr },
     { "ref_sub_multi", "P10 V$r[0:1|0:1]\n", "OK", values_ref_sub_multi, 4, nullptr },
     { "ref_sub_multi_lone", "P10 V$r[1|1]\n", "OK", values_ref_sub_multi_lone, 1, nullptr },
     { "off_origin", "P10 V$m@[0|0]\n", "OK", values_off_origin, 1, nullptr },

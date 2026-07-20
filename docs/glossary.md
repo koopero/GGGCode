@@ -402,7 +402,6 @@ Single-character codes used as internal identifiers in the parse pipeline. These
 | `Offset`     | `P`   | Offset parameter code                        |
 | `Number`     | `+`   | Decimal number token                         |
 | `HexNumber`  | `X`   | Hex number prefix                            |
-| `HexFraction`| `Y`   | Hex fraction                                 |
 | `HexList1`   | `I`   | 1-digit hex list prefix                      |
 | `HexList2`   | `G`   | 2-digit hex list prefix                      |
 | `HexNorm1`   | `J`   | 1-digit normalized hex prefix                |

@@ -7,9 +7,12 @@ import { Matrix } from "../ggggx"
 const isUsable = ( v ) => isNumber( v ) && !isNaN( v )
 const isBlank = ( v ) => isUndefined( v ) || v === null || isNaN( v )
 
-// A lone coordinate value (blank end, no range symbol) is an EXACT single point,
-// not an open range to the axis end. Pin it to start so it yields exactly one
-// value. Explicit ranges (a:b) keep their end and still sweep.
+// A blank end has no extent of its own, so what it means depends on whether a
+// register is in scope. WITH a register the range runs to that register's
+// dimension ($q[1:] / $q[1>] sweep to the end of q). WITHOUT one there is no
+// dimension to run to, so the axis is pinned to its start and yields exactly one
+// value -- which is what keeps register-less forms like V1|2|3 and V2*10 single
+// points. Explicit ranges (a:b) carry their own end and are never touched.
 const pinBlankEnd = ( a:RangeAxis ):RangeAxis =>
   isBlank( a.end ) ? { ...a, end: a.start, inclusive: true } : a
 
@@ -26,7 +29,21 @@ export function* Solve( arg:SolveArgument, options:SolveOptions = {
   const { MatrixResolve, solveStrings = true } = options
   yield* solve( arg )
 
-  function* solve( value:any, register?:Matrix ):Generator<number|string> {
+  // Resolves one axis against whatever dimension is available. An OPEN axis
+  // ("1:", "1>") sweeps to openDim -- the size of the register it was written
+  // against. Anything else with a blank end has no extent to sweep, so it pins
+  // to a single point; that is what keeps register-less V1|2|3 and V2*10 points.
+  function* solveOneAxis( axis:RangeAxis, dimension:number, hasDim:boolean, sweepBlank:boolean, stride:number ):Generator<number> {
+    // An open axis sweeps only when a real dimension is in scope; register-less
+    // "V1:" has nothing to sweep to and stays a point. A lone axis value pins
+    // even when a dimension IS available, so $r[1|1] stays one coordinate.
+    // sweepBlank is the legacy bare-register span, where a blank end sweeps too.
+    const sweep = ( axis.open && hasDim ) || sweepBlank
+    const resolved = sweep ? axis : pinBlankEnd( axis )
+    yield* solveRangeAxis( resolved, dimension, stride )
+  }
+
+  function* solve( value:any, register?:Matrix, openDim?:number ):Generator<number|string> {
     if ( value === true ) {
       yield 1
     } else if ( isString( value ) ) {
@@ -41,23 +58,23 @@ export function* Solve( arg:SolveArgument, options:SolveOptions = {
     } else if ( isNumber( value ) ) {
       yield value
     } else if ( isArray( value ) ) {
+      // Carry openDim into each item: a subscript arrives here as an array, and
+      // an open axis inside it resolves against the register's dimension.
       for ( const item of value ) {
-        yield* solve( item )
+        yield* solve( item, register, openDim )
       }
     } else if ( isObject( value ) ) {
       if ( "value" in value ) {
         yield* solve( ( value as ValueWithEncoding ).value )
       } else if ( "axes" in value ) {
-        yield* solveRangeAxes( value as RangeAxes, register )
+        yield* solveRangeAxes( value as RangeAxes, register, openDim )
       } else if ( "register" in value ) {
         yield* solveReference( value as Reference )
       } else {
-        // Register-less, a lone value (blank end) is a single point, not an open
-        // range to dimension 1 -- pin it. With a register, a blank end is a
-        // genuine open range to the register's end ($r[1>]), so leave it.
-        const dimension = register ? register.getSize() : 1
-        const axis = register ? value : pinBlankEnd( value as RangeAxis )
-        yield* solveRangeAxis( axis as RangeAxis, dimension, 1 )
+        const hasDim = openDim !== undefined || !!register
+        const dim = openDim !== undefined ? openDim
+          : register ? register.getSize() : 1
+        yield* solveOneAxis( value as RangeAxis, dim, hasDim, !!register, 1 )
       }
     }
   }
@@ -99,9 +116,11 @@ export function* Solve( arg:SolveArgument, options:SolveOptions = {
         }
         return
       }
-      // Plain subscript ($x[...]): solve register-less (Solve drops the register
-      // recursing into the array) into flat indices, then read those values.
-      for ( const index of solve( subscript, reg ) ) {
+      // Plain subscript ($x[...]): solve into flat indices, then read those
+      // values. The register is passed as openDim only -- an open axis sweeps to
+      // the register's size, while coordinates stay register-LESS (stride 1 per
+      // axis), which is what keeps $r[a|b] a flat coordinate-wise expansion.
+      for ( const index of solve( subscript, undefined, reg.getSize() ) ) {
         if ( isNumber( index ) ) {
           const val = reg.readNumber( index )
           if ( isUsable( val ) ) {
@@ -122,12 +141,12 @@ export function* Solve( arg:SolveArgument, options:SolveOptions = {
       multiplier = stride
     }
 
+    // A blank end runs to the dimension, whether the range was written ":" or
+    // ">" -- the two differ only in whether the endpoint itself is included
+    // (handled by the count below). Callers with no register pin the end to the
+    // start before getting here, so this only fires when a dimension is real.
     if ( isBlank( end ) ) {
-      if ( inclusive ) {
-        end = start
-      } else {
-        end = dimension
-      }
+      end = inclusive ? dimension - 1 : dimension
     }
 
     if ( !step ) {
@@ -154,7 +173,7 @@ export function* Solve( arg:SolveArgument, options:SolveOptions = {
     }
   }
 
-  function* solveRangeAxes( value:RangeAxes, register?:Matrix ):Generator<number> {
+  function* solveRangeAxes( value:RangeAxes, register?:Matrix, openDim?:number ):Generator<number> {
     const { axes } = value
     const dimensions:number[] = register ? register.getDimensions() : []
     const strides:number[] = []
@@ -169,10 +188,10 @@ export function* Solve( arg:SolveArgument, options:SolveOptions = {
 
     function* solveAxis( index:number, offset = 0 ):Generator<number> {
       const dim = (dimensions[ index ] as number) || 1
-      const axis = pinBlankEnd( axes[ index ] )
       const stride = strides[ index ]
 
-      for ( const val of solveRangeAxis( axis, dim, stride ) ) {
+      const hasDim = openDim !== undefined || !!register
+      for ( const val of solveOneAxis( axes[ index ], openDim !== undefined ? openDim : dim, hasDim, !!register, stride ) ) {
         if ( index == 0 ) {
           yield val + offset
         } else {

@@ -538,7 +538,8 @@ namespace ggg {
         if ( seg.numbers.size() == 1 && seg.symbols.empty() ) {
           readReferenceIndex( reg, seg.numbers[0] );
         } else {
-          CompoundExpansion expansion( buildAxes( seg.numbers, seg.symbols ) );   // register-less
+          // Coordinates register-less; an open axis sweeps to the register size.
+          CompoundExpansion expansion( buildAxes( seg.numbers, seg.symbols ), (NumberType) reg->sizeScalar() );
           NumberType v;
           while ( expansion.next( v ) ) readReferenceIndex( reg, v );
         }

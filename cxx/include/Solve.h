@@ -29,6 +29,10 @@ namespace ggg {
     NumberType count = NAN;
     NumberType multiplier = NAN;
     bool inclusive = false;
+    // True when written with a trailing range symbol and no end ("1:", "1>"): an
+    // OPEN range, which runs to the dimension it resolves against. Distinguishes
+    // those from a lone axis value, which parses identically otherwise.
+    bool open = false;
   };
 
   inline std::vector<RangeAxis> buildAxes( const std::vector<NumberType> &numbers, const std::vector<Char> &symbols ) {
@@ -71,10 +75,15 @@ namespace ggg {
       }
     }
 
-    // Trailing range symbol with no end value (open range, e.g. "1:").
+    // Trailing range symbol with no end value is an OPEN range ("1:", "1>").
     if ( !numbers.empty() && symbols.size() >= numbers.size() ) {
-      if ( symbols[numbers.size()-1] == Range ) {
+      const Char trailing = symbols[numbers.size()-1];
+      if ( trailing == Range ) {
+        axis.open = true;
         axis.inclusive = true;
+      } else if ( trailing == Uninclusive ) {
+        axis.open = true;
+        axis.inclusive = false;
       }
     }
 
@@ -102,8 +111,11 @@ namespace ggg {
 
     if ( std::isnan( multiplier ) ) multiplier = stride;
 
+    // A blank end runs to the dimension whether written ":" or ">"; the two
+    // differ only in whether the endpoint itself is included. Callers with no
+    // dimension pin the end to the start before getting here.
     if ( std::isnan( end ) ) {
-      end = inclusive ? start : dimension;
+      end = inclusive ? dimension - 1 : dimension;
     }
 
     if ( std::isnan( step ) || step == 0 ) {                    // !step
@@ -153,8 +165,11 @@ namespace ggg {
     // 1, matching Solve's register-less paths (the print compound and, faithfully,
     // $name[subscript] -- Solve drops the register inside the subscript array, so
     // the register's shape never sizes subscript ranges).
-    explicit CompoundExpansion( const std::vector<RangeAxis> &axes ) {
-      init( axes, nullptr, nullptr );
+    // openDim (NAN = none) is the dimension an OPEN axis ("1:", "1>") sweeps to
+    // -- the size of the register a subscript was written against. Coordinates
+    // stay register-less (dimension/stride 1), so only the open END consults it.
+    explicit CompoundExpansion( const std::vector<RangeAxis> &axes, NumberType openDim = NAN ) {
+      init( axes, nullptr, nullptr, openDim );
     }
 
     // Coordinate-aware expansion: per-axis dimensions + strides (mirrors
@@ -164,12 +179,13 @@ namespace ggg {
     CompoundExpansion( const std::vector<RangeAxis> &axes,
                        const std::vector<NumberType> &dims,
                        const std::vector<NumberType> &strides ) {
-      init( axes, &dims, &strides );
+      init( axes, &dims, &strides, NAN );
     }
 
     void init( const std::vector<RangeAxis> &axes,
                const std::vector<NumberType> *dims,
-               const std::vector<NumberType> *strides ) {
+               const std::vector<NumberType> *strides,
+               NumberType openDim ) {
       const size_t n = axes.size();
       first.resize( n );
       delta.resize( n );
@@ -178,12 +194,18 @@ namespace ggg {
       for ( size_t k = 0; k < n; k++ ) {
         const NumberType dim    = dims    ? (*dims)[k]    : 1;
         const NumberType stride = strides ? (*strides)[k] : 1;
-        // A lone coordinate value (blank end, no range symbol) is an EXACT single
-        // point, so pin it to start; explicit ranges (a:b) keep their end and
-        // still sweep. Mirrors pinBlankEnd in Solve.solveRangeAxes (ts/ggg/Solve.ts).
+        // An OPEN axis sweeps, but only when a dimension is in scope; a lone
+        // coordinate value (blank end, no range symbol) is an EXACT single point
+        // and pins to start even when one is. Mirrors solveOneAxis/pinBlankEnd
+        // (ts/ggg/Solve.ts).
         RangeAxis axis = axes[k];
-        if ( std::isnan( axis.end ) ) { axis.end = axis.start; axis.inclusive = true; }
-        resolveAxis( axis, dim, stride, first[k], delta[k], count[k] );
+        const bool hasOpenDim = !std::isnan( openDim );
+        const NumberType useDim = hasOpenDim ? openDim : dim;
+        if ( std::isnan( axis.end ) && !( axis.open && hasOpenDim ) ) {
+          axis.end = axis.start;
+          axis.inclusive = true;
+        }
+        resolveAxis( axis, useDim, stride, first[k], delta[k], count[k] );
         // Product semantics: any empty axis means the whole expansion is empty
         // (mirrors solveAxes looping zero times at that level).
         if ( count[k] == 0 ) done = true;

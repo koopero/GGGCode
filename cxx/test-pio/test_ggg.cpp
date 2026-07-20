@@ -523,8 +523,16 @@ void test_references() {
   TEST_ASSERT_EQUAL_STRING( "\nOK\n", m.out.c_str() );
 
   m.out.clear();
-  m.run( "P10 V$r[1:]\n" );                     // open range -> register-less single point
-  TEST_ASSERT_EQUAL_STRING( "V20\nOK\n", m.out.c_str() );
+  m.run( "P10 V$r[1:]\n" );                     // open range -> runs to the register's end
+  TEST_ASSERT_EQUAL_STRING( "V20,30\nOK\n", m.out.c_str() );
+
+  m.out.clear();
+  m.run( "P10 V$r[1>]\n" );                     // ">" is the exclusive spelling, same values
+  TEST_ASSERT_EQUAL_STRING( "V20,30\nOK\n", m.out.c_str() );
+
+  m.out.clear();
+  m.run( "P10 V$r[0:]\n" );                     // open from 0 -> the whole register
+  TEST_ASSERT_EQUAL_STRING( "V10,20,30\nOK\n", m.out.c_str() );
 
   m.out.clear();
   m.run( "P10 V$r[0:1|0:1]\n" );                // multi-axis -> flat indices 0,1,1,2

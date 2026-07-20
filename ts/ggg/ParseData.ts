@@ -139,10 +139,17 @@ function parseExpression( numbers, symbols, encodings, keepEncoding ) {
 
   }
 
-  // Handle trailing range symbol with no end value (open range, e.g. "R-1:")
+  // A trailing range symbol with no end value is an OPEN range ("1:", "1>"): it
+  // runs to the dimension it is resolved against. Mark it so Solve can tell it
+  // apart from a lone axis value, which otherwise parses identically (both end
+  // up with a blank end, and "inclusive" defaults to false).
   const trailingSymbol = symbols[numbers.length]
   if ( trailingSymbol == GGG.Range ) {
+    axis.open = true
     axis.inclusive = true
+  } else if ( trailingSymbol == GGG.Uninclusive ) {
+    axis.open = true
+    axis.inclusive = false
   }
 
   if ( axis ) {

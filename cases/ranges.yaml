@@ -78,3 +78,13 @@
   tags: [ ranges, multiaxis ]
   program: "P10 V1|2*10|3*100"
   values: [ 321 ]
+
+- name: range_open_no_register
+  # An open range needs a dimension to run to. In a plain value context there is
+  # no register, so `1:` has no extent and stays a single point -- the same shape
+  # that keeps a lone multi-axis value (V1|2|3) a single coordinate.
+  description: "Without a register an open range has no dimension and is one point."
+  needs: [ gggpx ]
+  tags: [ ranges ]
+  program: "P10 V1:"
+  values: [ 1 ]
