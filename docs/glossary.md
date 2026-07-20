@@ -646,18 +646,3 @@ Helpers for N-dimensional coordinate arithmetic.
 ### `NamedList`
 
 A generic dual-keyed collection where items are accessible by either a numeric index or a string name. Used internally for register maps and command collections.
-
----
-
-## Extensions
-
-GGGCode's command set is open-ended. The following extension namespaces are defined in this codebase:
-
-| Namespace  | Purpose                         |
-|------------|---------------------------------|
-| `ggggx`    | Graphics and image operations   |
-| `gggpx`    | Processing / print operations   |
-| `gggtx`    | Text processing                 |
-| `gggdx`    | Documentation                   |
-| `gggvx`    | Variable / value operations     |
-| `gggcx`    | Custom / misc extensions        |
