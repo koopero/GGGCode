@@ -31,6 +31,11 @@ export type Case = {
   status: string        // control response: "OK" (default), "OZ", or "" (none)
   exact: boolean        // OPT-IN byte check: also assert the generated `expected`
                         // bytes match, where formatting itself is the test
+  polls: number[]       // host clock times to call machine.poll() at, AFTER the
+                        // program has run. Async procedures (T12) are fired by
+                        // the host, so this is the only way the corpus can drive
+                        // them -- and passing time explicitly is what keeps them
+                        // deterministic. Empty for every non-async case.
 }
 
 // Command sets keyed by subsystem requirement. `golden()` loads exactly the union
@@ -86,6 +91,7 @@ function validateCase( raw: any, file: string ): Case {
     values: raw.values.map( Number ),
     status: raw.status ?? "OK",
     exact: raw.exact === true,
+    polls: Array.isArray( raw.polls ) ? raw.polls.map( Number ) : [],
   }
 }
 

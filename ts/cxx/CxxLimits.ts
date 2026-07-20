@@ -12,4 +12,6 @@ export const CxxMachineLimits = {
   // Upper bound on queued procedure-body lines (flow control), guarding against
   // runaway recursion / unbounded queue growth when re-running procedures.
   maxQueue: 1024,
+  // Upper bound on procedures exported as asynchronous (T12) at once.
+  maxAsync: 16,
 }

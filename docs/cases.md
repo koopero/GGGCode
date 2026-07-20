@@ -6,15 +6,16 @@ Each case is one artifact wearing four hats: a behavioural **spec**, a piece of 
 
 See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) · [runtime](runtime.md).
 
-121 cases across 23 tags.
+127 cases across 24 tags.
 
 ## Tags
 
+- [async](#async) (6)
 - [blit](#blit) (24)
 - [conditionals](#conditionals) (6)
 - [decimals](#decimals) (15)
 - [flip](#flip) (3)
-- [flow](#flow) (12)
+- [flow](#flow) (18)
 - [hex](#hex) (8)
 - [irrational](#irrational) (3)
 - [iteration](#iteration) (2)
@@ -33,6 +34,92 @@ See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) 
 - [subscript](#subscript) (8)
 - [unicode](#unicode) (10)
 - [unitary](#unitary) (14)
+
+## async
+
+### async_count
+
+T12 G<n> runs an exported procedure n times, then unschedules it.
+
+```
+T10 L"tick"
+P10 V7
+T0
+T12 L"tick" S0 G3
+```
+
+- values: `[7,7,7]`
+- needs: `gggpx`, `gggtx`
+
+### async_interval
+
+T12 S<ms> fires only once the interval has elapsed on the host clock.
+
+```
+T10 L"tick"
+P10 V7
+T0
+T12 L"tick" S500
+```
+
+- values: `[7,7]`
+- needs: `gggpx`, `gggtx`
+
+### async_unbounded
+
+Omitting the run count exports indefinitely; the host decides when to stop.
+
+```
+T10 L"tick"
+P10 V7
+T0
+T12 L"tick" S0
+```
+
+- values: `[7,7,7]`
+- needs: `gggpx`, `gggtx`
+
+### async_no_catchup
+
+A late poll fires once, not once per missed interval.
+
+```
+T10 L"tick"
+P10 V7
+T0
+T12 L"tick" S100
+```
+
+- values: `[7]`
+- needs: `gggpx`, `gggtx`
+
+### async_cancel
+
+T12 G0 cancels an export; later polls fire nothing.
+
+```
+T10 L"tick"
+P10 V7
+T0
+T12 L"tick" S0
+T12 L"tick" G0
+```
+
+- values: `[]`
+- status: (no response)
+- needs: `gggpx`, `gggtx`
+
+### async_unknown
+
+Exporting an undefined procedure fails with F6.
+
+```
+T12 L"nope" S0
+```
+
+- values: `[]`
+- status: `OZ`
+- needs: `gggtx`
 
 ## blit
 
@@ -850,6 +937,90 @@ T0
 - values: `[]`
 - status: (no response)
 - needs: `gggpx`, `gggtx`
+
+### async_count
+
+T12 G<n> runs an exported procedure n times, then unschedules it.
+
+```
+T10 L"tick"
+P10 V7
+T0
+T12 L"tick" S0 G3
+```
+
+- values: `[7,7,7]`
+- needs: `gggpx`, `gggtx`
+
+### async_interval
+
+T12 S<ms> fires only once the interval has elapsed on the host clock.
+
+```
+T10 L"tick"
+P10 V7
+T0
+T12 L"tick" S500
+```
+
+- values: `[7,7]`
+- needs: `gggpx`, `gggtx`
+
+### async_unbounded
+
+Omitting the run count exports indefinitely; the host decides when to stop.
+
+```
+T10 L"tick"
+P10 V7
+T0
+T12 L"tick" S0
+```
+
+- values: `[7,7,7]`
+- needs: `gggpx`, `gggtx`
+
+### async_no_catchup
+
+A late poll fires once, not once per missed interval.
+
+```
+T10 L"tick"
+P10 V7
+T0
+T12 L"tick" S100
+```
+
+- values: `[7]`
+- needs: `gggpx`, `gggtx`
+
+### async_cancel
+
+T12 G0 cancels an export; later polls fire nothing.
+
+```
+T10 L"tick"
+P10 V7
+T0
+T12 L"tick" S0
+T12 L"tick" G0
+```
+
+- values: `[]`
+- status: (no response)
+- needs: `gggpx`, `gggtx`
+
+### async_unknown
+
+Exporting an undefined procedure fails with F6.
+
+```
+T12 L"nope" S0
+```
+
+- values: `[]`
+- status: `OZ`
+- needs: `gggtx`
 
 ## hex
 

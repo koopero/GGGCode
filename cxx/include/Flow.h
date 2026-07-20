@@ -48,6 +48,20 @@ namespace ggg {
     std::function<void()> callback;
   };
 
+  // A procedure exported as asynchronous (T12), fired by the host through
+  // Machine::poll(). The body POINTER is held rather than the name so a T10
+  // redefine is picked up by an already-scheduled export. nextDue is unset until
+  // the first poll: at export time the machine has no clock. remaining < 0 means
+  // unbounded -- the host, not the language, decides when to stop granting ticks.
+  struct AsyncProcedure {
+    String name;
+    TProcedure * body = nullptr;
+    unsigned long interval = 0;
+    long remaining = -1;
+    bool started = false;
+    unsigned long nextDue = 0;
+  };
+
   // Trim leading/trailing whitespace; matches the TS source = str.trim() used
   // when recording captured command lines.
   inline String trimSource( const String& s ) {

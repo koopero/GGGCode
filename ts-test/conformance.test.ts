@@ -32,7 +32,7 @@ describe( "conformance", () => {
 
   for ( const c of cases ) {
     test( `TS reference: ${c.name}`, async () => {
-      const out = await golden( c.program, c.needs )
+      const out = await golden( c.program, c.needs, c.polls )
       const { values, statuses } = decodeOutput( out )
 
       // value-tolerance contract (the hand-authored ground truth)

@@ -130,7 +130,7 @@ The core language (`ts/ggg/`) is data + dispatch only; behaviour comes from comm
 
 - **ggggx** — graphics / matrix buffers (init, read, write, blit)
 - **gggpx** — print / processing
-- **gggtx** — flow control (procedures, conditionals, iteration)
+- **gggtx** — flow control (procedures, conditionals, iteration, async export)
 - **gggdx** — documentation helpers
 
 ## Implementing custom commands

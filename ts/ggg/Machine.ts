@@ -47,6 +47,23 @@ export type MachineLimits = {
   maxRegisterSize?:number
   maxQueue?:number
   maxArgs?:number
+  maxAsync?:number
+}
+
+// One scheduled async procedure (see poll). nextDue is undefined until the first
+// poll: at export time the machine has no clock, so the schedule cannot start
+// until the host supplies a `now`. remaining is undefined for an unbounded
+// export -- the whole point of the feature, since the host, not the language,
+// decides when to stop granting ticks.
+export type AsyncProcedure = {
+  name:string
+  // The body register itself, not its name: the core has no knowledge of the
+  // gggtx procedure vocabulary, and holding the object means a T10 redefine is
+  // picked up by an already-scheduled export.
+  body:{ lines?:string[] }
+  interval:number
+  remaining?:number
+  nextDue?:number
 }
 
 function isBlankCommand( command:string ) {
@@ -75,6 +92,10 @@ export default class Machine extends EventEmitter  {
   // correlated; defaults to 1, which renders the terminator as OK.
   requestId:number = 1
   registers:Map<object,NamedList<gggRegister>> = new Map<object,NamedList<gggRegister>>()
+
+  // Procedures exported as asynchronous (T12), fired by the host through poll().
+  // Insertion-ordered: due procedures run in the order they were exported.
+  schedule:AsyncProcedure[] = []
 
   timeout:ReturnType<typeof setTimeout>|null = null
 
@@ -222,6 +243,76 @@ export default class Machine extends EventEmitter  {
       return
     }
     queue.splice( queuePointer + 1, 0, ...items )
+  }
+
+  // --- Async procedures -------------------------------------------------
+  // The language has no loop construct. Repetition comes from exporting a
+  // procedure (T12) and letting the HOST call poll() -- so a runaway program
+  // consumes host ticks the host can stop granting, instead of spinning inside
+  // the parser. This is what makes the language Turing complete without making
+  // it possible to hang the machine.
+
+  // Schedule (or reschedule) a procedure. A count of 0 cancels; undefined runs
+  // it indefinitely. Re-exporting an existing name replaces its schedule,
+  // mirroring T10's silent redefine.
+  scheduleProcedure( name:string, body:{ lines?:string[] }, interval:number, count?:number ) : boolean {
+    this.cancelProcedure( name )
+    if ( count === 0 ) return true            // G0 is a cancel, not a schedule
+    const { limits } = this
+    if ( limits.maxAsync && this.schedule.length >= limits.maxAsync ) {
+      this.outputFail( GGGFail.QueueOverflow )
+      return false
+    }
+    this.schedule.push( { name, body, interval, remaining: count } )
+    return true
+  }
+
+  cancelProcedure( name:string ) {
+    this.schedule = this.schedule.filter( entry => entry.name !== name )
+  }
+
+  // Fire every procedure whose interval has elapsed, and resolve once their
+  // bodies have drained. Each due procedure fires AT MOST ONCE per poll: after a
+  // long gap the next deadline is rebased on `now` rather than catching up, so a
+  // late host cannot trigger a burst of queued bodies.
+  async poll( now:number ) : Promise<number> {
+    let fired = 0
+
+    for ( const entry of this.schedule.slice() ) {
+      if ( entry.nextDue === undefined ) {
+        // First sight of this entry: the schedule starts from the host's clock.
+        entry.nextDue = now + entry.interval
+        if ( entry.interval > 0 ) continue
+      }
+      if ( now < entry.nextDue ) continue
+
+      const lines = entry.body.lines
+      if ( !lines ) {
+        this.cancelProcedure( entry.name )
+        continue
+      }
+
+      entry.nextDue = now + entry.interval
+      if ( entry.remaining !== undefined ) {
+        entry.remaining--
+        if ( entry.remaining <= 0 ) this.cancelProcedure( entry.name )
+      }
+
+      this.enqueueLines( lines )
+      fired++
+    }
+
+    if ( fired ) await this.drain()
+    return fired
+  }
+
+  // Resolve once everything currently queued has run. Same sentinel-callback
+  // trick as run(): push a marker and wait for the queue to reach it.
+  drain() : Promise<void> {
+    return new Promise<void>( resolve => {
+      this.queue.push( { callback: () => resolve() } )
+      this.tick()
+    } )
   }
 
   getRegisterList( registerClass:object ) : NamedList<gggRegister> {

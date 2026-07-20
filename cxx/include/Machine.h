@@ -81,6 +81,10 @@ namespace ggg {
     std::vector<PendingItem> pending;
     bool draining = false;
 
+    // Procedures exported as asynchronous (T12), fired by the host via poll().
+    // Insertion-ordered: due procedures run in the order they were exported.
+    std::vector<AsyncProcedure> schedule;
+
     Machine() {
       resetLine();
     }
@@ -999,6 +1003,78 @@ namespace ggg {
       return reg;
     }
 
+    // --- Async procedures ------------------------------------------------
+    // The language has no loop construct. Repetition comes from exporting a
+    // procedure (T12) and letting the HOST call poll() -- on embedded that is
+    // the difference between a runaway program costing ticks the host can stop
+    // granting, and one that spins inside the parser until reset.
+
+    // Schedule (or reschedule) a procedure. count 0 cancels; count < 0 runs it
+    // indefinitely. Re-exporting a name replaces its schedule, mirroring T10's
+    // silent redefine.
+    bool scheduleProcedure( const String & name, TProcedure * body, unsigned long interval, long count ) {
+      cancelProcedure( name );
+      if ( count == 0 ) return true;              // G0 is a cancel, not a schedule
+      if ( limits.maxAsync && (Int) schedule.size() >= limits.maxAsync ) {
+        outputFail( (Int) GGGFail::QueueOverflow );
+        return false;
+      }
+      AsyncProcedure entry;
+      entry.name = name;
+      entry.body = body;
+      entry.interval = interval;
+      entry.remaining = count;
+      schedule.push_back( entry );
+      return true;
+    }
+
+    void cancelProcedure( const String & name ) {
+      for ( size_t i = 0; i < schedule.size(); ) {
+        if ( schedule[i].name == name ) schedule.erase( schedule.begin() + i );
+        else i++;
+      }
+    }
+
+    // Fire every procedure whose interval has elapsed and drain their bodies.
+    // Each fires AT MOST ONCE per poll: after a long gap the next deadline is
+    // rebased on `now` rather than catching up, so a late host cannot trigger a
+    // burst of queued bodies. Returns how many fired.
+    Index poll( unsigned long now ) {
+      Index fired = 0;
+      // Iterate over a copy of the names: a body may reschedule or cancel.
+      std::vector<String> names;
+      for ( const auto & entry : schedule ) names.push_back( entry.name );
+
+      for ( const auto & name : names ) {
+        AsyncProcedure * entry = nullptr;
+        for ( auto & candidate : schedule ) {
+          if ( candidate.name == name ) { entry = &candidate; break; }
+        }
+        if ( !entry ) continue;
+
+        if ( !entry->started ) {
+          // First sight: the schedule starts from the host's clock.
+          entry->started = true;
+          entry->nextDue = now + entry->interval;
+          if ( entry->interval > 0 ) continue;
+        }
+        if ( now < entry->nextDue ) continue;
+
+        TProcedure * body = entry->body;
+        if ( !body ) { cancelProcedure( name ); continue; }
+
+        entry->nextDue = now + entry->interval;
+        const bool done = ( entry->remaining > 0 && --entry->remaining <= 0 );
+        std::vector<String> lines = body->lines;
+        if ( done ) cancelProcedure( name );
+
+        enqueueLines( lines );
+        drainPending();
+        fired++;
+      }
+      return fired;
+    }
+
     // Queue procedure source lines to run after the current line. Inserting at
     // the front keeps nested calls (a body that runs another procedure) in the
     // right order, mirroring the TS splice-after-current. Bounded by maxQueue.
@@ -1054,7 +1130,18 @@ namespace ggg {
     void drainPending() {
       if ( draining ) return;
       draining = true;
+      // Bound the TOTAL work of one drain, not just the instantaneous queue
+      // depth. Items are popped as they run, so pending.size() stays small and
+      // the enqueueLines guard never trips on self-recursion -- a procedure that
+      // runs itself would spin here forever, which on embedded means until
+      // reset. (The TS queue accumulates instead, so its guard catches this.)
+      Index processed = 0;
       while ( !pending.empty() ) {
+        if ( limits.maxQueue && ++processed > limits.maxQueue ) {
+          pending.clear();
+          outputFail( (Int) GGGFail::QueueOverflow );
+          break;
+        }
         PendingItem item = pending.front();
         pending.erase( pending.begin() );
         if ( item.isCallback ) {

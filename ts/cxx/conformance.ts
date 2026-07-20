@@ -46,13 +46,17 @@ export function setupFixtures( machine: Machine ): void {
   }
 }
 
-export async function golden( program: string, needs: Subsystem[] ): Promise<string> {
+// `polls` are host clock times to call poll() at once the program has run, which
+// is how async procedures (T12) get driven -- the machine has no clock of its
+// own, so the corpus supplies one and the result stays deterministic.
+export async function golden( program: string, needs: Subsystem[], polls: number[] = [] ): Promise<string> {
   const machine = new Machine( { commands: commandsFor( needs ) } )
   setupFixtures( machine )
   let out = ""
   const onOutput = ( line: any ) => { out += Format( line ) }
   machine.on( "output", onOutput )
   await machine.run( program )
+  for ( const now of polls ) await machine.poll( now )
   machine.off( "output", onOutput )
   return normalizeOutput( out )
 }

@@ -10,7 +10,7 @@ A command is a letter + number (e.g. `G40`, `P10`). Its first argument's code an
 
 Print args as numbers.
 
-Examples: [flow_define_only](cases.md#flow_define_only), [flow_define_run](cases.md#flow_define_run), [flow_nested](cases.md#flow_nested), [cond_all_true](cases.md#cond_all_true), [cond_all_false](cases.md#cond_all_false), [cond_all_mixed](cases.md#cond_all_mixed), [cond_any_true](cases.md#cond_any_true), [cond_any_false](cases.md#cond_any_false), +77 more
+Examples: [flow_define_only](cases.md#flow_define_only), [flow_define_run](cases.md#flow_define_run), [flow_nested](cases.md#flow_nested), [cond_all_true](cases.md#cond_all_true), [cond_all_false](cases.md#cond_all_false), [cond_all_mixed](cases.md#cond_all_mixed), [cond_any_true](cases.md#cond_any_true), [cond_any_false](cases.md#cond_any_false), +82 more
 
 ### P13
 
@@ -22,7 +22,7 @@ Print data as comment string.
 
 End of block
 
-Examples: [flow_define_only](cases.md#flow_define_only), [flow_define_run](cases.md#flow_define_run), [flow_nested](cases.md#flow_nested), [cond_all_true](cases.md#cond_all_true), [cond_all_false](cases.md#cond_all_false), [cond_all_mixed](cases.md#cond_all_mixed), [cond_any_true](cases.md#cond_any_true), [cond_any_false](cases.md#cond_any_false), +3 more
+Examples: [flow_define_only](cases.md#flow_define_only), [flow_define_run](cases.md#flow_define_run), [flow_nested](cases.md#flow_nested), [cond_all_true](cases.md#cond_all_true), [cond_all_false](cases.md#cond_all_false), [cond_all_mixed](cases.md#cond_all_mixed), [cond_any_true](cases.md#cond_any_true), [cond_any_false](cases.md#cond_any_false), +8 more
 
 ### T10
 
@@ -34,7 +34,7 @@ Arguments:
 | --- | --- | --- |
 | `L` |  | procedure name |
 
-Examples: [flow_define_only](cases.md#flow_define_only), [flow_define_run](cases.md#flow_define_run), [flow_nested](cases.md#flow_nested)
+Examples: [flow_define_only](cases.md#flow_define_only), [flow_define_run](cases.md#flow_define_run), [flow_nested](cases.md#flow_nested), [async_count](cases.md#async_count), [async_interval](cases.md#async_interval), [async_unbounded](cases.md#async_unbounded), [async_no_catchup](cases.md#async_no_catchup), [async_cancel](cases.md#async_cancel)
 
 ### T11
 
@@ -47,6 +47,20 @@ Arguments:
 | `L` |  | procedure name |
 
 Examples: [flow_define_run](cases.md#flow_define_run), [flow_unknown](cases.md#flow_unknown), [flow_nested](cases.md#flow_nested)
+
+### T12
+
+Export a procedure to run asynchronously on the host's schedule
+
+Arguments:
+
+| code | format | meaning |
+| --- | --- | --- |
+| `L` |  | procedure name |
+| `S` |  | interval in milliseconds |
+| `G` |  | run count; omit for unbounded, 0 cancels |
+
+Examples: [async_count](cases.md#async_count), [async_interval](cases.md#async_interval), [async_unbounded](cases.md#async_unbounded), [async_no_catchup](cases.md#async_no_catchup), [async_cancel](cases.md#async_cancel), [async_unknown](cases.md#async_unknown)
 
 ### T9
 

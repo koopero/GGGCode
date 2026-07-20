@@ -59,7 +59,7 @@ async function build() {
   const records: GoldenRecord[] = []
 
   for ( const c of cases ) {
-    const expected = await golden( c.program, c.needs )
+    const expected = await golden( c.program, c.needs, c.polls )
     // Build-time double-entry: the reference must agree with the authored ground truth.
     const { values, statuses } = decodeOutput( expected )
     if ( !valuesMatch( values, c.values ) ) {
@@ -108,10 +108,16 @@ async function build() {
     if ( c.values.length === 0 ) continue
     header += `  static const double values_${c.name}[] = { ${c.values.map( cNum ).join( ", " )} };\n`
   }
+  // Host clock times for async (T12) cases; the runner calls poll() at each.
+  for ( const c of cxxCases ) {
+    if ( c.polls.length === 0 ) continue
+    header += `  static const unsigned long polls_${c.name}[] = { ${c.polls.map( t => `${Math.round( t )}UL` ).join( ", " )} };\n`
+  }
 
   header += "  struct Case {\n"
   header += "    const char* name; const char* program; const char* status;\n"
   header += "    const double* values; int valueCount; const char* expected;\n"
+  header += "    const unsigned long* polls; int pollCount;\n"
   header += "  };\n"
   header += "  constexpr Case cases[] = {\n"
   header += cxxCases.map( c => {
@@ -119,8 +125,10 @@ async function build() {
     const valuesPtr = c.values.length === 0 ? "nullptr" : `values_${c.name}`
     const expected = c.exact ? `"${cEscape( r.expected )}"` : "nullptr"
     // program gets a trailing newline so the C++ parser finishes the line.
+    const pollsPtr = c.polls.length === 0 ? "nullptr" : `polls_${c.name}`
     return `    { "${cEscape( c.name )}", "${cEscape( c.program + "\n" )}", ` +
-           `"${cEscape( c.status )}", ${valuesPtr}, ${c.values.length}, ${expected} }`
+           `"${cEscape( c.status )}", ${valuesPtr}, ${c.values.length}, ${expected}, ` +
+           `${pollsPtr}, ${c.polls.length} }`
   } ).join( ",\n" ) + "\n"
   header += "  };\n"
   header += "  constexpr int caseCount = sizeof( cases ) / sizeof( cases[0] );\n"

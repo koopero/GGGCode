@@ -159,6 +159,7 @@ struct ConformanceMachine : public ggg::Machine {
     addCommand( new ggg::BlockEnd() );
     addCommand( new ggg::ProcedureRun() );
     addCommand( new ggg::Conditional() );
+    addCommand( new ggg::AsyncExport() );   // gggtx T12
     addCommand( new ggg::MatrixWrite() );   // ggggx G20
     addCommand( new ggg::MatrixRead() );    // ggggx G10
     addCommand( new ggg::MatrixBlit() );    // ggggx G40
@@ -264,6 +265,9 @@ void test_conformance() {
     ConformanceMachine machine;
     machine.setup();
     machine.run( c.program );
+    // Async (T12) cases: the host drives the clock, so replay the same poll
+    // times the TS reference used when the golden was generated.
+    for ( int k = 0; k < c.pollCount; k++ ) machine.poll( c.polls[k] );
     std::string got = conformanceStrip( machine.out );
     Decoded d = decodeOutput( got );
 
@@ -442,6 +446,19 @@ void test_flow_procedures() {
     FlowMachine m; m.setup();
     m.run( "T10 L\"p\"\nP10 V1\nP10 V2\nT0\nT11 L\"p\"\n" );
     TEST_ASSERT_EQUAL_STRING( "V1\nOK\nV2\nOK\n", m.out.c_str() );
+  }
+
+  // A procedure that runs ITSELF must terminate at the queue bound. drainPending
+  // pops as it goes, so pending.size() stays small and the enqueueLines guard
+  // never fires -- without the total-work bound in drainPending this spins
+  // forever, which on embedded means until reset. If this regresses the suite
+  // HANGS rather than failing, so treat a timeout here as this bug.
+  {
+    FlowMachine m; m.setup();
+    m.limits.maxQueue = 20;
+    m.run( "T10 L\"boom\"\nP10 V1\nT11 L\"boom\"\nT0\nT11 L\"boom\"\n" );
+    TEST_ASSERT_TRUE( m.out.size() > 0 );
+    TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "F2" ) );   // QueueOverflow
   }
 
   // Redefining a procedure overwrites the previous body.

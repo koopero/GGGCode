@@ -95,6 +95,49 @@ their own marker, so different subsystems share the addressing without colliding
 reads a buffer back as a replayable `G20` write, which makes matrices round-trippable as
 source text.
 
+## Async procedures: repetition lives in the host
+
+GGG has no loop construct, deliberately: an in-language infinite loop on embedded
+hardware bricks the device until reset. Repetition instead comes from exporting a
+procedure and letting the **host** run it.
+
+```
+T10 L"blink"          ; define
+G20 R0 P0 V1
+T0
+T12 L"blink" S500 G10 ; every 500ms, 10 times
+T12 L"blink" S500     ; every 500ms, forever
+T12 L"blink" G0       ; cancel
+```
+
+`T12` does not run anything. It adds the procedure to the machine's schedule; the host
+then calls:
+
+```
+machine.poll( now )   // -> how many procedures fired
+```
+
+The host owns the clock and the cadence — `machine.poll( millis() )` from an Arduino
+`loop()`, a `setInterval` in Node. Three rules matter:
+
+- **Scheduling starts at the first poll.** At export time the machine has no clock, so a
+  procedure's first deadline is set the first time the host supplies a `now`.
+- **One fire per poll, per procedure — no catch-up.** If a poll arrives long after the
+  interval elapsed, the procedure fires *once* and the next deadline is rebased on `now`.
+  A host that polls every 10s with `S100` gets one fire per poll, not a hundred.
+- **Bodies are bounded.** A fired body goes through the same queue as `T11`, capped by
+  `maxQueue`, so runaway recursion inside one body fails with `QueueOverflow` rather than
+  spinning.
+
+This is what makes the language Turing complete — an unbounded export that reads and
+writes registers and conditionally re-exports itself is a Turing machine — while keeping
+the halting decision outside the language. A runaway program consumes host ticks, and the
+host can simply stop granting them.
+
+Because time is a parameter rather than something the machine reads, async behaviour is
+deterministic and conformance-testable: a case declares `polls: [ 0, 200, 500 ]` and both
+engines replay the same clock.
+
 ## Subsystems and the C++ port
 
 The core (`ts/ggg/`) is data + dispatch only; behaviour is supplied as command sets loaded

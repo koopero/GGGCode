@@ -10,5 +10,6 @@ namespace ggg {
     Index maxRegisters = 256;
     Index maxRegisterSize = 65536;
     Index maxQueue = 1024;
+    Index maxAsync = 16;
   };
 }

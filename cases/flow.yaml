@@ -136,3 +136,79 @@
     P10 V$it
     T0
   values: []
+
+# Async procedures (T12). The language has no loop: a procedure is exported and
+# the HOST fires it by calling poll(). `polls` below are the host clock times the
+# harness polls at, which is also what keeps these deterministic.
+
+- name: async_count
+  description: "T12 G<n> runs an exported procedure n times, then unschedules it."
+  needs: [ gggpx, gggtx ]
+  tags: [ flow, async ]
+  polls: [ 0, 1, 2, 3, 4 ]
+  program: |
+    T10 L"tick"
+    P10 V7
+    T0
+    T12 L"tick" S0 G3
+  values: [ 7, 7, 7 ]
+
+- name: async_interval
+  description: "T12 S<ms> fires only once the interval has elapsed on the host clock."
+  needs: [ gggpx, gggtx ]
+  tags: [ flow, async ]
+  polls: [ 0, 200, 500, 1000 ]
+  program: |
+    T10 L"tick"
+    P10 V7
+    T0
+    T12 L"tick" S500
+  values: [ 7, 7 ]
+
+- name: async_unbounded
+  description: "Omitting the run count exports indefinitely; the host decides when to stop."
+  needs: [ gggpx, gggtx ]
+  tags: [ flow, async ]
+  polls: [ 0, 1, 2 ]
+  program: |
+    T10 L"tick"
+    P10 V7
+    T0
+    T12 L"tick" S0
+  values: [ 7, 7, 7 ]
+
+- name: async_no_catchup
+  description: "A late poll fires once, not once per missed interval."
+  needs: [ gggpx, gggtx ]
+  tags: [ flow, async ]
+  polls: [ 0, 100000 ]
+  program: |
+    T10 L"tick"
+    P10 V7
+    T0
+    T12 L"tick" S100
+  values: [ 7 ]
+
+- name: async_cancel
+  description: "T12 G0 cancels an export; later polls fire nothing."
+  needs: [ gggpx, gggtx ]
+  tags: [ flow, async ]
+  status: ""
+  polls: [ 0, 1 ]
+  program: |
+    T10 L"tick"
+    P10 V7
+    T0
+    T12 L"tick" S0
+    T12 L"tick" G0
+  values: []
+
+- name: async_unknown
+  description: "Exporting an undefined procedure fails with F6."
+  needs: [ gggtx ]
+  tags: [ flow, async ]
+  status: "OZ"
+  polls: [ 0 ]
+  program: |
+    T12 L"nope" S0
+  values: []

@@ -827,6 +827,120 @@
     "expected": ""
   },
   {
+    "name": "async_count",
+    "description": "T12 G<n> runs an exported procedure n times, then unschedules it.",
+    "needs": [
+      "gggpx",
+      "gggtx"
+    ],
+    "tags": [
+      "flow",
+      "async"
+    ],
+    "program": "T10 L\"tick\"\nP10 V7\nT0\nT12 L\"tick\" S0 G3",
+    "status": "OK",
+    "values": [
+      7,
+      7,
+      7
+    ],
+    "exact": false,
+    "expected": "V7\nOK\nV7\nOK\nV7\nOK"
+  },
+  {
+    "name": "async_interval",
+    "description": "T12 S<ms> fires only once the interval has elapsed on the host clock.",
+    "needs": [
+      "gggpx",
+      "gggtx"
+    ],
+    "tags": [
+      "flow",
+      "async"
+    ],
+    "program": "T10 L\"tick\"\nP10 V7\nT0\nT12 L\"tick\" S500",
+    "status": "OK",
+    "values": [
+      7,
+      7
+    ],
+    "exact": false,
+    "expected": "V7\nOK\nV7\nOK"
+  },
+  {
+    "name": "async_unbounded",
+    "description": "Omitting the run count exports indefinitely; the host decides when to stop.",
+    "needs": [
+      "gggpx",
+      "gggtx"
+    ],
+    "tags": [
+      "flow",
+      "async"
+    ],
+    "program": "T10 L\"tick\"\nP10 V7\nT0\nT12 L\"tick\" S0",
+    "status": "OK",
+    "values": [
+      7,
+      7,
+      7
+    ],
+    "exact": false,
+    "expected": "V7\nOK\nV7\nOK\nV7\nOK"
+  },
+  {
+    "name": "async_no_catchup",
+    "description": "A late poll fires once, not once per missed interval.",
+    "needs": [
+      "gggpx",
+      "gggtx"
+    ],
+    "tags": [
+      "flow",
+      "async"
+    ],
+    "program": "T10 L\"tick\"\nP10 V7\nT0\nT12 L\"tick\" S100",
+    "status": "OK",
+    "values": [
+      7
+    ],
+    "exact": false,
+    "expected": "V7\nOK"
+  },
+  {
+    "name": "async_cancel",
+    "description": "T12 G0 cancels an export; later polls fire nothing.",
+    "needs": [
+      "gggpx",
+      "gggtx"
+    ],
+    "tags": [
+      "flow",
+      "async"
+    ],
+    "program": "T10 L\"tick\"\nP10 V7\nT0\nT12 L\"tick\" S0\nT12 L\"tick\" G0",
+    "status": "",
+    "values": [],
+    "exact": false,
+    "expected": ""
+  },
+  {
+    "name": "async_unknown",
+    "description": "Exporting an undefined procedure fails with F6.",
+    "needs": [
+      "gggtx"
+    ],
+    "tags": [
+      "flow",
+      "async"
+    ],
+    "program": "T12 L\"nope\" S0",
+    "status": "OZ",
+    "values": [],
+    "exact": false,
+    "expected": "OK F6"
+  },
+  {
     "name": "hex_1f",
     "description": "0X is a hexadecimal integer.",
     "needs": [

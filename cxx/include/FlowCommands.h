@@ -20,6 +20,7 @@ namespace ggg {
   constexpr const char* FlowBlockEnd      = "T0";
   constexpr const char* FlowConditional   = "T9";
   constexpr const char* FlowProcedureInit = "T10";
+  constexpr const char* FlowAsyncExport   = "T12";
 
   // Shared capture frame: buffers every command's raw source into `body`,
   // tracking nested block depth so an inner T0 does not close the outer frame.
@@ -161,6 +162,34 @@ namespace ggg {
   };
 
   // T11: run a procedure by name; re-enqueues its captured source lines.
+  // T12: export a procedure as asynchronous. The body is not run here -- it is
+  // handed to the machine's schedule and the HOST runs it by calling poll().
+  // That is how the language gets unbounded repetition without owning a loop.
+  class AsyncExport : public CommandType {
+  public:
+    String procName;
+    NumberType interval;
+    long count;
+    AsyncExport() {
+      name = "T12";
+      description = "Export a procedure to run asynchronously on the host's schedule";
+      addArg( GGG::Alias, "procedure name", "(s)" );
+      addArg( GGG::Size, "interval in milliseconds", "(n)" );
+      addArg( GGG::Repeat, "run count; omit for unbounded, 0 cancels", "(n)" );
+    }
+    void hookCommand() override { procName.clear(); interval = 0; count = -1; }
+    void hookString() override { if ( code == GGG::Alias ) procName = string; }
+    void hookNumber() override {
+      if ( code == GGG::Size ) interval = number;
+      else if ( code == GGG::Repeat ) count = (long) number;
+    }
+    void hookFinish() override {
+      TProcedure * body = machine->getProcedure( procName, false );
+      if ( !body ) { machine->outputFail( (Int) GGGFail::ProcedureNotFound ); return; }
+      machine->scheduleProcedure( procName, body, (unsigned long) interval, count );
+    }
+  };
+
   class ProcedureRun : public CommandType {
   public:
     String procName;

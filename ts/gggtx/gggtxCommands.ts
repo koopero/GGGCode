@@ -9,6 +9,7 @@ export enum gggtxCodes {
   Conditional = `${gggtxFlowPrefix}9`,
   ProcedureInit = `${gggtxFlowPrefix}10`,
   ProcedureRun = `${gggtxFlowPrefix}11`,
+  AsyncExport = `${gggtxFlowPrefix}12`,
 }
 
 // --- Flow control: procedures via the command gate ---------------------
@@ -176,6 +177,43 @@ const ProcedureRunCommand : Command = {
   },
 }
 
+// T12: export a procedure as asynchronous. The body is not run here -- it is
+// handed to the machine's schedule, and the HOST runs it by calling poll(). That
+// is how the language gets unbounded repetition without owning a loop: a runaway
+// export consumes host ticks, which the host can simply stop granting, rather
+// than spinning inside the parser.
+const AsyncExportCommand : Command = {
+  description: "Export a procedure to run asynchronously on the host's schedule",
+  args: {
+    [GGG.Alias]: { description: "procedure name", type: ArgType.String },
+    [GGG.Size]: { description: "interval in milliseconds", type: ArgType.Number },
+    [GGG.Repeat]: { description: "run count; omit for unbounded, 0 cancels", type: ArgType.Number },
+  },
+  [Hooks.Command]: ( args ) => {
+    const { state } = args
+    state.procName = null
+    state.asyncInterval = 0
+    state.asyncCount = undefined
+  },
+  [Hooks.Value]: ( args ) => {
+    const { state, code, value } = args
+    procedureNameHookValue( args )
+    if ( code === GGG.Size && typeof value === "number" ) state.asyncInterval = value
+    else if ( code === GGG.Repeat && typeof value === "number" ) state.asyncCount = value
+  },
+  [Hooks.End]: ( args ) => {
+    const { machine, state } = args
+    const list = machine.getRegisterList( TProcedure )
+    const name = state.procName
+    const reg = name != null ? list.named[name] : null
+    if ( !reg || !reg.lines ) {
+      machine.outputFail( GGGFail.ProcedureNotFound )
+      return
+    }
+    machine.scheduleProcedure( name, reg, state.asyncInterval, state.asyncCount )
+  },
+}
+
 export const gggtxFlowCommands : Commands = {
   [gggtxCodes.BlockEnd]: {
     description: "End of block",
@@ -183,6 +221,7 @@ export const gggtxFlowCommands : Commands = {
   [gggtxCodes.Conditional]: ConditionalCommand,
   [gggtxCodes.ProcedureInit]: ProcedureInitCommand,
   [gggtxCodes.ProcedureRun]: ProcedureRunCommand,
+  [gggtxCodes.AsyncExport]: AsyncExportCommand,
 }
 
 const gggtxCommands = {
