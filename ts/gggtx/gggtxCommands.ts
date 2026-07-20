@@ -99,8 +99,7 @@ const ProcedureInitCommand : Command = {
 // T9: the block combinator. With V it iterates the body once per value (writing
 // each into the R register so the body can read it as $name/$index); otherwise
 // it is a one-shot conditional (A = all values truthy, Y = any). The body is
-// always captured first (so nested blocks compose). Re-evaluatable looping (G)
-// is a deliberate follow-up, not built here.
+// always captured first (so nested blocks compose).
 const ConditionalCommand : Command = {
   description: "Block combinator: V iterates, A/Y run once if a condition holds",
   args: {

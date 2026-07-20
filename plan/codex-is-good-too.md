@@ -204,16 +204,6 @@ The parser needs one new suppression mode: "consume the rest of this line withou
 
 Implement C++ `T10`, `T11`, `T1`, and simple conditionals after the command gate is in place. `T10` writes procedure bodies to `T` registers; `T11` reads those registers and enqueues their source lines. Keep procedure bodies as source strings for compactness and parity.
 
-## `T9 G` Loop Semantics
-
-Procedures are straightforward. Repeat mode needs a sharper rule.
-
-The recommended first version is block-capture looping: `T9 G A...` or `T9 G O...` captures its body, evaluates its condition at the block boundary, and enqueues another iteration while truthy. That makes loops compatible with the same source-body machinery used by procedures.
-
-The condition must be re-evaluatable. If `T9 G A$flag[0]` is allowed, store the condition source or token data, not only the boolean result from the first parse.
-
-If `G` and `V` are combined, define one canonical order before implementation. The simplest rule is that `V` is outer and `G` is inner: for each solved `V` value, repeat the captured body while `A` or `O` remains true.
-
 ## Parity and Conformance
 
 Add a small shared flow-control conformance corpus once TS and C++ both support the same commands. Good first cases:
