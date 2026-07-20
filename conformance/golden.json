@@ -2146,6 +2146,23 @@
     "expected": "V9731,20320\nOK"
   },
   {
+    "name": "unicode_negated",
+    "description": "A sign before a Unicode character negates its code point.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "unicode"
+    ],
+    "program": "P10 V-☃",
+    "status": "OK",
+    "values": [
+      -9731
+    ],
+    "exact": false,
+    "expected": "V-9731\nOK"
+  },
+  {
     "name": "unitary_one",
     "description": "K is the unitary constant one.",
     "needs": [
@@ -2355,5 +2372,57 @@
     ],
     "exact": false,
     "expected": "V50000\nOK"
+  },
+  {
+    "name": "unitary_negated",
+    "description": "A sign before a constant negates it.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "unitary"
+    ],
+    "program": "P10 V-K",
+    "status": "OK",
+    "values": [
+      -1
+    ],
+    "exact": false,
+    "expected": "V-1\nOK"
+  },
+  {
+    "name": "unitary_negated_symbol",
+    "description": "A sign negates a symbolic constant.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "unitary",
+      "irrational"
+    ],
+    "program": "P10 V-π",
+    "status": "OK",
+    "values": [
+      -3.141592653589793
+    ],
+    "exact": false,
+    "expected": "V-3.141592653589793\nOK"
+  },
+  {
+    "name": "unitary_negated_twice",
+    "description": "Negating a negative constant yields a positive value.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "unitary"
+    ],
+    "program": "P10 V-N",
+    "status": "OK",
+    "values": [
+      1
+    ],
+    "exact": false,
+    "expected": "V1\nOK"
   }
 ]

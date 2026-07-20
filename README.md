@@ -73,7 +73,8 @@ See the [tour](docs/tour.md) for the full progression, with diagrams.
   - Quoted: `"Hello, world!"`
   - To end of line: `` `Rest of line becomes string``
 - **Unitary constants** — named numeric literals (ASCII forms case-insensitive):
-  `K`=1, `Z`=0, `N`=−1, `π`=Pi, `τ`=2π, `φ`=golden ratio, `γ`=Euler–Mascheroni
+  `K`=1, `Z`=0, `N`=−1, `π`=Pi, `τ`=2π, `φ`=golden ratio, `γ`=Euler–Mascheroni,
+  `∞`=infinity. A leading sign negates one: `-π` is −3.14159, `-N` is 1.
 - **Unicode characters** — every *other* non-ASCII character is a numeric literal
   for its Unicode code point, and lists like any other value:
 
@@ -87,7 +88,8 @@ See the [tour](docs/tour.md) for the full progression, with diagrams.
 
   The constants above are the only exception, and they are otherwise unremarkable
   letters — `α` is `945` and `β` is `946`, but `γ` is a named constant, so it
-  gives `0.5772…` rather than `947`.
+  gives `0.5772…` rather than `947`. A sign negates a code point too: `-☃` is
+  `-9731`.
 - **References** into named buffers: `$name`, indexed `$name[1]`, ranged `$name[0:2]`, multi-axis `$name[a|b]`, or offsets `$name@[...]`
 
 ### Ranges

@@ -6,7 +6,7 @@ Each case is one artifact wearing four hats: a behavioural **spec**, a piece of 
 
 See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) · [runtime](runtime.md).
 
-117 cases across 23 tags.
+121 cases across 23 tags.
 
 ## Tags
 
@@ -16,7 +16,7 @@ See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) 
 - [flip](#flip) (3)
 - [flow](#flow) (12)
 - [hex](#hex) (8)
-- [irrational](#irrational) (2)
+- [irrational](#irrational) (3)
 - [iteration](#iteration) (2)
 - [lists](#lists) (11)
 - [map](#map) (6)
@@ -31,8 +31,8 @@ See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) 
 - [rotate](#rotate) (3)
 - [signs](#signs) (1)
 - [subscript](#subscript) (8)
-- [unicode](#unicode) (9)
-- [unitary](#unitary) (11)
+- [unicode](#unicode) (10)
+- [unitary](#unitary) (14)
 
 ## blit
 
@@ -980,6 +980,17 @@ P10 Vτ
 ```
 
 - values: `[6.283185307179586]`
+- needs: `gggpx`
+
+### unitary_negated_symbol
+
+A sign negates a symbolic constant.
+
+```
+P10 V-π
+```
+
+- values: `[-3.141592653589793]`
 - needs: `gggpx`
 
 ## iteration
@@ -2282,6 +2293,17 @@ P10 V☃你
 - values: `[9731,20320]`
 - needs: `gggpx`
 
+### unicode_negated
+
+A sign before a Unicode character negates its code point.
+
+```
+P10 V-☃
+```
+
+- values: `[-9731]`
+- needs: `gggpx`
+
 ## unitary
 
 ### unitary_one
@@ -2415,5 +2437,38 @@ P10 V5e4
 ![unitary_exponent_unaffected: 50000](img/unitary_exponent_unaffected.svg)
 
 - values: `[50000]`
+- needs: `gggpx`
+
+### unitary_negated
+
+A sign before a constant negates it.
+
+```
+P10 V-K
+```
+
+- values: `[-1]`
+- needs: `gggpx`
+
+### unitary_negated_symbol
+
+A sign negates a symbolic constant.
+
+```
+P10 V-π
+```
+
+- values: `[-3.141592653589793]`
+- needs: `gggpx`
+
+### unitary_negated_twice
+
+Negating a negative constant yields a positive value.
+
+```
+P10 V-N
+```
+
+- values: `[1]`
 - needs: `gggpx`
 

@@ -87,3 +87,31 @@
   tags: [ unitary, ranges ]
   program: "P10 V5e4"
   values: [ 50000 ]
+
+- name: unitary_negated
+  # A leading sign negates the constant.
+  description: "A sign before a constant negates it."
+  needs: [ gggpx ]
+  tags: [ unitary ]
+  program: "P10 V-K"
+  values: [ -1 ]
+
+- name: unitary_negated_symbol
+  # Same for the symbolic constants.
+  description: "A sign negates a symbolic constant."
+  needs: [ gggpx ]
+  tags: [ unitary, irrational ]
+  program: "P10 V-π"
+  values: [ -3.141592653589793 ]
+
+- name: unitary_negated_twice
+  # Negating N (-1) yields +1.
+  description: "Negating a negative constant yields a positive value."
+  needs: [ gggpx ]
+  tags: [ unitary ]
+  program: "P10 V-N"
+  values: [ 1 ]
+
+# NOTE: ∞ is deliberately NOT a conformance case -- JSON has no Infinity literal,
+# so golden.json stores it as null and the generated C++ emits an undeclared
+# `Infinity`. It is asserted in the hand-written tests on both sides instead.

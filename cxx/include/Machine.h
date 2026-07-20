@@ -52,6 +52,11 @@ namespace ggg {
 
     uint32_t utf8Accum = 0;
     int utf8Remaining = 0;
+
+    // A bare "-"/"+" that finishNumber could not turn into a number, held for the
+    // constant that follows it ("-π"). Constants never reach finishNumber, so
+    // without this the sign is discarded and the value comes out positive.
+    bool pendingNegative = false;
   };
 
 
@@ -101,6 +106,7 @@ namespace ggg {
       state.refHasSub = false;
       state.refOffset = false;
       state.refSub.clear();
+      state.pendingNegative = false;
     }
 
     void run( String _code ) {
@@ -174,7 +180,7 @@ namespace ggg {
                 // Both kinds feed the compound (state.numbers) rather than being
                 // appended immediately, so a code point works as a range bound
                 // exactly like a symbolic unitary does -- "V☃:9735" sweeps.
-                pushCompoundNumber( uval );
+                pushCompoundNumber( uval * takePendingSign() );
               }
             } else {
               state.utf8Remaining = 0;
@@ -262,11 +268,28 @@ namespace ggg {
       return false;
     }
 
+    // A lone pending sign belongs to the constant that follows it ("-π" is
+    // -3.14159). Consumed here because a constant never reaches finishNumber, so
+    // the buffered sign would otherwise be dropped and the value come out
+    // POSITIVE. Only a bare sign qualifies.
+    NumberType takePendingSign() {
+      bool negative = false;
+      if ( state.dataMode == GGG::Number && ( state.argBuffer == "-" || state.argBuffer == "+" ) ) {
+        negative = ( state.argBuffer == "-" );
+        state.argBuffer.clear();
+      } else if ( state.pendingNegative ) {
+        negative = true;
+      }
+      state.pendingNegative = false;
+      return negative ? (NumberType) -1 : (NumberType) 1;
+    }
+
     static bool unitaryValue( uint32_t codepoint, NumberType &out ) {
       switch ( codepoint ) {
         case 0x03C0: out = (NumberType) 3.141592653589793;  return true;  // π  pi
         case 0x03C4: out = (NumberType) 6.283185307179586;  return true;  // τ  2π
         case 0x03C6: out = (NumberType) 1.618033988749895;  return true;  // φ  golden ratio
+        case 0x221E: out = INFINITY;                        return true;  // ∞  infinity
         case 0x03B3: out = (NumberType) 0.5772156649;       return true;  // γ  Euler–Mascheroni
         default: return false;
       }
@@ -336,15 +359,15 @@ namespace ggg {
         // separator is handled by the parseEndOfNumber() at the top of parseEncoding().
         NumberType uval;
         if ( unitaryValue( (uint32_t)(uint8_t)_char, uval ) ) {
-          pushCompoundNumber( uval );
+          pushCompoundNumber( uval * takePendingSign() );
         } else {
           _char = CasedString( _char );
           if ( _char == GGG::EncodedOne ) {
-            pushCompoundNumber( 1. );
+            pushCompoundNumber( 1. * takePendingSign() );
           } else if ( _char == EncodedZero ) {
-            pushCompoundNumber( 0. );
+            pushCompoundNumber( 0. * takePendingSign() );
           } else if ( _char == EncodedMinusOne ) {
-            pushCompoundNumber( -1. );
+            pushCompoundNumber( -1. * takePendingSign() );
           }
         }
       }
@@ -681,6 +704,10 @@ namespace ggg {
         // compound, which re-enters finishNumber.
         const String buf = state.argBuffer;
         state.argBuffer.clear();
+        if ( buf == "-" || buf == "+" ) {
+          state.pendingNegative = ( buf == "-" );
+          return;
+        }
         const char *begin = buf.c_str();
         char *end = nullptr;
         const double parsed = strtod( begin, &end );
@@ -760,6 +787,7 @@ namespace ggg {
       state.lineMode = GGG::Argument;
       state.dataMode = GGG::Skip;
       state.skipData = false;
+      state.pendingNegative = false;
     }
 
 

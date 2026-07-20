@@ -66,3 +66,11 @@
   tags: [ unicode, lists ]
   program: "P10 V☃你"
   values: [ 9731, 20320 ]
+
+- name: unicode_negated
+  # A sign negates a code point like any other numeric value.
+  description: "A sign before a Unicode character negates its code point."
+  needs: [ gggpx ]
+  tags: [ unicode ]
+  program: "P10 V-☃"
+  values: [ -9731 ]

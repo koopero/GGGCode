@@ -754,9 +754,28 @@ void test_blit() {
   delete dst;
 }
 
+// Infinity is not a conformance case -- JSON has no Infinity literal, so
+// golden.json cannot carry it and the generated header would emit an undeclared
+// identifier. Asserted here (and in ts-test) instead.
+void test_unitary_infinity() {
+  RefMachine m; m.setup();
+
+  m.run( "P10 V\xE2\x88\x9E\n" );                     // ∞
+  TEST_ASSERT_EQUAL_STRING( "VInfinity\nOK\n", m.out.c_str() );
+
+  m.out.clear();
+  m.run( "P10 V-\xE2\x88\x9E\n" );                    // -∞
+  TEST_ASSERT_EQUAL_STRING( "V-Infinity\nOK\n", m.out.c_str() );
+
+  m.out.clear();
+  m.run( "P10 V1e309\n" );                             // overflow renders alike
+  TEST_ASSERT_EQUAL_STRING( "VInfinity\nOK\n", m.out.c_str() );
+}
+
 // Run all tests
 int main() {
   UNITY_BEGIN();
+  RUN_TEST(test_unitary_infinity);
   RUN_TEST(test_norm_compare);
   RUN_TEST(test_matrix_int);
   RUN_TEST(test_matrix_norm);

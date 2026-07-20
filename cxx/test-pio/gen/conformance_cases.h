@@ -105,6 +105,7 @@ namespace ggg_conformance {
   static const double values_unicode_range[] = { 9731.0, 9732.0, 9733.0, 9734.0, 9735.0 };
   static const double values_unicode_range_multi[] = { 30051.0 };
   static const double values_unicode_adjacent[] = { 9731.0, 20320.0 };
+  static const double values_unicode_negated[] = { -9731.0 };
   static const double values_unitary_one[] = { 1.0 };
   static const double values_unitary_zero[] = { 0.0 };
   static const double values_unitary_minusone[] = { -1.0 };
@@ -116,6 +117,9 @@ namespace ggg_conformance {
   static const double values_unitary_after_number[] = { 5.0, 1.0 };
   static const double values_unitary_pair[] = { 1.0, 0.0 };
   static const double values_unitary_exponent_unaffected[] = { 50000.0 };
+  static const double values_unitary_negated[] = { -1.0 };
+  static const double values_unitary_negated_symbol[] = { -3.1415926535897931 };
+  static const double values_unitary_negated_twice[] = { 1.0 };
   struct Case {
     const char* name; const char* program; const char* status;
     const double* values; int valueCount; const char* expected;
@@ -227,6 +231,7 @@ namespace ggg_conformance {
     { "unicode_range", "P10 V☃:9735\n", "OK", values_unicode_range, 5, nullptr },
     { "unicode_range_multi", "P10 V☃|你\n", "OK", values_unicode_range_multi, 1, nullptr },
     { "unicode_adjacent", "P10 V☃你\n", "OK", values_unicode_adjacent, 2, nullptr },
+    { "unicode_negated", "P10 V-☃\n", "OK", values_unicode_negated, 1, nullptr },
     { "unitary_one", "P10 VK\n", "OK", values_unitary_one, 1, nullptr },
     { "unitary_zero", "P10 VZ\n", "OK", values_unitary_zero, 1, nullptr },
     { "unitary_minusone", "P10 VN\n", "OK", values_unitary_minusone, 1, nullptr },
@@ -237,7 +242,10 @@ namespace ggg_conformance {
     { "unitary_before_number", "P10 VK5\n", "OK", values_unitary_before_number, 2, nullptr },
     { "unitary_after_number", "P10 V5K\n", "OK", values_unitary_after_number, 2, nullptr },
     { "unitary_pair", "P10 VKZ\n", "OK", values_unitary_pair, 2, nullptr },
-    { "unitary_exponent_unaffected", "P10 V5e4\n", "OK", values_unitary_exponent_unaffected, 1, nullptr }
+    { "unitary_exponent_unaffected", "P10 V5e4\n", "OK", values_unitary_exponent_unaffected, 1, nullptr },
+    { "unitary_negated", "P10 V-K\n", "OK", values_unitary_negated, 1, nullptr },
+    { "unitary_negated_symbol", "P10 V-π\n", "OK", values_unitary_negated_symbol, 1, nullptr },
+    { "unitary_negated_twice", "P10 V-N\n", "OK", values_unitary_negated_twice, 1, nullptr }
   };
   constexpr int caseCount = sizeof( cases ) / sizeof( cases[0] );
 }

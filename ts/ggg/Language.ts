@@ -52,6 +52,7 @@ export enum UnitaryNames {
   TwoPi = "τ",
   GoldenRatio = "φ",
   EulerMascheroni = "γ",
+  Infinity = "∞",
 }
 
 export enum HexEncodings {
@@ -70,6 +71,7 @@ export const UnitaryValues = {
   [UnitaryNames.TwoPi]: Math.PI * 2,
   [UnitaryNames.GoldenRatio]: (1 + Math.sqrt(5)) / 2,
   [UnitaryNames.EulerMascheroni]: 0.5772156649,
+  [UnitaryNames.Infinity]: Infinity,
 }
 
 

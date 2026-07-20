@@ -118,6 +118,9 @@ Named numeric literals that can appear as data values. Case-insensitive for ASCI
 | `τ`   | 2π ≈ 6.28318               |
 | `φ`   | Golden ratio ≈ 1.61803     |
 | `γ`   | Euler-Mascheroni ≈ 0.57722 |
+| `∞`   | Infinity                   |
+
+A leading sign negates a constant (`-π` is −3.14159, `-N` is 1) or a code point (`-☃` is −9731).
 
 Examples: [unitary](cases.md#unitary).
 

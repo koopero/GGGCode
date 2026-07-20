@@ -21,6 +21,15 @@ describe("README", () => {
       expect( ParseArg("Vφ")?.[0]?.data ).toEqual([(1 + Math.sqrt(5)) / 2])
     })
 
+    // Not a conformance case: JSON has no Infinity literal, so golden.json
+    // cannot carry it.
+    test("infinity constant, and negation of constants", () => {
+      expect( ParseArg("V∞")?.[0]?.data ).toEqual([Infinity])
+      expect( ParseArg("V-∞")?.[0]?.data ).toEqual([-Infinity])
+      expect( ParseArg("V-π")?.[0]?.data ).toEqual([-Math.PI])
+      expect( ParseArg("V-K")?.[0]?.data ).toEqual([-1])
+    })
+
     // "e" is the exponent marker, never a constant -- it was retired as Euler's
     // number so that no unitary collides with scientific notation.
     test("e is scientific notation, not a constant", () => {

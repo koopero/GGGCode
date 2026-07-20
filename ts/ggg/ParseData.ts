@@ -14,7 +14,14 @@ const doubleQuotedString = /^((""|".*?[^\\]"))/
 const RegexEscape = ( str:string ) => str.replace( /[-/\\^$*+?.()|[\]{}]/g, "\\$&" )
 const referenceReg = new RegExp( `^${RegexEscape(GGG.Reference)}([a-zA-Z0-9_]*)(${RegexEscape(GGG.At)}?)(${RegexEscape(GGG.Subscript)}?)` )
 
-const unitaryPattern = new RegExp( `^[${Object.values(UnitaryNames).map(RegexEscape).join("")}]`, "iu" )
+// A leading sign negates the constant: "-π" is -3.14159. Captured separately so
+// the sign can be applied to the looked-up value.
+const unitaryPattern = new RegExp( `^([+-]?)([${Object.values(UnitaryNames).map(RegexEscape).join("")}])`, "iu" )
+// A sign directly before a non-ASCII character negates its code point too.
+const signedUnicode = /^([+-])(.)/u
+// "0X" with no hex digits after it is not a number; consume it and yield nothing
+// rather than falling through to the decimal match and producing a bare 0.
+const hexPrefixEmpty = new RegExp( `^0[${hexPrefixCodes}]`, "i" )
 const unitaryMap: Record<string, number> = {}
 for ( const [name, value] of Object.entries(UnitaryValues) ) {
   unitaryMap[name] = value
@@ -219,13 +226,21 @@ export default function ParseData( str:string, options:ParseOptions = {} ) : [ P
     const unicode = (str.match( /^./u ) || [""])[0].codePointAt(0) || 0
 
     if ( ( match = str.match( unitaryPattern ) ) ) {
-      const value = unitaryMap[ match[0] ]
-      pushNumber( value, GGG.EncodedOne, false )
+      const value = unitaryMap[ match[2] ]
+      pushNumber( match[1] === "-" ? -value : value, GGG.EncodedOne, false )
     } else if ( unicode >= 0x80 ) {
       // Unicode character as number
       const uniChar = String.fromCodePoint( unicode )
       pushNumber( unicode, uniChar, false )
       match = [ uniChar ]
+    } else if ( ( match = str.match( signedUnicode ) ) && ( match[2].codePointAt(0) || 0 ) >= 0x80 ) {
+      // Signed code point ("-☃"). Re-read with the full code point so astral
+      // characters are not split.
+      const signed = str.substring(1)
+      const point = ( signed.match( /^./u ) || [""] )[0]
+      const cp = point.codePointAt(0) || 0
+      pushNumber( match[1] === "-" ? -cp : cp, point, false )
+      match = [ match[1] + point ]
     } else if ( str[0] == GGG.StringToEOL ) {
       // String to end of line
       let endIndex = str.indexOf( GGG.End )
@@ -266,6 +281,8 @@ export default function ParseData( str:string, options:ParseOptions = {} ) : [ P
         const value = parseInt( hexData, 16 )
         pushNumber( value, HexEncodings.HexNumber, false )
       }
+    } else if ( ( match = str.match( hexPrefixEmpty ) ) ) {
+      // Matched but pushes no value: an empty hex prefix is not a number.
     } else if ( ( match = str.match( decimalNumber ) ) ) {
       const value = parseFloat( match[0] )
       pushNumber( value, "", false )
