@@ -629,12 +629,22 @@ namespace ggg {
         }
         pushCompoundNumber( value );
       } else if ( !state.argBuffer.empty() && ( state.dataMode == GGG::Number || state.dataMode == GGG::Zero ) ) {
-        std::stringstream ss(state.argBuffer);
-        NumberType value;
-        if (ss >> value) {
-          pushCompoundNumber( value );
-        }
+        // strtod, not stringstream: it consumes the longest valid numeric PREFIX,
+        // which is what the reference's parseFloat does. stringstream sets failbit
+        // unless the WHOLE buffer parses, so a trailing float-syntax character --
+        // "5e" (exponent with no digits) or "5X" (hex-float prefix) -- threw the
+        // number away entirely instead of yielding 5.
+        //
+        // Buffer is copied and cleared first: pushCompoundNumber can finish the
+        // compound, which re-enters finishNumber.
+        const String buf = state.argBuffer;
         state.argBuffer.clear();
+        const char *begin = buf.c_str();
+        char *end = nullptr;
+        const double parsed = strtod( begin, &end );
+        if ( end != begin ) {
+          pushCompoundNumber( (NumberType) parsed );
+        }
       }
     }
 

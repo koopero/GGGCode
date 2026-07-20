@@ -63,6 +63,8 @@ namespace ggg_conformance {
   static const double values_print_bytes[] = { 255.0, 128.0, 64.0 };
   static const double values_print_decimal[] = { -1.5000000000000000 };
   static const double values_print_decimal_zero[] = { 0.50000000000000000 };
+  static const double values_number_trailing_exponent[] = { 5.0 };
+  static const double values_number_trailing_letter[] = { 5.0 };
   static const double values_range_incl[] = { 1.0, 2.0, 3.0, 4.0, 5.0 };
   static const double values_range_excl[] = { 1.0, 2.0, 3.0, 4.0 };
   static const double values_range_count[] = { 0.0, 2.5000000000000000, 5.0, 7.5000000000000000, 10.0 };
@@ -177,6 +179,8 @@ namespace ggg_conformance {
     { "print_bytes", "P10 V255,128,64\n", "OK", values_print_bytes, 3, nullptr },
     { "print_decimal", "P10 V-1.5\n", "OK", values_print_decimal, 1, nullptr },
     { "print_decimal_zero", "P10 V0.5\n", "OK", values_print_decimal_zero, 1, nullptr },
+    { "number_trailing_exponent", "P10 V5e\n", "OK", values_number_trailing_exponent, 1, nullptr },
+    { "number_trailing_letter", "P10 V5X\n", "OK", values_number_trailing_letter, 1, nullptr },
     { "range_incl", "P10 V1:5\n", "OK", values_range_incl, 5, nullptr },
     { "range_excl", "P10 V1>5\n", "OK", values_range_excl, 4, nullptr },
     { "range_count", "P10 V0:10/5\n", "OK", values_range_count, 5, nullptr },

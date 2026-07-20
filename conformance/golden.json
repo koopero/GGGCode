@@ -1330,6 +1330,40 @@
     "expected": "V0.5\nOK"
   },
   {
+    "name": "number_trailing_exponent",
+    "description": "A dangling exponent marker ends the number instead of discarding it.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "decimals"
+    ],
+    "program": "P10 V5e",
+    "status": "OK",
+    "values": [
+      5
+    ],
+    "exact": false,
+    "expected": "V5\nOK"
+  },
+  {
+    "name": "number_trailing_letter",
+    "description": "A trailing letter ends the number rather than discarding it.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "decimals"
+    ],
+    "program": "P10 V5X",
+    "status": "OK",
+    "values": [
+      5
+    ],
+    "exact": false,
+    "expected": "V5\nOK"
+  },
+  {
     "name": "range_incl",
     "description": "a:b expands to an inclusive integer sweep.",
     "needs": [

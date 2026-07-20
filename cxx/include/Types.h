@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <cstdlib>   // strtod: longest-valid-prefix number parsing
 #include <iostream>
 #include <unordered_map>
 

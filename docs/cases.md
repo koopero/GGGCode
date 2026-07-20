@@ -6,13 +6,13 @@ Each case is one artifact wearing four hats: a behavioural **spec**, a piece of 
 
 See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) · [runtime](runtime.md).
 
-110 cases across 23 tags.
+112 cases across 23 tags.
 
 ## Tags
 
 - [blit](#blit) (24)
 - [conditionals](#conditionals) (6)
-- [decimals](#decimals) (8)
+- [decimals](#decimals) (10)
 - [flip](#flip) (3)
 - [flow](#flow) (12)
 - [hex](#hex) (7)
@@ -550,6 +550,28 @@ P10 V0.5
 ```
 
 - values: `[0.5]`
+- needs: `gggpx`
+
+### number_trailing_exponent
+
+A dangling exponent marker ends the number instead of discarding it.
+
+```
+P10 V5e
+```
+
+- values: `[5]`
+- needs: `gggpx`
+
+### number_trailing_letter
+
+A trailing letter ends the number rather than discarding it.
+
+```
+P10 V5X
+```
+
+- values: `[5]`
 - needs: `gggpx`
 
 ## flip

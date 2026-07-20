@@ -67,3 +67,20 @@
   tags: [ decimals ]
   program: "P10 V0.5"
   values: [ 0.5 ]
+
+- name: number_trailing_exponent
+  # A number is parsed up to its longest valid prefix, so an exponent marker with
+  # no digits after it ends the number rather than voiding it.
+  description: "A dangling exponent marker ends the number instead of discarding it."
+  needs: [ gggpx ]
+  tags: [ decimals ]
+  program: "P10 V5e"
+  values: [ 5 ]
+
+- name: number_trailing_letter
+  # Same rule for a trailing letter that is part of float syntax elsewhere.
+  description: "A trailing letter ends the number rather than discarding it."
+  needs: [ gggpx ]
+  tags: [ decimals ]
+  program: "P10 V5X"
+  values: [ 5 ]
