@@ -2,6 +2,8 @@
 
 Definitions for GGGCode language concepts, runtime types, and TypeScript interfaces.
 
+See also: [tour](tour.md) · [cases](cases.md) (worked, tested examples) · [commands](commands.md) · [runtime](runtime.md).
+
 ---
 
 ## Language Concepts
@@ -64,7 +66,7 @@ A compact notation for generating sequences of numbers.
 | `0:/4`    | Open range from 0, divided into 4 steps |
 | `5*3`     | Multiplied value: 15                     |
 
-Ranges are parsed into `RangeAxis` objects and expanded by `Solve`.
+Ranges are parsed into `RangeAxis` objects and expanded by `Solve`. Examples: [ranges](cases.md#ranges).
 
 ---
 
@@ -76,7 +78,7 @@ The `|` operator separates values across dimensions within a single argument:
 V1|2|3    ; three separate axis values
 ```
 
-Parsed as a `RangeAxes` object containing one `RangeAxis` per axis.
+Parsed as a `RangeAxes` object containing one `RangeAxis` per axis. Examples: [multiaxis](cases.md#multiaxis).
 
 ---
 
@@ -99,7 +101,7 @@ $myMatrix         ; reference to register named "myMatrix"
 $myMatrix[1,2]    ; subscripted reference: element at [1,2]
 ```
 
-Parsed as a `Reference` object. The subscript is an array of `Numeric` values.
+Parsed as a `Reference` object. The subscript is an array of `Numeric` values. Examples: [references](cases.md#references), [subscript](cases.md#subscript), [offset](cases.md#offset).
 
 ---
 
@@ -118,6 +120,8 @@ Named numeric literals that can appear as data values. Case-insensitive for ASCI
 | `φ`   | Golden ratio ≈ 1.61803     |
 | `γ`   | Euler-Mascheroni ≈ 0.57722 |
 
+Examples: [unitary](cases.md#unitary).
+
 ---
 
 ### Number Formats
@@ -132,6 +136,8 @@ GGGCode supports multiple numeric representations:
 | Hex list (2)   | `0G5A3B`  | Pairs of 2-digit hex values                         |
 | Hex norm (1)   | `0J80`    | 1-digit hex normalized to 0–1 (÷ 0xF)              |
 | Hex norm (2)   | `0H8040`  | 2-digit hex normalized to 0–1 (÷ 0xFF)             |
+
+Examples: [hex](cases.md#hex), [normalized](cases.md#normalized).
 
 ---
 

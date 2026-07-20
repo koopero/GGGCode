@@ -4,7 +4,9 @@
 
 Each case is one artifact wearing four hats: a behavioural **spec**, a piece of **documentation**, a runnable **example**, and a cross-engine conformance **test**. The contract is the decoded `values` stream within a global epsilon; `status` is the control response. Cases are grouped below by `tag` (a case appears under each tag it carries).
 
-98 cases across 23 tags.
+See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) · [runtime](runtime.md).
+
+101 cases across 23 tags.
 
 ## Tags
 
@@ -19,12 +21,12 @@ Each case is one artifact wearing four hats: a behavioural **spec**, a piece of 
 - [lists](#lists) (5)
 - [map](#map) (6)
 - [matrix](#matrix) (11)
-- [multiaxis](#multiaxis) (2)
+- [multiaxis](#multiaxis) (3)
 - [normalized](#normalized) (2)
 - [offset](#offset) (5)
 - [operator](#operator) (6)
 - [procedures](#procedures) (4)
-- [ranges](#ranges) (9)
+- [ranges](#ranges) (12)
 - [references](#references) (14)
 - [rotate](#rotate) (3)
 - [signs](#signs) (1)
@@ -43,6 +45,8 @@ G40 R"bs" W"bd"
 G10 R"bd"
 ```
 
+![blit_box_default: blit source to result](img/blit_box_default.svg)
+
 - values: `[1,2,3,4,5,6,7,8,9]`
 - needs: `ggggx`
 
@@ -54,6 +58,8 @@ An explicit full-source box M0,3,0,3 (min,max per axis, in source pixels) copies
 G40 R"bs" W"bd" T"box" M0,3,0,3
 G10 R"bd"
 ```
+
+![blit_box_full: blit source to result](img/blit_box_full.svg)
 
 - values: `[1,2,3,4,5,6,7,8,9]`
 - needs: `ggggx`
@@ -67,6 +73,8 @@ G40 R"bs" W"bd" T"box" M1,3,0,3 F1
 G10 R"bd"
 ```
 
+![blit_box_subregion: blit source to result](img/blit_box_subregion.svg)
+
 - values: `[2,2,3,5,5,6,8,8,9]`
 - needs: `ggggx`
 
@@ -78,6 +86,8 @@ A box flips an axis when its range runs backwards: M2.5,-0.5 on axis 0 (= [dim-0
 G40 R"bs" W"bd" T"box" M2.5,-0.5,0,3 F1
 G10 R"bd"
 ```
+
+![blit_box_flip_x: blit source to result](img/blit_box_flip_x.svg)
 
 - values: `[3,2,1,6,5,4,9,8,7]`
 - needs: `ggggx`
@@ -91,6 +101,8 @@ G40 R"bs" W"bd" T"box" M0,3,2.5,-0.5 F1
 G10 R"bd"
 ```
 
+![blit_box_flip_y: blit source to result](img/blit_box_flip_y.svg)
+
 - values: `[7,8,9,4,5,6,1,2,3]`
 - needs: `ggggx`
 
@@ -102,6 +114,8 @@ Reversing both axes flips the matrix in both directions -- a 180-degree turn (ev
 G40 R"bs" W"bd" T"box" M2.5,-0.5,2.5,-0.5 F1
 G10 R"bd"
 ```
+
+![blit_box_flip_180: blit source to result](img/blit_box_flip_180.svg)
 
 - values: `[9,8,7,6,5,4,3,2,1]`
 - needs: `ggggx`
@@ -115,6 +129,8 @@ G40 R"bs" W"bd" T"map" M0,0,3,1,1,3 F1
 G10 R"bd"
 ```
 
+![blit_map_axes: blit source to result](img/blit_map_axes.svg)
+
 - values: `[4,5,6,4,5,6,7,8,9]`
 - needs: `ggggx`
 
@@ -126,6 +142,8 @@ map with no triples leaves every dest axis identity (dest k <- src k, full sourc
 G40 R"bs" W"bd" T"map"
 G10 R"bd"
 ```
+
+![blit_map_default: blit source to result](img/blit_map_default.svg)
 
 - values: `[1,2,3,4,5,6,7,8,9]`
 - needs: `ggggx`
@@ -139,6 +157,8 @@ G40 R"bs" W"bd" T"map" M1,0,3,0,0,3 F1
 G10 R"bd"
 ```
 
+![blit_map_transpose: blit source to result](img/blit_map_transpose.svg)
+
 - values: `[1,4,7,2,5,8,3,6,9]`
 - needs: `ggggx`
 
@@ -150,6 +170,8 @@ A quarter turn clockwise = swap axes + reverse the swapped-in axis: M1,2.5,-0.5,
 G40 R"bs" W"bd" T"map" M1,2.5,-0.5,0,0,3 F1
 G10 R"bd"
 ```
+
+![blit_map_rotate_cw: blit source to result](img/blit_map_rotate_cw.svg)
 
 - values: `[7,4,1,8,5,2,9,6,3]`
 - needs: `ggggx`
@@ -163,6 +185,8 @@ G40 R"bs" W"bd" T"map" M1,0,3,0,2.5,-0.5 F1
 G10 R"bd"
 ```
 
+![blit_map_rotate_ccw: blit source to result](img/blit_map_rotate_ccw.svg)
+
 - values: `[3,6,9,2,5,8,1,4,7]`
 - needs: `ggggx`
 
@@ -174,6 +198,8 @@ Mode by index T2 == map; a single triple (0,1,3) sets dest0<-src0 over [1,3] and
 G40 R"bs" W"bd" T2 M0,1,3 F1
 G10 R"bd"
 ```
+
+![blit_map_by_index: blit source to result](img/blit_map_by_index.svg)
 
 - values: `[2,2,3,5,5,6,8,8,9]`
 - needs: `ggggx`
@@ -187,6 +213,8 @@ G40 R"bs" W"bd" T"affine" M1,0,0,0,1,0
 G10 R"bd"
 ```
 
+![blit_affine_identity: blit source to result](img/blit_affine_identity.svg)
+
 - values: `[1,2,3,4,5,6,7,8,9]`
 - needs: `ggggx`
 
@@ -198,6 +226,8 @@ The transform mode accepts an index: T1 == affine.
 G40 R"bs" W"bd" T1 M1,0,0,0,1,0
 G10 R"bd"
 ```
+
+![blit_mode_by_index: blit source to result](img/blit_mode_by_index.svg)
 
 - values: `[1,2,3,4,5,6,7,8,9]`
 - needs: `ggggx`
@@ -211,6 +241,8 @@ G40 R"bs" W"bd" T"box" M0,1.5,0,1.5 F1
 G10 R"bd"
 ```
 
+![blit_magnify_nearest: blit source to result](img/blit_magnify_nearest.svg)
+
 - values: `[1,1,2,1,1,2,4,4,5]`
 - needs: `ggggx`
 
@@ -222,6 +254,8 @@ Same half-extent box with the default linear filter interpolates between source 
 G40 R"bs" W"bd" T"box" M0,1.5,0,1.5
 G10 R"bd"
 ```
+
+![blit_magnify_linear: blit source to result](img/blit_magnify_linear.svg)
 
 - values: `[1,1.5,2,2.5,2.75,3,4,4.5,5]`
 - needs: `ggggx`
@@ -235,6 +269,8 @@ G40 R"bs" W"bd" T"box" M0,1.5,0,1.5 F0,1
 G10 R"bd"
 ```
 
+![blit_filter_per_axis: blit source to result](img/blit_filter_per_axis.svg)
+
 - values: `[1,1.5,2,1,1.5,2,4,4.5,5]`
 - needs: `ggggx`
 
@@ -247,6 +283,8 @@ G40 R"bs" W"bd" T"box" M0,1.5,0,1.5 F"linear","nearest"
 G10 R"bd"
 ```
 
+![blit_filter_by_name: blit source to result](img/blit_filter_by_name.svg)
+
 - values: `[1,1.5,2,1,1.5,2,4,4.5,5]`
 - needs: `ggggx`
 
@@ -258,6 +296,8 @@ An axis-0 shifted box [1.2,4.2] with nearest filter + hold edge shifts and clamp
 G40 R"bs" W"bd" T"box" M1.2,4.2,0,3 F1 E1
 G10 R"bd"
 ```
+
+![blit_translate_hold: blit source to result](img/blit_translate_hold.svg)
 
 - values: `[2,3,3,5,6,6,8,9,9]`
 - needs: `ggggx`
@@ -272,6 +312,8 @@ G40 R"bs" W"bd" Q"add"
 G10 R"bd"
 ```
 
+![blit_operator_add: blit source to result](img/blit_operator_add.svg)
+
 - values: `[11,12,13,14,15,16,17,18,19]`
 - needs: `ggggx`
 
@@ -283,6 +325,8 @@ Lerp WITH minify: a 1.5x oversized box [0,4.5] with the default linear filter (a
 G40 R"bs" W"bd" T"box" M0,4.5,0,4.5 E1
 G10 R"bd"
 ```
+
+![blit_minify_lerp: blit source to result](img/blit_minify_lerp.svg)
 
 - values: `[1,2.5,3,5.5,7.25,7.5,7,8.5,9]`
 - needs: `ggggx`
@@ -296,6 +340,8 @@ G40 R"bs" W"bd" T"box" M0,6,0,6 F2 E1
 G10 R"bd"
 ```
 
+![blit_minify_mean: blit source to result](img/blit_minify_mean.svg)
+
 - values: `[1,2.75,3,5.5,7.25,7.5,7,8.75,9]`
 - needs: `ggggx`
 
@@ -308,6 +354,8 @@ G40 R"bs" W"bd" T"box" M0,6,0,6 F4 E1
 G10 R"bd"
 ```
 
+![blit_minify_max: blit source to result](img/blit_minify_max.svg)
+
 - values: `[1,3,3,7,9,9,7,9,9]`
 - needs: `ggggx`
 
@@ -319,6 +367,8 @@ Separable per-axis filter: F4,2 = max-pool X (F4) but mean-pool Y (F2). Differs 
 G40 R"bs" W"bd" T"box" M0,6,0,6 F4,2 E1
 G10 R"bd"
 ```
+
+![blit_minify_pool: blit source to result](img/blit_minify_pool.svg)
 
 - values: `[1,3,3,5.5,7.5,7.5,7,9,9]`
 - needs: `ggggx`
@@ -442,6 +492,8 @@ A comma-separated value list echoes each value in order.
 P10 V1,2,3
 ```
 
+![print_list: 1, 2, 3](img/print_list.svg)
+
 - values: `[1,2,3]`
 - needs: `gggpx`
 
@@ -511,6 +563,8 @@ G40 R"bs" W"bd" T"box" M2.5,-0.5,0,3 F1
 G10 R"bd"
 ```
 
+![blit_box_flip_x: blit source to result](img/blit_box_flip_x.svg)
+
 - values: `[3,2,1,6,5,4,9,8,7]`
 - needs: `ggggx`
 
@@ -523,6 +577,8 @@ G40 R"bs" W"bd" T"box" M0,3,2.5,-0.5 F1
 G10 R"bd"
 ```
 
+![blit_box_flip_y: blit source to result](img/blit_box_flip_y.svg)
+
 - values: `[7,8,9,4,5,6,1,2,3]`
 - needs: `ggggx`
 
@@ -534,6 +590,8 @@ Reversing both axes flips the matrix in both directions -- a 180-degree turn (ev
 G40 R"bs" W"bd" T"box" M2.5,-0.5,2.5,-0.5 F1
 G10 R"bd"
 ```
+
+![blit_box_flip_180: blit source to result](img/blit_box_flip_180.svg)
 
 - values: `[9,8,7,6,5,4,3,2,1]`
 - needs: `ggggx`
@@ -718,6 +776,8 @@ T0
 P10 V0X1F
 ```
 
+![hex_1f: 31](img/hex_1f.svg)
+
 - values: `[31]`
 - needs: `gggpx`
 
@@ -728,6 +788,8 @@ P10 V0X1F
 ```
 P10 V0XFF
 ```
+
+![hex_ff: 255](img/hex_ff.svg)
 
 - values: `[255]`
 - needs: `gggpx`
@@ -740,6 +802,8 @@ P10 V0XFF
 P10 V0X0
 ```
 
+![hex_zero: 0](img/hex_zero.svg)
+
 - values: `[0]`
 - needs: `gggpx`
 
@@ -750,6 +814,8 @@ Multi-digit hex integers carry across nibbles.
 ```
 P10 V0X100
 ```
+
+![hex_100: 256](img/hex_100.svg)
 
 - values: `[256]`
 - needs: `gggpx`
@@ -762,6 +828,8 @@ P10 V0X100
 P10 V0IFF00
 ```
 
+![hexlist_ff00: 15, 15, 0, 0](img/hexlist_ff00.svg)
+
 - values: `[15,15,0,0]`
 - needs: `gggpx`
 
@@ -773,6 +841,8 @@ P10 V0IFF00
 P10 V0H80
 ```
 
+![hexnorm2_80: 0.502](img/hexnorm2_80.svg)
+
 - values: `[0.5019607843137255]`
 - needs: `gggpx`
 
@@ -783,6 +853,8 @@ P10 V0H80
 ```
 P10 V0J8
 ```
+
+![hexnorm1_8: 0.533](img/hexnorm1_8.svg)
 
 - values: `[0.5333333333333333]`
 - needs: `gggpx`
@@ -861,6 +933,8 @@ T0
 P10 V0IFF00
 ```
 
+![hexlist_ff00: 15, 15, 0, 0](img/hexlist_ff00.svg)
+
 - values: `[15,15,0,0]`
 - needs: `gggpx`
 
@@ -872,6 +946,8 @@ A comma-separated value list echoes each value in order.
 P10 V1,2,3
 ```
 
+![print_list: 1, 2, 3](img/print_list.svg)
+
 - values: `[1,2,3]`
 - needs: `gggpx`
 
@@ -882,6 +958,8 @@ Two value arguments stay distinct in the output.
 ```
 P10 V1,2,3 V4,5,6
 ```
+
+![print_two_args: 1, 2, 3, 4, 5, 6](img/print_two_args.svg)
 
 - values: `[1,2,3,4,5,6]`
 - needs: `gggpx`
@@ -895,6 +973,8 @@ A range may sit inside a comma list alongside plain values.
 P10 V1:3,9
 ```
 
+![range_in_list: 1, 2, 3, 9](img/range_in_list.svg)
+
 - values: `[1,2,3,9]`
 - needs: `gggpx`
 
@@ -905,6 +985,8 @@ Unicode characters list like any other values.
 ```
 P10 V☃,你
 ```
+
+![unicode_list: 9731, 20320](img/unicode_list.svg)
 
 - values: `[9731,20320]`
 - needs: `gggpx`
@@ -920,6 +1002,8 @@ G40 R"bs" W"bd" T"map" M0,0,3,1,1,3 F1
 G10 R"bd"
 ```
 
+![blit_map_axes: blit source to result](img/blit_map_axes.svg)
+
 - values: `[4,5,6,4,5,6,7,8,9]`
 - needs: `ggggx`
 
@@ -931,6 +1015,8 @@ map with no triples leaves every dest axis identity (dest k <- src k, full sourc
 G40 R"bs" W"bd" T"map"
 G10 R"bd"
 ```
+
+![blit_map_default: blit source to result](img/blit_map_default.svg)
 
 - values: `[1,2,3,4,5,6,7,8,9]`
 - needs: `ggggx`
@@ -944,6 +1030,8 @@ G40 R"bs" W"bd" T"map" M1,0,3,0,0,3 F1
 G10 R"bd"
 ```
 
+![blit_map_transpose: blit source to result](img/blit_map_transpose.svg)
+
 - values: `[1,4,7,2,5,8,3,6,9]`
 - needs: `ggggx`
 
@@ -955,6 +1043,8 @@ A quarter turn clockwise = swap axes + reverse the swapped-in axis: M1,2.5,-0.5,
 G40 R"bs" W"bd" T"map" M1,2.5,-0.5,0,0,3 F1
 G10 R"bd"
 ```
+
+![blit_map_rotate_cw: blit source to result](img/blit_map_rotate_cw.svg)
 
 - values: `[7,4,1,8,5,2,9,6,3]`
 - needs: `ggggx`
@@ -968,6 +1058,8 @@ G40 R"bs" W"bd" T"map" M1,0,3,0,2.5,-0.5 F1
 G10 R"bd"
 ```
 
+![blit_map_rotate_ccw: blit source to result](img/blit_map_rotate_ccw.svg)
+
 - values: `[3,6,9,2,5,8,1,4,7]`
 - needs: `ggggx`
 
@@ -979,6 +1071,8 @@ Mode by index T2 == map; a single triple (0,1,3) sets dest0<-src0 over [1,3] and
 G40 R"bs" W"bd" T2 M0,1,3 F1
 G10 R"bd"
 ```
+
+![blit_map_by_index: blit source to result](img/blit_map_by_index.svg)
 
 - values: `[2,2,3,5,5,6,8,8,9]`
 - needs: `ggggx`
@@ -1122,13 +1216,15 @@ G10 R0 P0 S1
 
 ### multiaxis
 
-Register-less multi-axis of lone values collapses to nothing.
+Register-less multi-axis of lone values adds coordinate-wise.
 
 ```
 P10 V1|2|3
 ```
 
-- values: `[]`
+![multiaxis: 6](img/multiaxis.svg)
+
+- values: `[6]`
 - needs: `gggpx`
 
 ### multiaxis_range
@@ -1139,7 +1235,22 @@ Multi-axis ranges add coordinate-wise (nested register-less sweep).
 P10 V1:2|10:20/2|100:200/2
 ```
 
+![multiaxis_range: 111, 112, 121, 122, 211, 212, 221, 222](img/multiaxis_range.svg)
+
 - values: `[111,112,121,122,211,212,221,222]`
+- needs: `gggpx`
+
+### multiaxis_multiplier
+
+Multi-axis multipliers add scaled single-point coordinates.
+
+```
+P10 V1|2*10|3*100
+```
+
+![multiaxis_multiplier: 321](img/multiaxis_multiplier.svg)
+
+- values: `[321]`
 - needs: `gggpx`
 
 ## normalized
@@ -1152,6 +1263,8 @@ P10 V1:2|10:20/2|100:200/2
 P10 V0H80
 ```
 
+![hexnorm2_80: 0.502](img/hexnorm2_80.svg)
+
 - values: `[0.5019607843137255]`
 - needs: `gggpx`
 
@@ -1162,6 +1275,8 @@ P10 V0H80
 ```
 P10 V0J8
 ```
+
+![hexnorm1_8: 0.533](img/hexnorm1_8.svg)
 
 - values: `[0.5333333333333333]`
 - needs: `gggpx`
@@ -1366,6 +1481,8 @@ a:b expands to an inclusive integer sweep.
 P10 V1:5
 ```
 
+![range_incl: 1, 2, 3, 4, 5](img/range_incl.svg)
+
 - values: `[1,2,3,4,5]`
 - needs: `gggpx`
 
@@ -1376,6 +1493,8 @@ a>b expands to an exclusive sweep (stops before b).
 ```
 P10 V1>5
 ```
+
+![range_excl: 1, 2, 3, 4](img/range_excl.svg)
 
 - values: `[1,2,3,4]`
 - needs: `gggpx`
@@ -1388,6 +1507,8 @@ a:b/n divides the inclusive range into n points.
 P10 V0:10/5
 ```
 
+![range_count: 0, 2.5, 5, 7.5, 10](img/range_count.svg)
+
 - values: `[0,2.5,5,7.5,10]`
 - needs: `gggpx`
 
@@ -1399,7 +1520,35 @@ a:b:s walks the inclusive range in steps of s.
 P10 V0:10:2
 ```
 
+![range_step: 0, 2, 4, 6, 8, 10](img/range_step.svg)
+
 - values: `[0,2,4,6,8,10]`
+- needs: `gggpx`
+
+### range_multiplier
+
+a:b:s:m scales each value of the stepped range by the multiplier m.
+
+```
+P10 V10:30:4:3
+```
+
+![range_multiplier: 30, 42, 54, 66, 78, 90](img/range_multiplier.svg)
+
+- values: `[30,42,54,66,78,90]`
+- needs: `gggpx`
+
+### lone_multiplier
+
+a*m is the single point start*m (multiplier with no range).
+
+```
+P10 V2*10
+```
+
+![lone_multiplier: 20](img/lone_multiplier.svg)
+
+- values: `[20]`
 - needs: `gggpx`
 
 ### range_in_list
@@ -1410,18 +1559,22 @@ A range may sit inside a comma list alongside plain values.
 P10 V1:3,9
 ```
 
+![range_in_list: 1, 2, 3, 9](img/range_in_list.svg)
+
 - values: `[1,2,3,9]`
 - needs: `gggpx`
 
 ### multiaxis
 
-Register-less multi-axis of lone values collapses to nothing.
+Register-less multi-axis of lone values adds coordinate-wise.
 
 ```
 P10 V1|2|3
 ```
 
-- values: `[]`
+![multiaxis: 6](img/multiaxis.svg)
+
+- values: `[6]`
 - needs: `gggpx`
 
 ### multiaxis_range
@@ -1432,7 +1585,22 @@ Multi-axis ranges add coordinate-wise (nested register-less sweep).
 P10 V1:2|10:20/2|100:200/2
 ```
 
+![multiaxis_range: 111, 112, 121, 122, 211, 212, 221, 222](img/multiaxis_range.svg)
+
 - values: `[111,112,121,122,211,212,221,222]`
+- needs: `gggpx`
+
+### multiaxis_multiplier
+
+Multi-axis multipliers add scaled single-point coordinates.
+
+```
+P10 V1|2*10|3*100
+```
+
+![multiaxis_multiplier: 321](img/multiaxis_multiplier.svg)
+
+- values: `[321]`
 - needs: `gggpx`
 
 ### unitary_range
@@ -1442,6 +1610,8 @@ A unitary constant acts as a range bound like any number.
 ```
 P10 VK:5
 ```
+
+![unitary_range: 1, 2, 3, 4, 5](img/unitary_range.svg)
 
 - values: `[1,2,3,4,5]`
 - needs: `gggpx`
@@ -1453,6 +1623,8 @@ Z as an exclusive range bound sweeps 0 up to (not including) 10.
 ```
 P10 VZ>10
 ```
+
+![unitary_range_excl: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9](img/unitary_range_excl.svg)
 
 - values: `[0,1,2,3,4,5,6,7,8,9]`
 - needs: `gggpx`
@@ -1550,13 +1722,13 @@ P10 V$r[0:1|0:1]
 
 ### ref_sub_multi_lone
 
-Lone-value multi-axis subscript collapses to nothing.
+Lone-value multi-axis subscript indexes an exact coordinate.
 
 ```
 P10 V$r[1|1]
 ```
 
-- values: `[]`
+- values: `[30]`
 - needs: `gggpx`
 
 ### off_origin
@@ -1625,6 +1797,8 @@ G40 R"bs" W"bd" T"map" M1,0,3,0,0,3 F1
 G10 R"bd"
 ```
 
+![blit_map_transpose: blit source to result](img/blit_map_transpose.svg)
+
 - values: `[1,4,7,2,5,8,3,6,9]`
 - needs: `ggggx`
 
@@ -1637,6 +1811,8 @@ G40 R"bs" W"bd" T"map" M1,2.5,-0.5,0,0,3 F1
 G10 R"bd"
 ```
 
+![blit_map_rotate_cw: blit source to result](img/blit_map_rotate_cw.svg)
+
 - values: `[7,4,1,8,5,2,9,6,3]`
 - needs: `ggggx`
 
@@ -1648,6 +1824,8 @@ A quarter turn counter-clockwise = the other swap + reverse: M1,0,3,0,2.5,-0.5 (
 G40 R"bs" W"bd" T"map" M1,0,3,0,2.5,-0.5 F1
 G10 R"bd"
 ```
+
+![blit_map_rotate_ccw: blit source to result](img/blit_map_rotate_ccw.svg)
 
 - values: `[3,6,9,2,5,8,1,4,7]`
 - needs: `ggggx`
@@ -1724,13 +1902,13 @@ P10 V$r[0:1|0:1]
 
 ### ref_sub_multi_lone
 
-Lone-value multi-axis subscript collapses to nothing.
+Lone-value multi-axis subscript indexes an exact coordinate.
 
 ```
 P10 V$r[1|1]
 ```
 
-- values: `[]`
+- values: `[30]`
 - needs: `gggpx`
 
 ## unicode
@@ -1798,6 +1976,8 @@ Unicode characters list like any other values.
 P10 V☃,你
 ```
 
+![unicode_list: 9731, 20320](img/unicode_list.svg)
+
 - values: `[9731,20320]`
 - needs: `gggpx`
 
@@ -1844,6 +2024,8 @@ A unitary constant acts as a range bound like any number.
 P10 VK:5
 ```
 
+![unitary_range: 1, 2, 3, 4, 5](img/unitary_range.svg)
+
 - values: `[1,2,3,4,5]`
 - needs: `gggpx`
 
@@ -1854,6 +2036,8 @@ Z as an exclusive range bound sweeps 0 up to (not including) 10.
 ```
 P10 VZ>10
 ```
+
+![unitary_range_excl: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9](img/unitary_range_excl.svg)
 
 - values: `[0,1,2,3,4,5,6,7,8,9]`
 - needs: `gggpx`

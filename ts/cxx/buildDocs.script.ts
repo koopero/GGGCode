@@ -1,6 +1,7 @@
 import { loadCases, Case } from "./cases"
+import { visualFor } from "./renderVisual"
 import { resolve, dirname } from "path"
-import { writeFileSync, readFileSync, existsSync, mkdirSync } from "fs"
+import { writeFileSync, readFileSync, existsSync, mkdirSync, readdirSync, rmSync } from "fs"
 
 //
 // Generates the human reference (docs/cases.md) from the conformance cases
@@ -8,11 +9,17 @@ import { writeFileSync, readFileSync, existsSync, mkdirSync } from "fs"
 // test — so the documentation falls out of the same source the tests run on.
 // Cases are grouped by `tags` (a case appears under each tag it carries).
 //
+// Where a case has a spatial/numeric shape worth seeing (blits, ranges, hex
+// encodings), it also gets a generated SVG under docs/img/ (see renderVisual.ts),
+// referenced inline — GitHub markdown won't render raw <svg>, but renders a
+// committed .svg via image syntax.
+//
 // Run `npm run build:docs`, or with `--check` to verify freshness (CI).
 //
 
 const root = resolve( __dirname, "../.." )
 const docsPath = resolve( root, "docs/cases.md" )
+const imgDir = resolve( root, "docs/img" )
 
 const NO_TAG = "(untagged)"
 
@@ -21,15 +28,23 @@ function statusLabel( status: string ): string {
   return `\`${status}\``
 }
 
-function renderCase( c: Case ): string {
+// Collected SVG assets (filename -> contents), filled as cases render.
+type Assets = Map<string, string>
+
+function renderCase( c: Case, assets: Assets ): string {
   let s = `### ${c.name}\n\n`
   if ( c.description ) s += `${c.description}\n\n`
   s += "```\n" + c.program + "\n```\n\n"
+  const visual = visualFor( c )
+  if ( visual ) {
+    assets.set( visual.filename, visual.svg )
+    s += `![${visual.alt}](img/${visual.filename})\n\n`
+  }
   s += `- values: \`${JSON.stringify( c.values )}\`\n`
   // Only surface non-default metadata, to keep entries scannable.
   if ( c.status !== "OK" ) s += `- status: ${statusLabel( c.status )}\n`
   if ( c.needs.length ) s += `- needs: ${c.needs.map( n => `\`${n}\`` ).join( ", " )}\n`
-  if ( c.exact ) s += `- byte-exact (formatting is part of the contract)\n`
+  if ( c.exact ) s += "- byte-exact (formatting is part of the contract)\n"
   return s
 }
 
@@ -38,8 +53,9 @@ function slug( tag: string ): string {
   return tag.toLowerCase().replace( /[^a-z0-9 -]/g, "" ).replace( / /g, "-" )
 }
 
-function build(): string {
+function build(): { md: string, assets: Assets } {
   const cases = loadCases()
+  const assets: Assets = new Map()
 
   // tag -> cases (in corpus order); a case lands under each of its tags.
   const byTag = new Map<string, Case[]>()
@@ -58,6 +74,8 @@ function build(): string {
   md += "**documentation**, a runnable **example**, and a cross-engine conformance **test**. "
   md += "The contract is the decoded `values` stream within a global epsilon; `status` is the "
   md += "control response. Cases are grouped below by `tag` (a case appears under each tag it carries).\n\n"
+  md += "See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) · "
+  md += "[runtime](runtime.md).\n\n"
 
   md += `${cases.length} cases across ${tags.length} tags.\n\n`
   md += "## Tags\n\n"
@@ -66,23 +84,44 @@ function build(): string {
 
   for ( const t of tags ) {
     md += `## ${t}\n\n`
-    for ( const c of byTag.get( t )! ) md += renderCase( c ) + "\n"
+    for ( const c of byTag.get( t )! ) md += renderCase( c, assets ) + "\n"
   }
 
-  return md
+  return { md, assets }
 }
 
-const content = build()
+// Existing img/*.svg on disk, name -> contents (for --check and orphan pruning).
+function readImgDir(): Map<string, string> {
+  const out = new Map<string, string>()
+  if ( !existsSync( imgDir ) ) return out
+  for ( const f of readdirSync( imgDir ) ) {
+    if ( f.endsWith( ".svg" ) ) out.set( f, readFileSync( resolve( imgDir, f ), "utf8" ) )
+  }
+  return out
+}
 
-if ( process.argv.includes( "--check" ) ) {
+const { md, assets } = build()
+const check = process.argv.includes( "--check" )
+
+if ( check ) {
   const current = existsSync( docsPath ) ? readFileSync( docsPath, "utf8" ) : null
-  if ( current !== content ) {
-    console.error( "docs/cases.md is out of date. Run `npm run build:docs`." )
+  const onDisk = readImgDir()
+  let stale = current !== md
+  if ( onDisk.size !== assets.size ) stale = true
+  for ( const [ name, svg ] of assets ) if ( onDisk.get( name ) !== svg ) stale = true
+  if ( stale ) {
+    console.error( "docs/cases.md or docs/img/* is out of date. Run `npm run build:docs`." )
     process.exit( 1 )
   }
   console.log( "Cases docs up to date." )
 } else {
   mkdirSync( dirname( docsPath ), { recursive: true } )
-  writeFileSync( docsPath, content )
-  console.log( `Wrote docs/cases.md (${loadCases().length} cases).` )
+  writeFileSync( docsPath, md )
+  mkdirSync( imgDir, { recursive: true } )
+  // Prune orphaned SVGs so a removed/renamed case can't leave stale assets.
+  for ( const f of readImgDir().keys() ) {
+    if ( !assets.has( f ) ) rmSync( resolve( imgDir, f ) )
+  }
+  for ( const [ name, svg ] of assets ) writeFileSync( resolve( imgDir, name ), svg )
+  console.log( `Wrote docs/cases.md (${loadCases().length} cases, ${assets.size} svg).` )
 }

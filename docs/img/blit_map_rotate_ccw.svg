@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 284 150" width="284" height="150" font-family="ui-monospace, monospace">
+<rect x="0" y="0" width="284" height="150" rx="8" fill="#ffffff"/>
+<rect x="12" y="30" width="34" height="34" rx="3" fill="#e6194b" stroke="#999" stroke-width="0.5"/>
+<text x="29" y="52" font-size="13" text-anchor="middle" fill="#fff">1</text>
+<rect x="48" y="30" width="34" height="34" rx="3" fill="#3cb44b" stroke="#999" stroke-width="0.5"/>
+<text x="65" y="52" font-size="13" text-anchor="middle" fill="#fff">2</text>
+<rect x="84" y="30" width="34" height="34" rx="3" fill="#ffb000" stroke="#999" stroke-width="0.5"/>
+<text x="101" y="52" font-size="13" text-anchor="middle" fill="#222">3</text>
+<rect x="12" y="66" width="34" height="34" rx="3" fill="#4363d8" stroke="#999" stroke-width="0.5"/>
+<text x="29" y="88" font-size="13" text-anchor="middle" fill="#fff">4</text>
+<rect x="48" y="66" width="34" height="34" rx="3" fill="#f58231" stroke="#999" stroke-width="0.5"/>
+<text x="65" y="88" font-size="13" text-anchor="middle" fill="#222">5</text>
+<rect x="84" y="66" width="34" height="34" rx="3" fill="#911eb4" stroke="#999" stroke-width="0.5"/>
+<text x="101" y="88" font-size="13" text-anchor="middle" fill="#fff">6</text>
+<rect x="12" y="102" width="34" height="34" rx="3" fill="#42a5d4" stroke="#999" stroke-width="0.5"/>
+<text x="29" y="124" font-size="13" text-anchor="middle" fill="#fff">7</text>
+<rect x="48" y="102" width="34" height="34" rx="3" fill="#f032e6" stroke="#999" stroke-width="0.5"/>
+<text x="65" y="124" font-size="13" text-anchor="middle" fill="#fff">8</text>
+<rect x="84" y="102" width="34" height="34" rx="3" fill="#7bbf45" stroke="#999" stroke-width="0.5"/>
+<text x="101" y="124" font-size="13" text-anchor="middle" fill="#222">9</text>
+<rect x="164" y="30" width="34" height="34" rx="3" fill="#ffb000" stroke="#999" stroke-width="0.5"/>
+<text x="181" y="52" font-size="13" text-anchor="middle" fill="#222">3</text>
+<rect x="200" y="30" width="34" height="34" rx="3" fill="#911eb4" stroke="#999" stroke-width="0.5"/>
+<text x="217" y="52" font-size="13" text-anchor="middle" fill="#fff">6</text>
+<rect x="236" y="30" width="34" height="34" rx="3" fill="#7bbf45" stroke="#999" stroke-width="0.5"/>
+<text x="253" y="52" font-size="13" text-anchor="middle" fill="#222">9</text>
+<rect x="164" y="66" width="34" height="34" rx="3" fill="#3cb44b" stroke="#999" stroke-width="0.5"/>
+<text x="181" y="88" font-size="13" text-anchor="middle" fill="#fff">2</text>
+<rect x="200" y="66" width="34" height="34" rx="3" fill="#f58231" stroke="#999" stroke-width="0.5"/>
+<text x="217" y="88" font-size="13" text-anchor="middle" fill="#222">5</text>
+<rect x="236" y="66" width="34" height="34" rx="3" fill="#f032e6" stroke="#999" stroke-width="0.5"/>
+<text x="253" y="88" font-size="13" text-anchor="middle" fill="#fff">8</text>
+<rect x="164" y="102" width="34" height="34" rx="3" fill="#e6194b" stroke="#999" stroke-width="0.5"/>
+<text x="181" y="124" font-size="13" text-anchor="middle" fill="#fff">1</text>
+<rect x="200" y="102" width="34" height="34" rx="3" fill="#4363d8" stroke="#999" stroke-width="0.5"/>
+<text x="217" y="124" font-size="13" text-anchor="middle" fill="#fff">4</text>
+<rect x="236" y="102" width="34" height="34" rx="3" fill="#42a5d4" stroke="#999" stroke-width="0.5"/>
+<text x="253" y="124" font-size="13" text-anchor="middle" fill="#fff">7</text>
+<text x="66" y="20" font-size="12" text-anchor="middle" fill="#555">bs (source)</text>
+<text x="218" y="20" font-size="12" text-anchor="middle" fill="#555">bd (result)</text>
+<line x1="128" y1="84" x2="156" y2="84" stroke="#555" stroke-width="2"/>
+<path d="M156 84 l-8 -5 v10 z" fill="#555"/>
+</svg>

@@ -531,8 +531,8 @@ void test_references() {
   TEST_ASSERT_EQUAL_STRING( "V10,20,20,30\nOK\n", m.out.c_str() );
 
   m.out.clear();
-  m.run( "P10 V$r[1|1]\n" );                     // lone-value multi-axis collapses
-  TEST_ASSERT_EQUAL_STRING( "\nOK\n", m.out.c_str() );
+  m.run( "P10 V$r[1|1]\n" );                     // lone coords -> flat index 1+1=2 -> $r[2]
+  TEST_ASSERT_EQUAL_STRING( "V30\nOK\n", m.out.c_str() );
 
   delete mat;
 }

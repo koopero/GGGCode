@@ -65,13 +65,13 @@
   values: [ 10, 20, 20, 30 ]
 
 - name: ref_sub_multi_lone
-  # A lone value on an axis resolves to count 0 register-less, so a lone-value
-  # multi-axis collapses to nothing (the same quirk as register-less V1|2|3).
-  description: "Lone-value multi-axis subscript collapses to nothing."
+  # Each lone value is an exact single coordinate; the axes add coordinate-wise
+  # (register-less, stride 1 each) to flat index 1+1 = 2, reading $r[2] = 30.
+  description: "Lone-value multi-axis subscript indexes an exact coordinate."
   needs: [ gggpx ]
   tags: [ references, subscript ]
   program: "P10 V$r[1|1]"
-  values: []
+  values: [ 30 ]
 
 # Offset references ($x@[...]): yield flat OFFSETS computed from coordinates
 # against the register's dimensions/strides, not the values. Run against the 2x3

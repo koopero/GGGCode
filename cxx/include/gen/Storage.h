@@ -21,6 +21,7 @@ namespace ggg {
     { 10, "Int8", 1, true, -128, 127, 'H', "int8_t" },
     { 11, "UNorm4", 16, true, 0, 255, 'H', "uint8_t" },
     { 12, "Norm4", 8, true, -128, 127, 'H', "int8_t" },
+    { 16, "Norm16", 32767, true, -32768, 32767, 'V', "int16_t" },
     { 255, "Uint8", 1, true, 0, 255, 'H', "uint8_t" }
   };
   constexpr Index StorageDescriptorCount = sizeof( StorageDescriptors ) / sizeof( StorageDescriptors[0] );

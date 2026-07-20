@@ -67,8 +67,12 @@ namespace ggg_conformance {
   static const double values_range_excl[] = { 1.0, 2.0, 3.0, 4.0 };
   static const double values_range_count[] = { 0.0, 2.5000000000000000, 5.0, 7.5000000000000000, 10.0 };
   static const double values_range_step[] = { 0.0, 2.0, 4.0, 6.0, 8.0, 10.0 };
+  static const double values_range_multiplier[] = { 30.0, 42.0, 54.0, 66.0, 78.0, 90.0 };
+  static const double values_lone_multiplier[] = { 20.0 };
   static const double values_range_in_list[] = { 1.0, 2.0, 3.0, 9.0 };
+  static const double values_multiaxis[] = { 6.0 };
   static const double values_multiaxis_range[] = { 111.0, 112.0, 121.0, 122.0, 211.0, 212.0, 221.0, 222.0 };
+  static const double values_multiaxis_multiplier[] = { 321.0 };
   static const double values_ref_bare[] = { 10.0, 20.0, 30.0 };
   static const double values_ref_two[] = { 10.0, 20.0, 30.0, 10.0, 20.0, 30.0 };
   static const double values_ref_subscript[] = { 20.0 };
@@ -76,6 +80,7 @@ namespace ggg_conformance {
   static const double values_ref_sub_list[] = { 10.0, 30.0 };
   static const double values_ref_sub_open[] = { 20.0 };
   static const double values_ref_sub_multi[] = { 10.0, 20.0, 20.0, 30.0 };
+  static const double values_ref_sub_multi_lone[] = { 30.0 };
   static const double values_off_origin[] = { 0.0 };
   static const double values_off_coord[] = { 5.0 };
   static const double values_off_coord_list[] = { 1.0, 2.0 };
@@ -167,9 +172,12 @@ namespace ggg_conformance {
     { "range_excl", "P10 V1>5\n", "OK", values_range_excl, 4, nullptr },
     { "range_count", "P10 V0:10/5\n", "OK", values_range_count, 5, nullptr },
     { "range_step", "P10 V0:10:2\n", "OK", values_range_step, 6, nullptr },
+    { "range_multiplier", "P10 V10:30:4:3\n", "OK", values_range_multiplier, 6, nullptr },
+    { "lone_multiplier", "P10 V2*10\n", "OK", values_lone_multiplier, 1, nullptr },
     { "range_in_list", "P10 V1:3,9\n", "OK", values_range_in_list, 4, nullptr },
-    { "multiaxis", "P10 V1|2|3\n", "OK", nullptr, 0, nullptr },
+    { "multiaxis", "P10 V1|2|3\n", "OK", values_multiaxis, 1, nullptr },
     { "multiaxis_range", "P10 V1:2|10:20/2|100:200/2\n", "OK", values_multiaxis_range, 8, nullptr },
+    { "multiaxis_multiplier", "P10 V1|2*10|3*100\n", "OK", values_multiaxis_multiplier, 1, nullptr },
     { "ref_bare", "P10 V$r\n", "OK", values_ref_bare, 3, nullptr },
     { "ref_two", "P10 V$r V$r\n", "OK", values_ref_two, 6, "V10,20,30 V10,20,30\nOK" },
     { "ref_unknown", "P10 V$x\n", "OK", nullptr, 0, nullptr },
@@ -178,7 +186,7 @@ namespace ggg_conformance {
     { "ref_sub_list", "P10 V$r[0,2]\n", "OK", values_ref_sub_list, 2, nullptr },
     { "ref_sub_open", "P10 V$r[1:]\n", "OK", values_ref_sub_open, 1, nullptr },
     { "ref_sub_multi", "P10 V$r[0:1|0:1]\n", "OK", values_ref_sub_multi, 4, nullptr },
-    { "ref_sub_multi_lone", "P10 V$r[1|1]\n", "OK", nullptr, 0, nullptr },
+    { "ref_sub_multi_lone", "P10 V$r[1|1]\n", "OK", values_ref_sub_multi_lone, 1, nullptr },
     { "off_origin", "P10 V$m@[0|0]\n", "OK", values_off_origin, 1, nullptr },
     { "off_coord", "P10 V$m@[1|2]\n", "OK", values_off_coord, 1, nullptr },
     { "off_coord_list", "P10 V$m@[1|0,0|1]\n", "OK", values_off_coord_list, 2, nullptr },

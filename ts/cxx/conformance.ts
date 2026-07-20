@@ -26,17 +26,29 @@ export function normalizeOutput( output: string ): string {
   return output.replace( /\n+$/, "" )
 }
 
+// The fixed register fixtures every case runs against, in add order (so R index
+// matches: r=0, m=1, bs=2, bd=3). Exported so the docs renderer can draw the same
+// source/shape it knows the cases were authored against, without re-running.
+//   r  = [10,20,30] (1-D) for $r reference cases
+//   m  = 2x3 matrix for offset references ($m@[...]) where the shape matters
+//   bs = 3x3 [1..9] blit source; bd = 3x3 zeroed blit destination (read back via G10)
+export const FIXTURES: { name: string, dim: number[], data: number[] }[] = [
+  { name: "r", dim: [3], data: [10, 20, 30] },
+  { name: "m", dim: [2, 3], data: [10, 11, 12, 13, 14, 15] },
+  { name: "bs", dim: [3, 3], data: [1, 2, 3, 4, 5, 6, 7, 8, 9] },
+  { name: "bd", dim: [3, 3], data: [0, 0, 0, 0, 0, 0, 0, 0, 0] },
+]
+
+export function setupFixtures( machine: Machine ): void {
+  const registers = machine.getRegisterList( Matrix )
+  for ( const { name, dim, data } of FIXTURES ) {
+    registers.add( new Matrix( { dim, data: [ ...data ] } ), { name } )
+  }
+}
+
 export async function golden( program: string, needs: Subsystem[] ): Promise<string> {
   const machine = new Machine( { commands: commandsFor( needs ) } )
-  // Fixed register fixtures: "r" = [10,20,30] (1-D) for $r reference cases, and
-  // "m" = a 2x3 matrix for offset references ($m@[...]) where the shape matters.
-  const registers = machine.getRegisterList( Matrix )
-  registers.add( new Matrix( { dim: [3], data: [10, 20, 30] } ), { name: "r" } )
-  registers.add( new Matrix( { dim: [2, 3], data: [10, 11, 12, 13, 14, 15] } ), { name: "m" } )
-  // Blit (G40) fixtures: source "bs" = 3x3 [1..9], destination "bd" = 3x3 zeroed
-  // (read back via G10 to compare the transform result).
-  registers.add( new Matrix( { dim: [3, 3], data: [1, 2, 3, 4, 5, 6, 7, 8, 9] } ), { name: "bs" } )
-  registers.add( new Matrix( { dim: [3, 3], data: [0, 0, 0, 0, 0, 0, 0, 0, 0] } ), { name: "bd" } )
+  setupFixtures( machine )
   let out = ""
   const onOutput = ( line: any ) => { out += Format( line ) }
   machine.on( "output", onOutput )

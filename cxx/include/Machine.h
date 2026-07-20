@@ -556,10 +556,8 @@ namespace ggg {
       if ( !reg ) return;
       for ( auto & seg : parseSubscriptSegments( sub ) ) {
         std::vector<RangeAxis> axes = buildAxes( seg.numbers, seg.symbols );
-        // Pin lone values (blank end) to a single coordinate at start.
-        for ( auto & a : axes ) {
-          if ( std::isnan( a.end ) ) { a.end = a.start; a.inclusive = true; }
-        }
+        // Lone values (blank end) are pinned to a single coordinate inside
+        // CompoundExpansion (see pinBlankEnd / Solve.solveRangeAxes).
         // Per-axis dimensions + strides from the register shape (axis 0 innermost,
         // stride 1); axes beyond the register's rank use dimension 1.
         std::vector<NumberType> dims, strides;

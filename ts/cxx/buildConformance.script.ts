@@ -99,7 +99,7 @@ async function build() {
     for ( const c of excluded ) header += `//   ${c.name}: needs [${c.needs.join( ", " )}]\n`
   }
   header += "//\n"
-  header += `namespace ggg_conformance {\n`
+  header += "namespace ggg_conformance {\n"
   header += `  constexpr double EPSILON = ${cNum( EPSILON )};\n`
 
   // Per-case value arrays (a zero-length array is ill-formed in C++, so empty

@@ -7,6 +7,12 @@ import { Matrix } from "../ggggx"
 const isUsable = ( v ) => isNumber( v ) && !isNaN( v )
 const isBlank = ( v ) => isUndefined( v ) || v === null || isNaN( v )
 
+// A lone coordinate value (blank end, no range symbol) is an EXACT single point,
+// not an open range to the axis end. Pin it to start so it yields exactly one
+// value. Explicit ranges (a:b) keep their end and still sweep.
+const pinBlankEnd = ( a:RangeAxis ):RangeAxis =>
+  isBlank( a.end ) ? { ...a, end: a.start, inclusive: true } : a
+
 export type SolveOptions = {
   MatrixResolve?: ( name:string ) => Matrix
   solveStrings?: boolean
@@ -46,8 +52,12 @@ export function* Solve( arg:SolveArgument, options:SolveOptions = {
       } else if ( "register" in value ) {
         yield* solveReference( value as Reference )
       } else {
+        // Register-less, a lone value (blank end) is a single point, not an open
+        // range to dimension 1 -- pin it. With a register, a blank end is a
+        // genuine open range to the register's end ($r[1>]), so leave it.
         const dimension = register ? register.getSize() : 1
-        yield* solveRangeAxis( value as RangeAxis, dimension, 1 )
+        const axis = register ? value : pinBlankEnd( value as RangeAxis )
+        yield* solveRangeAxis( axis as RangeAxis, dimension, 1 )
       }
     }
   }
@@ -73,8 +83,7 @@ export function* Solve( arg:SolveArgument, options:SolveOptions = {
         // (not the values). A lone coordinate value is an EXACT coordinate (a
         // single point), not an open range to the axis end -- so blank-end axes
         // are pinned to start. Explicit ranges (a:b) still sweep coordinates.
-        const pin = ( a:RangeAxis ):RangeAxis =>
-          isBlank( a.end ) ? { ...a, end: a.start, inclusive: true } : a
+        const pin = pinBlankEnd
         for ( const item of subscript as any[] ) {
           if ( isNumber( item ) ) {
             yield item
@@ -160,7 +169,7 @@ export function* Solve( arg:SolveArgument, options:SolveOptions = {
 
     function* solveAxis( index:number, offset = 0 ):Generator<number> {
       const dim = (dimensions[ index ] as number) || 1
-      const axis = axes[ index ]
+      const axis = pinBlankEnd( axes[ index ] )
       const stride = strides[ index ]
 
       for ( const val of solveRangeAxis( axis, dim, stride ) ) {

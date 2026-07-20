@@ -48,28 +48,26 @@ namespace ggg {
         axisIndex = 0;
       }
 
-      switch ( axisIndex++ ) {
-        case 0:
-          axis.start = numbers[i];
-          break;
-        case 1:
+      // The first number of an axis is the start; every later number is routed by
+      // the symbol that PRECEDES it, not by position -- so components may be
+      // skipped (e.g. "a*m" sets the multiplier with no range, "a/n" a bare count).
+      if ( axisIndex == 0 ) {
+        axis.start = numbers[i];
+        axisIndex = 1;
+      } else if ( symbolBefore == Range || symbolBefore == Uninclusive || symbolBefore == '<' ) {
+        // ":"/">"/"<" fill the next empty slot: end -> step -> multiplier (a:b:s:m).
+        if ( std::isnan( axis.end ) ) {
           axis.end = numbers[i];
-          if ( symbolBefore == Range ) {
-            axis.inclusive = true;
-          } else if ( symbolBefore == Uninclusive || symbolBefore == '<' ) {
-            axis.inclusive = false;
-          }
-          break;
-        case 2:
-          if ( symbolBefore == Count ) {
-            axis.count = numbers[i];
-          } else {
-            axis.step = numbers[i];
-          }
-          break;
-        case 3:
+          axis.inclusive = symbolBefore == Range;
+        } else if ( std::isnan( axis.step ) ) {
+          axis.step = numbers[i];
+        } else {
           axis.multiplier = numbers[i];
-          break;
+        }
+      } else if ( symbolBefore == Count ) {
+        axis.count = numbers[i];
+      } else if ( symbolBefore == Multiplier ) {
+        axis.multiplier = numbers[i];
       }
     }
 
@@ -180,11 +178,14 @@ namespace ggg {
       for ( size_t k = 0; k < n; k++ ) {
         const NumberType dim    = dims    ? (*dims)[k]    : 1;
         const NumberType stride = strides ? (*strides)[k] : 1;
-        resolveAxis( axes[k], dim, stride, first[k], delta[k], count[k] );
+        // A lone coordinate value (blank end, no range symbol) is an EXACT single
+        // point, so pin it to start; explicit ranges (a:b) keep their end and
+        // still sweep. Mirrors pinBlankEnd in Solve.solveRangeAxes (ts/ggg/Solve.ts).
+        RangeAxis axis = axes[k];
+        if ( std::isnan( axis.end ) ) { axis.end = axis.start; axis.inclusive = true; }
+        resolveAxis( axis, dim, stride, first[k], delta[k], count[k] );
         // Product semantics: any empty axis means the whole expansion is empty
-        // (mirrors solveAxes looping zero times at that level). This also yields
-        // the "a|b|c collapses to empty" quirk, since each lone value resolves
-        // to count 0.
+        // (mirrors solveAxes looping zero times at that level).
         if ( count[k] == 0 ) done = true;
       }
       if ( n == 0 ) done = true;

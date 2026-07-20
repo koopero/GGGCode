@@ -1414,6 +1414,45 @@
     "expected": "V0,2,4,6,8,10\nOK"
   },
   {
+    "name": "range_multiplier",
+    "description": "a:b:s:m scales each value of the stepped range by the multiplier m.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "ranges"
+    ],
+    "program": "P10 V10:30:4:3",
+    "status": "OK",
+    "values": [
+      30,
+      42,
+      54,
+      66,
+      78,
+      90
+    ],
+    "exact": false,
+    "expected": "V30,42,54,66,78,90\nOK"
+  },
+  {
+    "name": "lone_multiplier",
+    "description": "a*m is the single point start*m (multiplier with no range).",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "ranges"
+    ],
+    "program": "P10 V2*10",
+    "status": "OK",
+    "values": [
+      20
+    ],
+    "exact": false,
+    "expected": "V20\nOK"
+  },
+  {
     "name": "range_in_list",
     "description": "A range may sit inside a comma list alongside plain values.",
     "needs": [
@@ -1436,7 +1475,7 @@
   },
   {
     "name": "multiaxis",
-    "description": "Register-less multi-axis of lone values collapses to nothing.",
+    "description": "Register-less multi-axis of lone values adds coordinate-wise.",
     "needs": [
       "gggpx"
     ],
@@ -1446,9 +1485,11 @@
     ],
     "program": "P10 V1|2|3",
     "status": "OK",
-    "values": [],
+    "values": [
+      6
+    ],
     "exact": false,
-    "expected": "\nOK"
+    "expected": "V6\nOK"
   },
   {
     "name": "multiaxis_range",
@@ -1474,6 +1515,24 @@
     ],
     "exact": false,
     "expected": "V111,112,121,122,211,212,221,222\nOK"
+  },
+  {
+    "name": "multiaxis_multiplier",
+    "description": "Multi-axis multipliers add scaled single-point coordinates.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "ranges",
+      "multiaxis"
+    ],
+    "program": "P10 V1|2*10|3*100",
+    "status": "OK",
+    "values": [
+      321
+    ],
+    "exact": false,
+    "expected": "V321\nOK"
   },
   {
     "name": "ref_bare",
@@ -1629,7 +1688,7 @@
   },
   {
     "name": "ref_sub_multi_lone",
-    "description": "Lone-value multi-axis subscript collapses to nothing.",
+    "description": "Lone-value multi-axis subscript indexes an exact coordinate.",
     "needs": [
       "gggpx"
     ],
@@ -1639,9 +1698,11 @@
     ],
     "program": "P10 V$r[1|1]",
     "status": "OK",
-    "values": [],
+    "values": [
+      30
+    ],
     "exact": false,
-    "expected": "\nOK"
+    "expected": "V30\nOK"
   },
   {
     "name": "off_origin",

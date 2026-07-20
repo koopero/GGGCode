@@ -107,28 +107,33 @@ function parseExpression( numbers, symbols, encodings, keepEncoding ) {
       }
     }
 
-    switch ( axisIndex++ ) {
-      case 0:
-        axis.start = number
-        break
-      case 1:
-        axis.end = number
-        if ( symbolBefore == ":" ) {
-          axis.inclusive = true
-        } else if ( symbolBefore == ">" || symbolBefore == "<" ) {
-          axis.inclusive = false
-        }
-        break
-      case 2:
-        if ( symbolBefore == "/" ) {
+    // The first number of an axis is the start; every later number is routed by
+    // the symbol that PRECEDES it, not by position -- so components may be
+    // skipped (e.g. "a*m" sets the multiplier with no range, "a/n" a bare count).
+    if ( axisIndex == 0 ) {
+      axis.start = number
+      axisIndex = 1
+    } else {
+      switch ( symbolBefore ) {
+        case ":":             // fills the next empty slot: end -> step -> multiplier
+        case ">":             // ( a:b:s:m ); ":" ends inclusively, ">"/"<" exclusively
+        case "<":
+          if ( isNaN( axis.end ) ) {
+            axis.end = number
+            axis.inclusive = symbolBefore == ":"
+          } else if ( isNaN( axis.step ) ) {
+            axis.step = number
+          } else {
+            axis.multiplier = number
+          }
+          break
+        case "/":             // count
           axis.count = number
-        } else {
-          axis.step = number
-        }
-        break
-      case 3:
-        axis.multiplier = number
-        break
+          break
+        case "*":             // multiplier
+          axis.multiplier = number
+          break
+      }
     }
 
 
