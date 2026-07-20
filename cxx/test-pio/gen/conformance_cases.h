@@ -65,6 +65,9 @@ namespace ggg_conformance {
   static const double values_print_decimal_zero[] = { 0.50000000000000000 };
   static const double values_number_trailing_exponent[] = { 5.0 };
   static const double values_number_trailing_letter[] = { 5.0 };
+  static const double values_number_ends_at_letter[] = { 5.0 };
+  static const double values_number_ends_at_sign[] = { 5.0, -3.0 };
+  static const double values_number_hex_prefix_not_absorbed[] = { 0.0 };
   static const double values_range_incl[] = { 1.0, 2.0, 3.0, 4.0, 5.0 };
   static const double values_range_excl[] = { 1.0, 2.0, 3.0, 4.0 };
   static const double values_range_count[] = { 0.0, 2.5000000000000000, 5.0, 7.5000000000000000, 10.0 };
@@ -181,6 +184,9 @@ namespace ggg_conformance {
     { "print_decimal_zero", "P10 V0.5\n", "OK", values_print_decimal_zero, 1, nullptr },
     { "number_trailing_exponent", "P10 V5e\n", "OK", values_number_trailing_exponent, 1, nullptr },
     { "number_trailing_letter", "P10 V5X\n", "OK", values_number_trailing_letter, 1, nullptr },
+    { "number_ends_at_letter", "P10 V5X10\n", "OK", values_number_ends_at_letter, 1, "V5 X10\nOK" },
+    { "number_ends_at_sign", "P10 V5-3\n", "OK", values_number_ends_at_sign, 2, nullptr },
+    { "number_hex_prefix_not_absorbed", "P10 V-0x10\n", "OK", values_number_hex_prefix_not_absorbed, 1, "V0 X10\nOK" },
     { "range_incl", "P10 V1:5\n", "OK", values_range_incl, 5, nullptr },
     { "range_excl", "P10 V1>5\n", "OK", values_range_excl, 4, nullptr },
     { "range_count", "P10 V0:10/5\n", "OK", values_range_count, 5, nullptr },

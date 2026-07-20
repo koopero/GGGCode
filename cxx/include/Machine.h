@@ -237,6 +237,31 @@ namespace ggg {
       return u == GGG::EncodedOne || u == EncodedZero || u == EncodedMinusOne;
     }
 
+    // Can _char extend the decimal number already in argBuffer? Mirrors the float
+    // grammar parseFloat accepts: digits, a single ".", a single exponent marker
+    // after at least one digit, and a sign ONLY straight after that marker. Any
+    // other character means the number is complete.
+    bool numberCanContinue( Char _char ) const {
+      const String &b = state.argBuffer;
+      if ( _char >= '0' && _char <= '9' ) return true;
+
+      const bool hasExp = b.find('e') != String::npos || b.find('E') != String::npos;
+
+      if ( _char == '.' ) return !hasExp && b.find('.') == String::npos;
+
+      if ( _char == 'e' || _char == 'E' ) {
+        if ( hasExp ) return false;
+        for ( Char c : b ) if ( c >= '0' && c <= '9' ) return true;
+        return false;   // "e" with no digits before it is not an exponent
+      }
+
+      if ( _char == '-' || _char == '+' ) {
+        return !b.empty() && ( b.back() == 'e' || b.back() == 'E' );
+      }
+
+      return false;
+    }
+
     static bool unitaryValue( uint32_t codepoint, NumberType &out ) {
       switch ( codepoint ) {
         case 0x03C0: out = (NumberType) 3.141592653589793;  return true;  // π  pi
@@ -372,10 +397,26 @@ namespace ggg {
       } else if ( state.dataMode == GGG::Zero ) {
         parseAfterZero( _char );
       } else if ( state.dataMode == GGG::Number ) {
-        if ( isUnitaryAscii( _char ) ) {
-          // Completes the number, then the unitary is parsed as its own value.
+        // A character the float grammar cannot absorb ENDS the number, and is then
+        // re-dispatched in its own right rather than being swallowed into the
+        // buffer. Without this "V5X10" parsed as the number "5X10" (yielding just
+        // 5, the X10 lost) instead of V5 followed by the argument X10.
+        if ( numberCanContinue( _char ) ) {
+          bufferAppend( _char );
+        } else if ( isUnitaryAscii( _char ) ) {
+          // A unitary is a VALUE: complete the number, then parse it in place.
           finishNumber();
           state.expressionMode = GGG::Encoding;
+          parseEncoding( _char );
+        } else if ( ( _char >= 'a' && _char <= 'z' ) || ( _char >= 'A' && _char <= 'Z' ) ) {
+          // Any other letter is the CODE of a new argument. finishArg resets to
+          // Code mode and fires the completed argument's hook.
+          finishArg();
+          parseCode( _char );
+        } else if ( _char == '-' || _char == '+' ) {
+          // A sign begins another value under the same code (an implicit list).
+          finishCompound();
+          resetEncoding();
           parseEncoding( _char );
         } else {
           bufferAppend( _char );

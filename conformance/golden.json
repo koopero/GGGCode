@@ -1364,6 +1364,60 @@
     "expected": "V5\nOK"
   },
   {
+    "name": "number_ends_at_letter",
+    "description": "A letter ends the number and begins a new argument.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "decimals"
+    ],
+    "program": "P10 V5X10",
+    "status": "OK",
+    "values": [
+      5
+    ],
+    "exact": true,
+    "expected": "V5 X10\nOK"
+  },
+  {
+    "name": "number_ends_at_sign",
+    "description": "A sign begins another value under the same code.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "decimals",
+      "lists"
+    ],
+    "program": "P10 V5-3",
+    "status": "OK",
+    "values": [
+      5,
+      -3
+    ],
+    "exact": false,
+    "expected": "V5,-3\nOK"
+  },
+  {
+    "name": "number_hex_prefix_not_absorbed",
+    "description": "A mid-number hex prefix ends the number rather than forming a hex float.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "decimals",
+      "hex"
+    ],
+    "program": "P10 V-0x10",
+    "status": "OK",
+    "values": [
+      0
+    ],
+    "exact": true,
+    "expected": "V0 X10\nOK"
+  },
+  {
     "name": "range_incl",
     "description": "a:b expands to an inclusive integer sweep.",
     "needs": [

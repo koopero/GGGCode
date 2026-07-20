@@ -21,7 +21,10 @@ namespace ggg {
 
   inline String FormatNumber( const NumberType &number ) {
     std::ostringstream oss;
-    oss << number;
+    // Negative zero renders as "0", not "-0". The reference stringifies numbers
+    // with JavaScript's Number->String, which does not sign zero, and -0 reaches
+    // here from ordinary parses ("-0x10" ends its number at the "x", leaving -0).
+    oss << ( number == 0 ? (NumberType) 0 : number );
     return oss.str();
   }
 }; // namespace ggg

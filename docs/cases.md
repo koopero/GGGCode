@@ -6,19 +6,19 @@ Each case is one artifact wearing four hats: a behavioural **spec**, a piece of 
 
 See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) · [runtime](runtime.md).
 
-112 cases across 23 tags.
+115 cases across 23 tags.
 
 ## Tags
 
 - [blit](#blit) (24)
 - [conditionals](#conditionals) (6)
-- [decimals](#decimals) (10)
+- [decimals](#decimals) (13)
 - [flip](#flip) (3)
 - [flow](#flow) (12)
-- [hex](#hex) (7)
+- [hex](#hex) (8)
 - [irrational](#irrational) (2)
 - [iteration](#iteration) (2)
-- [lists](#lists) (9)
+- [lists](#lists) (10)
 - [map](#map) (6)
 - [matrix](#matrix) (11)
 - [multiaxis](#multiaxis) (4)
@@ -574,6 +574,45 @@ P10 V5X
 - values: `[5]`
 - needs: `gggpx`
 
+### number_ends_at_letter
+
+A letter ends the number and begins a new argument.
+
+```
+P10 V5X10
+```
+
+- values: `[5]`
+- needs: `gggpx`
+- byte-exact (formatting is part of the contract)
+
+### number_ends_at_sign
+
+A sign begins another value under the same code.
+
+```
+P10 V5-3
+```
+
+![number_ends_at_sign: 5, -3](img/number_ends_at_sign.svg)
+
+- values: `[5,-3]`
+- needs: `gggpx`
+
+### number_hex_prefix_not_absorbed
+
+A mid-number hex prefix ends the number rather than forming a hex float.
+
+```
+P10 V-0x10
+```
+
+![number_hex_prefix_not_absorbed: 0](img/number_hex_prefix_not_absorbed.svg)
+
+- values: `[0]`
+- needs: `gggpx`
+- byte-exact (formatting is part of the contract)
+
 ## flip
 
 ### blit_box_flip_x
@@ -881,6 +920,20 @@ P10 V0J8
 - values: `[0.5333333333333333]`
 - needs: `gggpx`
 
+### number_hex_prefix_not_absorbed
+
+A mid-number hex prefix ends the number rather than forming a hex float.
+
+```
+P10 V-0x10
+```
+
+![number_hex_prefix_not_absorbed: 0](img/number_hex_prefix_not_absorbed.svg)
+
+- values: `[0]`
+- needs: `gggpx`
+- byte-exact (formatting is part of the contract)
+
 ## irrational
 
 ### unitary_pi
@@ -975,6 +1028,19 @@ P10 V1,2,3 V4,5,6
 - values: `[1,2,3,4,5,6]`
 - needs: `gggpx`
 - byte-exact (formatting is part of the contract)
+
+### number_ends_at_sign
+
+A sign begins another value under the same code.
+
+```
+P10 V5-3
+```
+
+![number_ends_at_sign: 5, -3](img/number_ends_at_sign.svg)
+
+- values: `[5,-3]`
+- needs: `gggpx`
 
 ### range_in_list
 

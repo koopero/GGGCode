@@ -84,3 +84,34 @@
   tags: [ decimals ]
   program: "P10 V5X"
   values: [ 5 ]
+
+- name: number_ends_at_letter
+  # A character the number grammar cannot absorb ends the number, and is then
+  # parsed in its own right -- here X starts a new argument rather than being
+  # swallowed into the value.
+  description: "A letter ends the number and begins a new argument."
+  needs: [ gggpx ]
+  tags: [ decimals ]
+  exact: true
+  program: "P10 V5X10"
+  values: [ 5 ]
+
+- name: number_ends_at_sign
+  # A sign is not part of the number unless it follows an exponent marker, so it
+  # begins another value under the same code -- an implicit list.
+  description: "A sign begins another value under the same code."
+  needs: [ gggpx ]
+  tags: [ decimals, lists ]
+  program: "P10 V5-3"
+  values: [ 5, -3 ]
+
+- name: number_hex_prefix_not_absorbed
+  # "0x" is only a hex prefix at the start of a value; mid-number the x ends the
+  # number, so -0x10 is the value -0 followed by the argument X10 (and negative
+  # zero renders as 0).
+  description: "A mid-number hex prefix ends the number rather than forming a hex float."
+  needs: [ gggpx ]
+  tags: [ decimals, hex ]
+  exact: true
+  program: "P10 V-0x10"
+  values: [ 0 ]
