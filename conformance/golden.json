@@ -639,7 +639,7 @@
       "flow",
       "procedures"
     ],
-    "program": "T10 L\"p\"\nP10 V42\nT0\nT11 L\"p\"",
+    "program": "T10 L\"p\"\nP10 V42\nT0\nT11 R\"p\"",
     "status": "OK",
     "values": [
       42
@@ -657,7 +657,7 @@
       "flow",
       "procedures"
     ],
-    "program": "T11 L\"nope\"",
+    "program": "T11 R\"nope\"",
     "status": "OZ",
     "values": [],
     "exact": false,
@@ -674,7 +674,7 @@
       "flow",
       "procedures"
     ],
-    "program": "T10 L\"outer\"\nT10 L\"inner\"\nP10 V7\nT0\nT0\nT11 L\"outer\"\nT11 L\"inner\"",
+    "program": "T10 L\"outer\"\nT10 L\"inner\"\nP10 V7\nT0\nT0\nT11 R\"outer\"\nT11 R\"inner\"",
     "status": "OK",
     "values": [
       7
@@ -837,7 +837,7 @@
       "flow",
       "async"
     ],
-    "program": "T10 L\"tick\"\nP10 V7\nT0\nT12 L\"tick\" S0 G3",
+    "program": "T10 L\"tick\"\nP10 V7\nT0\nT12 R\"tick\" S0 G3",
     "status": "OK",
     "values": [
       7,
@@ -858,7 +858,7 @@
       "flow",
       "async"
     ],
-    "program": "T10 L\"tick\"\nP10 V7\nT0\nT12 L\"tick\" S500",
+    "program": "T10 L\"tick\"\nP10 V7\nT0\nT12 R\"tick\" S500",
     "status": "OK",
     "values": [
       7,
@@ -878,7 +878,7 @@
       "flow",
       "async"
     ],
-    "program": "T10 L\"tick\"\nP10 V7\nT0\nT12 L\"tick\" S0",
+    "program": "T10 L\"tick\"\nP10 V7\nT0\nT12 R\"tick\" S0",
     "status": "OK",
     "values": [
       7,
@@ -899,7 +899,7 @@
       "flow",
       "async"
     ],
-    "program": "T10 L\"tick\"\nP10 V7\nT0\nT12 L\"tick\" S100",
+    "program": "T10 L\"tick\"\nP10 V7\nT0\nT12 R\"tick\" S100",
     "status": "OK",
     "values": [
       7
@@ -918,7 +918,7 @@
       "flow",
       "async"
     ],
-    "program": "T10 L\"tick\"\nP10 V7\nT0\nT12 L\"tick\" S0\nT12 L\"tick\" G0",
+    "program": "T10 L\"tick\"\nP10 V7\nT0\nT12 R\"tick\" S0\nT12 R\"tick\" G0",
     "status": "",
     "values": [],
     "exact": false,
@@ -934,7 +934,79 @@
       "flow",
       "async"
     ],
-    "program": "T12 L\"nope\" S0",
+    "program": "T12 R\"nope\" S0",
+    "status": "OZ",
+    "values": [],
+    "exact": false,
+    "expected": "OK F6"
+  },
+  {
+    "name": "proc_by_index",
+    "description": "R addresses a procedure by index.",
+    "needs": [
+      "gggpx",
+      "gggtx"
+    ],
+    "tags": [
+      "flow",
+      "procedures"
+    ],
+    "program": "T10 L\"p\"\nP10 V1\nT0\nT11 R0",
+    "status": "OK",
+    "values": [
+      1
+    ],
+    "exact": false,
+    "expected": "V1\nOK"
+  },
+  {
+    "name": "proc_rename",
+    "description": "T10 R<ref> L<name> renames a procedure.",
+    "needs": [
+      "gggpx",
+      "gggtx"
+    ],
+    "tags": [
+      "flow",
+      "procedures"
+    ],
+    "program": "T10 L\"old\"\nP10 V1\nT0\nT10 R\"old\" L\"new\"\nP10 V2\nT0\nT11 R\"new\"",
+    "status": "OK",
+    "values": [
+      2
+    ],
+    "exact": false,
+    "expected": "V2\nOK"
+  },
+  {
+    "name": "proc_rename_old_gone",
+    "description": "After a rename the old name no longer addresses the procedure.",
+    "needs": [
+      "gggpx",
+      "gggtx"
+    ],
+    "tags": [
+      "flow",
+      "procedures"
+    ],
+    "program": "T10 L\"old\"\nP10 V1\nT0\nT10 R\"old\" L\"new\"\nP10 V2\nT0\nT11 R\"old\"",
+    "status": "OZ",
+    "values": [],
+    "exact": false,
+    "expected": "OK F6"
+  },
+  {
+    "name": "proc_alias_does_not_select",
+    "description": "L does not address a procedure; only R does.",
+    "needs": [
+      "gggpx",
+      "gggtx"
+    ],
+    "tags": [
+      "flow",
+      "procedures"
+    ],
+    "program": "T10 L\"p\"\nP10 V1\nT0\nT11 L\"p\"",
     "status": "OZ",
     "values": [],
     "exact": false,
@@ -1111,7 +1183,7 @@
     "tags": [
       "matrix"
     ],
-    "program": "G10 L\"r\" P0 S3",
+    "program": "G10 R\"r\" P0 S3",
     "status": "OK",
     "values": [
       10,

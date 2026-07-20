@@ -330,13 +330,13 @@ void test_matrix_commands() {
 
   // Address the same register by name (L) instead of index (R).
   m.out.clear();
-  m.run("G20 L\"buf0\" P0 V7,8\n");
+  m.run("G20 R\"buf0\" P0 V7,8\n");
   TEST_ASSERT_EQUAL_FLOAT( 7, mat->readNumber(0) );
   TEST_ASSERT_EQUAL_FLOAT( 8, mat->readNumber(1) );
   TEST_ASSERT_EQUAL_STRING( "OK\n", m.out.c_str() );
 
   m.out.clear();
-  m.run("G10 L\"buf0\" P0 S2\n");            // read by name -> replayable G20 (by index)
+  m.run("G10 R\"buf0\" P0 S2\n");            // read by name -> replayable G20 (by index)
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "G20 R0 P0 V7,8" ) );
 
   // R is the universal selector: a string R resolves by name, just like L.
@@ -444,7 +444,7 @@ void test_flow_procedures() {
   // Running a procedure executes its body in order.
   {
     FlowMachine m; m.setup();
-    m.run( "T10 L\"p\"\nP10 V1\nP10 V2\nT0\nT11 L\"p\"\n" );
+    m.run( "T10 L\"p\"\nP10 V1\nP10 V2\nT0\nT11 R\"p\"\n" );
     TEST_ASSERT_EQUAL_STRING( "V1\nOK\nV2\nOK\n", m.out.c_str() );
   }
 
@@ -459,7 +459,7 @@ void test_flow_procedures() {
   {
     FlowMachine m; m.setup();
     m.limits.maxQueue = 10;
-    m.run( "T10 L\"boom\"\nP10 V1\nT11 L\"boom\"\nT0\nT11 L\"boom\"\n" );
+    m.run( "T10 L\"boom\"\nP10 V1\nT11 R\"boom\"\nT0\nT11 R\"boom\"\n" );
     TEST_ASSERT_EQUAL_STRING(
       "V1\nOK\nV1\nOK\nV1\nOK\nV1\nOK\nV1\nOK\nOK F2\n", m.out.c_str() );
   }
@@ -467,14 +467,14 @@ void test_flow_procedures() {
   // Redefining a procedure overwrites the previous body.
   {
     FlowMachine m; m.setup();
-    m.run( "T10 L\"p\"\nP10 V1\nT0\nT10 L\"p\"\nP10 V2\nT0\nT11 L\"p\"\n" );
+    m.run( "T10 L\"p\"\nP10 V1\nT0\nT10 L\"p\"\nP10 V2\nT0\nT11 R\"p\"\n" );
     TEST_ASSERT_EQUAL_STRING( "V2\nOK\n", m.out.c_str() );
   }
 
   // Running an unknown procedure reports failure (OK id + F6 = ProcedureNotFound).
   {
     FlowMachine m; m.setup();
-    m.run( "T11 L\"nope\"\n" );
+    m.run( "T11 R\"nope\"\n" );
     TEST_ASSERT_EQUAL_STRING( "OK F6\n", m.out.c_str() );
   }
 
@@ -483,17 +483,17 @@ void test_flow_procedures() {
     FlowMachine m; m.setup();
     m.run( "T10 L\"outer\"\nT10 L\"inner\"\nP10 V7\nT0\nT0\n" );
     TEST_ASSERT_NULL( m.getProcedure( "inner", false ) );  // not defined yet
-    m.run( "T11 L\"outer\"\n" );                            // defines inner
+    m.run( "T11 R\"outer\"\n" );                            // defines inner
     TEST_ASSERT_EQUAL_STRING( "", m.out.c_str() );
     TEST_ASSERT_NOT_NULL( m.getProcedure( "inner", false ) );
-    m.run( "T11 L\"inner\"\n" );                            // now runs inner
+    m.run( "T11 R\"inner\"\n" );                            // now runs inner
     TEST_ASSERT_EQUAL_STRING( "V7\nOK\n", m.out.c_str() );
   }
 
   // A procedure can call another procedure (ordering via front-insert).
   {
     FlowMachine m; m.setup();
-    m.run( "T10 L\"a\"\nP10 V1\nT0\nT10 L\"b\"\nT11 L\"a\"\nP10 V2\nT0\nT11 L\"b\"\n" );
+    m.run( "T10 L\"a\"\nP10 V1\nT0\nT10 L\"b\"\nT11 R\"a\"\nP10 V2\nT0\nT11 R\"b\"\n" );
     TEST_ASSERT_EQUAL_STRING( "V1\nOK\nV2\nOK\n", m.out.c_str() );
   }
 }
@@ -604,7 +604,7 @@ void test_flow_conditionals() {
   // A procedure body may contain conditionals.
   {
     FlowMachine m; m.setup();
-    m.run( "T10 L\"p\"\nT9 A1\nP10 V1\nT0\nT9 A0\nP10 V2\nT0\nT0\nT11 L\"p\"\n" );
+    m.run( "T10 L\"p\"\nT9 A1\nP10 V1\nT0\nT9 A0\nP10 V2\nT0\nT0\nT11 R\"p\"\n" );
     TEST_ASSERT_EQUAL_STRING( "V1\nOK\n", m.out.c_str() );
   }
 }
@@ -633,7 +633,7 @@ void test_flow_iteration() {
   // Iteration inside a procedure body.
   {
     FlowMachine m; m.setup();
-    m.run( "T10 L\"p\"\nT9 V1,2 R\"i\"\nP10 V$i\nT0\nT0\nT11 L\"p\"\n" );
+    m.run( "T10 L\"p\"\nT9 V1,2 R\"i\"\nP10 V$i\nT0\nT0\nT11 R\"p\"\n" );
     TEST_ASSERT_EQUAL_STRING( "V1\nOK\nV2\nOK\n", m.out.c_str() );
   }
 }

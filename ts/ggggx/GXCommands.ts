@@ -47,7 +47,7 @@ function GXCommandsForNamespace( namespace?: GXNamespaceArg ) {
     commands[ `${code}${MatrixInit}` ] = {
       description: "Init buffer",
       args: {
-        [GGG.Register]: ArgsBufferIndex,
+        [GGG.Register]: ArgsBufferRef,
         [GGG.Storage]: ArgsBufferStorage,
         [GGG.Size]: ArgsDimension,
         [GGG.Alias]: ArgsName,

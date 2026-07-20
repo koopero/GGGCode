@@ -37,6 +37,16 @@ namespace ggg {
       itemsByName[item->name] = item;
     }
 
+    // Rename an item in place, keeping the name index consistent. Mirrors
+    // NamedList.setItemName in ts/ggg/NamedList.ts -- L renames a register.
+    void setItemName(T* item, const String& name) {
+      for (auto it = itemsByName.begin(); it != itemsByName.end(); ++it) {
+        if (it->second == item) { itemsByName.erase(it); break; }
+      }
+      item->name = name;
+      itemsByName[name] = item;
+    }
+
     // Get an item by name
     T* getByName(const String& name) {
       if (itemsByName.find(name) != itemsByName.end()) {

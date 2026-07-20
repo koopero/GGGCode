@@ -56,9 +56,6 @@ function MatrixBlitHookValue( arg: HookArgs ) {
     case GGG.Register:
       state.sourceRef = value
       break
-    case GGG.Alias:
-      if ( isString( value ) ) state.sourceRef = value
-      break
     case GGG.Target:
       state.destRef = value
       break

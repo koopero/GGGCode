@@ -6,7 +6,7 @@ Each case is one artifact wearing four hats: a behavioural **spec**, a piece of 
 
 See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) · [runtime](runtime.md).
 
-127 cases across 24 tags.
+131 cases across 24 tags.
 
 ## Tags
 
@@ -15,7 +15,7 @@ See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) 
 - [conditionals](#conditionals) (6)
 - [decimals](#decimals) (15)
 - [flip](#flip) (3)
-- [flow](#flow) (18)
+- [flow](#flow) (22)
 - [hex](#hex) (8)
 - [irrational](#irrational) (3)
 - [iteration](#iteration) (2)
@@ -26,7 +26,7 @@ See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) 
 - [normalized](#normalized) (2)
 - [offset](#offset) (5)
 - [operator](#operator) (6)
-- [procedures](#procedures) (4)
+- [procedures](#procedures) (8)
 - [ranges](#ranges) (15)
 - [references](#references) (16)
 - [rotate](#rotate) (3)
@@ -45,7 +45,7 @@ T12 G<n> runs an exported procedure n times, then unschedules it.
 T10 L"tick"
 P10 V7
 T0
-T12 L"tick" S0 G3
+T12 R"tick" S0 G3
 ```
 
 - values: `[7,7,7]`
@@ -59,7 +59,7 @@ T12 S<ms> fires only once the interval has elapsed on the host clock.
 T10 L"tick"
 P10 V7
 T0
-T12 L"tick" S500
+T12 R"tick" S500
 ```
 
 - values: `[7,7]`
@@ -73,7 +73,7 @@ Omitting the run count exports indefinitely; the host decides when to stop.
 T10 L"tick"
 P10 V7
 T0
-T12 L"tick" S0
+T12 R"tick" S0
 ```
 
 - values: `[7,7,7]`
@@ -87,7 +87,7 @@ A late poll fires once, not once per missed interval.
 T10 L"tick"
 P10 V7
 T0
-T12 L"tick" S100
+T12 R"tick" S100
 ```
 
 - values: `[7]`
@@ -101,8 +101,8 @@ T12 G0 cancels an export; later polls fire nothing.
 T10 L"tick"
 P10 V7
 T0
-T12 L"tick" S0
-T12 L"tick" G0
+T12 R"tick" S0
+T12 R"tick" G0
 ```
 
 - values: `[]`
@@ -114,7 +114,7 @@ T12 L"tick" G0
 Exporting an undefined procedure fails with F6.
 
 ```
-T12 L"nope" S0
+T12 R"nope" S0
 ```
 
 - values: `[]`
@@ -792,7 +792,7 @@ T11 runs a previously defined procedure body.
 T10 L"p"
 P10 V42
 T0
-T11 L"p"
+T11 R"p"
 ```
 
 - values: `[42]`
@@ -803,7 +803,7 @@ T11 L"p"
 Running an undefined procedure reports failure (an F<code> arg on the return).
 
 ```
-T11 L"nope"
+T11 R"nope"
 ```
 
 - values: `[]`
@@ -820,8 +820,8 @@ T10 L"inner"
 P10 V7
 T0
 T0
-T11 L"outer"
-T11 L"inner"
+T11 R"outer"
+T11 R"inner"
 ```
 
 - values: `[7]`
@@ -946,7 +946,7 @@ T12 G<n> runs an exported procedure n times, then unschedules it.
 T10 L"tick"
 P10 V7
 T0
-T12 L"tick" S0 G3
+T12 R"tick" S0 G3
 ```
 
 - values: `[7,7,7]`
@@ -960,7 +960,7 @@ T12 S<ms> fires only once the interval has elapsed on the host clock.
 T10 L"tick"
 P10 V7
 T0
-T12 L"tick" S500
+T12 R"tick" S500
 ```
 
 - values: `[7,7]`
@@ -974,7 +974,7 @@ Omitting the run count exports indefinitely; the host decides when to stop.
 T10 L"tick"
 P10 V7
 T0
-T12 L"tick" S0
+T12 R"tick" S0
 ```
 
 - values: `[7,7,7]`
@@ -988,7 +988,7 @@ A late poll fires once, not once per missed interval.
 T10 L"tick"
 P10 V7
 T0
-T12 L"tick" S100
+T12 R"tick" S100
 ```
 
 - values: `[7]`
@@ -1002,8 +1002,8 @@ T12 G0 cancels an export; later polls fire nothing.
 T10 L"tick"
 P10 V7
 T0
-T12 L"tick" S0
-T12 L"tick" G0
+T12 R"tick" S0
+T12 R"tick" G0
 ```
 
 - values: `[]`
@@ -1015,12 +1015,76 @@ T12 L"tick" G0
 Exporting an undefined procedure fails with F6.
 
 ```
-T12 L"nope" S0
+T12 R"nope" S0
 ```
 
 - values: `[]`
 - status: `OZ`
 - needs: `gggtx`
+
+### proc_by_index
+
+R addresses a procedure by index.
+
+```
+T10 L"p"
+P10 V1
+T0
+T11 R0
+```
+
+- values: `[1]`
+- needs: `gggpx`, `gggtx`
+
+### proc_rename
+
+T10 R<ref> L<name> renames a procedure.
+
+```
+T10 L"old"
+P10 V1
+T0
+T10 R"old" L"new"
+P10 V2
+T0
+T11 R"new"
+```
+
+- values: `[2]`
+- needs: `gggpx`, `gggtx`
+
+### proc_rename_old_gone
+
+After a rename the old name no longer addresses the procedure.
+
+```
+T10 L"old"
+P10 V1
+T0
+T10 R"old" L"new"
+P10 V2
+T0
+T11 R"old"
+```
+
+- values: `[]`
+- status: `OZ`
+- needs: `gggpx`, `gggtx`
+
+### proc_alias_does_not_select
+
+L does not address a procedure; only R does.
+
+```
+T10 L"p"
+P10 V1
+T0
+T11 L"p"
+```
+
+- values: `[]`
+- status: `OZ`
+- needs: `gggpx`, `gggtx`
 
 ## hex
 
@@ -1456,7 +1520,7 @@ G10 R0 P1 S2
 A register is addressable by name via L; the read replays by index.
 
 ```
-G10 L"r" P0 S3
+G10 R"r" P0 S3
 ```
 
 - values: `[10,20,30]`
@@ -1797,7 +1861,7 @@ T11 runs a previously defined procedure body.
 T10 L"p"
 P10 V42
 T0
-T11 L"p"
+T11 R"p"
 ```
 
 - values: `[42]`
@@ -1808,7 +1872,7 @@ T11 L"p"
 Running an undefined procedure reports failure (an F<code> arg on the return).
 
 ```
-T11 L"nope"
+T11 R"nope"
 ```
 
 - values: `[]`
@@ -1825,11 +1889,75 @@ T10 L"inner"
 P10 V7
 T0
 T0
-T11 L"outer"
-T11 L"inner"
+T11 R"outer"
+T11 R"inner"
 ```
 
 - values: `[7]`
+- needs: `gggpx`, `gggtx`
+
+### proc_by_index
+
+R addresses a procedure by index.
+
+```
+T10 L"p"
+P10 V1
+T0
+T11 R0
+```
+
+- values: `[1]`
+- needs: `gggpx`, `gggtx`
+
+### proc_rename
+
+T10 R<ref> L<name> renames a procedure.
+
+```
+T10 L"old"
+P10 V1
+T0
+T10 R"old" L"new"
+P10 V2
+T0
+T11 R"new"
+```
+
+- values: `[2]`
+- needs: `gggpx`, `gggtx`
+
+### proc_rename_old_gone
+
+After a rename the old name no longer addresses the procedure.
+
+```
+T10 L"old"
+P10 V1
+T0
+T10 R"old" L"new"
+P10 V2
+T0
+T11 R"old"
+```
+
+- values: `[]`
+- status: `OZ`
+- needs: `gggpx`, `gggtx`
+
+### proc_alias_does_not_select
+
+L does not address a procedure; only R does.
+
+```
+T10 L"p"
+P10 V1
+T0
+T11 L"p"
+```
+
+- values: `[]`
+- status: `OZ`
 - needs: `gggpx`, `gggtx`
 
 ## ranges

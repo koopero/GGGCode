@@ -243,7 +243,6 @@ namespace ggg {
       name = "G40";
       description = "Blit (transform-copy) between registers.";
       addArg( Register, "source register index or name", "(n|s)" );
-      addArg( Alias, "source register name", "(s)" );
       addArg( Target, "destination register index or name", "(n|s)" );
       addArg( Transform, "transform coeffs (per mode): box = source min,max pairs; map = (srcAxis,min,max) triples per dest axis; affine = matrix", "(n+)" );
       addArg( Storage, "transform mode: box (default) / affine / map", "(n|s)" );
@@ -278,7 +277,7 @@ namespace ggg {
 
     void hookString() override {
       switch ( code ) {
-        case Register: case Alias: source = machine->resolveRegisterByName( string ); break;
+        case Register: source = machine->resolveRegisterByName( string ); break;
         case Target:    dest = machine->resolveRegisterByName( string ); break;
         case Storage:   opt.mode = string; break;
         case Operator:  opt.op = string; break;

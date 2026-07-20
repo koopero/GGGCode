@@ -105,6 +105,31 @@ Parsed as a `Reference` object. The subscript is an array of `Numeric` values. E
 
 ---
 
+### Addressing a register: `R` selects, `L` names
+
+There is one way to address a register, in every subsystem: **`R`**, taking either an index
+or a name.
+
+```
+G10 R0        G10 R"img"        ; matrix buffers
+T11 R0        T11 R"blink"      ; procedure bodies
+```
+
+**`L` never selects.** It only assigns a name, and only where a register is being created
+or edited — `G30` and `T10`:
+
+```
+G30 R0 L"img" S64,64    ; create buffer 0, name it "img"
+G30 R"img" L"icon"      ; rename it
+T10 L"blink"            ; define procedure "blink"
+T10 R"blink" L"pulse"   ; redefine it and rename
+```
+
+Procedures and matrix buffers share the same `NamedList` addressing, which is why both
+answer to an index as well as a name.
+
+---
+
 ### Unitary Constant
 
 Named numeric literals that can appear as data values. Case-insensitive for ASCII names.

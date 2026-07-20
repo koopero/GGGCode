@@ -83,17 +83,30 @@ namespace ggg {
   // T10: define a procedure; opens a capture frame.
   class ProcedureInit : public CommandType {
   public:
-    String procName;
+    String procRef, procName;
     ProcedureInit() {
       name = FlowProcedureInit;
       description = "Define a procedure; capture following lines until T0";
-      addArg( GGG::Alias, "procedure name", "(s)" );
+      addArg( GGG::Register, "procedure to (re)define (index or name)", "(n|s)" );
+      addArg( GGG::Alias, "name to give the procedure", "(s)" );
     }
-    void hookCommand() override { procName.clear(); }
-    void hookString() override { if ( code == GGG::Alias ) procName = string; }
+    void hookCommand() override { procRef.clear(); procName.clear(); }
+    void hookString() override {
+      if ( code == GGG::Register ) procRef = string;      // R selects
+      else if ( code == GGG::Alias ) procName = string;   // L only names
+    }
+    void hookNumber() override {
+      if ( code == GGG::Register ) procRef = std::to_string( (long) number );
+    }
     void hookFinish() override {
-      TProcedure * reg = machine->getProcedure( procName, true );
+      // Select with R if given, else by the name being assigned, so a bare
+      // T10 L"p" still redefines "p" in place rather than stacking duplicates.
+      TProcedure * reg = machine->resolveProcedure( procRef );
+      if ( !reg ) reg = machine->getProcedure( procName, true );
       reg->lines.clear();            // redefine overwrites silently
+      if ( !procName.empty() && reg->name != procName ) {
+        machine->procedures->setItemName( reg, procName );
+      }
       machine->pushFrame( new ProcedureCaptureFrame( reg ) );
     }
   };
@@ -167,41 +180,47 @@ namespace ggg {
   // That is how the language gets unbounded repetition without owning a loop.
   class AsyncExport : public CommandType {
   public:
-    String procName;
+    String procRef;
     NumberType interval;
     long count;
     AsyncExport() {
       name = "T12";
       description = "Export a procedure to run asynchronously on the host's schedule";
-      addArg( GGG::Alias, "procedure name", "(s)" );
+      addArg( GGG::Register, "procedure to export (index or name)", "(n|s)" );
       addArg( GGG::Size, "interval in milliseconds", "(n)" );
       addArg( GGG::Repeat, "run count; omit for unbounded, 0 cancels", "(n)" );
     }
-    void hookCommand() override { procName.clear(); interval = 0; count = -1; }
-    void hookString() override { if ( code == GGG::Alias ) procName = string; }
+    void hookCommand() override { procRef.clear(); interval = 0; count = -1; }
+    void hookString() override { if ( code == GGG::Register ) procRef = string; }
     void hookNumber() override {
-      if ( code == GGG::Size ) interval = number;
+      if ( code == GGG::Register ) procRef = std::to_string( (long) number );
+      else if ( code == GGG::Size ) interval = number;
       else if ( code == GGG::Repeat ) count = (long) number;
     }
     void hookFinish() override {
-      TProcedure * body = machine->getProcedure( procName, false );
+      TProcedure * body = machine->resolveProcedure( procRef );
       if ( !body ) { machine->outputFail( (Int) GGGFail::ProcedureNotFound ); return; }
-      machine->scheduleProcedure( procName, body, (unsigned long) interval, count );
+      // Key the schedule on the register's own identity, so cancel/reschedule
+      // agree regardless of whether R addressed it by index or by name.
+      machine->scheduleProcedure( body->name, body, (unsigned long) interval, count );
     }
   };
 
   class ProcedureRun : public CommandType {
   public:
-    String procName;
+    String procRef;
     ProcedureRun() {
       name = "T11";
-      description = "Run a procedure by name";
-      addArg( GGG::Alias, "procedure name", "(s)" );
+      description = "Run a procedure";
+      addArg( GGG::Register, "procedure to run (index or name)", "(n|s)" );
     }
-    void hookCommand() override { procName.clear(); }
-    void hookString() override { if ( code == GGG::Alias ) procName = string; }
+    void hookCommand() override { procRef.clear(); }
+    void hookString() override { if ( code == GGG::Register ) procRef = string; }
+    void hookNumber() override {
+      if ( code == GGG::Register ) procRef = std::to_string( (long) number );
+    }
     void hookFinish() override {
-      TProcedure * reg = machine->getProcedure( procName, false );
+      TProcedure * reg = machine->resolveProcedure( procRef );
       if ( reg ) machine->enqueueLines( reg->lines );
       else machine->outputFail( (Int) GGGFail::ProcedureNotFound );
     }

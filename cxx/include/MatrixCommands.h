@@ -24,7 +24,6 @@ namespace ggg {
       name = "G20";
       description = "Write values into a register.";
       addArg( Register, "register index or name", "(n|s)" );
-      addArg( Alias, "register name", "(s)" );
       addArg( Offset, "start offset", "(n)" );
       addArg( Operator, "write operator (set/add/mult/...)", "(s)" );
       addArg( Value, "values to write", "(n+)" );
@@ -55,10 +54,10 @@ namespace ggg {
     }
 
     // R is the universal register selector: numeric -> by index (hookNumber),
-    // string -> by name here. Alias (L) stays as a back-compat name selector.
+    // string -> by name here. L never selects; it only names (G30).
     // Q selects the write operator.
     void hookString() override {
-      if ( code == Register || code == Alias )
+      if ( code == Register )
         reg = machine->resolveRegisterByName( string );
       else if ( code == Operator )
         op = string;
@@ -81,7 +80,6 @@ namespace ggg {
       name = "G10";
       description = "Read a region of a register (responds with a G20 write).";
       addArg( Register, "register index or name", "(n|s)" );
-      addArg( Alias, "register name", "(s)" );
       addArg( Offset, "start offset", "(n)" );
       addArg( Size, "scalar count", "(n)" );
     }
@@ -98,9 +96,9 @@ namespace ggg {
     }
 
     // R is the universal register selector: numeric -> by index (hookNumber),
-    // string -> by name here. Alias (L) stays as a back-compat name selector.
+    // string -> by name here. L never selects; it only names (G30).
     void hookString() override {
-      if ( code == Register || code == Alias )
+      if ( code == Register )
         reg = machine->resolveRegisterByName( string );
     }
 

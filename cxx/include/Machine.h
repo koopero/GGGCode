@@ -993,6 +993,20 @@ namespace ggg {
 
     // Resolve a procedure body by name, optionally creating it. Bodies live in
     // the T-owned `procedures` list, addressable by name (L) or index (R).
+    // Resolve a procedure the way R addresses any register: by name, or by a
+    // numeric string falling back to an index. Same shape as
+    // resolveRegisterByName above, which does this for matrices.
+    TProcedure * resolveProcedure( const String & ref ) {
+      if ( ref.empty() ) return nullptr;
+      TProcedure * reg = procedures->getByName( ref );
+      if ( !reg ) {
+        bool numeric = true;
+        for ( char c : ref ) if ( c < '0' || c > '9' ) { numeric = false; break; }
+        if ( numeric ) reg = procedures->getByIndex( std::stoi( ref ) );
+      }
+      return reg;
+    }
+
     TProcedure * getProcedure( const String & name, bool create ) {
       TProcedure * reg = procedures->getByName( name );
       if ( !reg && create ) {

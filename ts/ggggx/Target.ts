@@ -55,12 +55,6 @@ export function TargetHookValue( arg ) {
       dim[state.dimIndex++] = toInt( value )
       break
 
-    case GGG.Alias:
-      if ( isString( value ) ) {
-        state.name = value
-      }
-      break
-
     case GGG.Storage:
       state.type = value
       break

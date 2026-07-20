@@ -1,4 +1,6 @@
 import { GGG, Hooks, HookArgs } from "../ggg/Language"
+import { isString } from "../common/util"
+import Matrix from "../ggg/Matrix"
 import { TargetHookCode, TargetHookCommand, TargetHookValue } from "./Target"
 import { GXContext } from "./GXContext"
 import { toKeyDescription } from "../ggg/NamedList"
@@ -19,15 +21,12 @@ export function MatrixInitHookCode( arg:HookArgs ) {
 export function MatrixInitHookValue( arg:HookArgs ) {
   TargetHookValue( arg )
 
-  const { code, state, value, machine } = arg
-  switch ( code ) {
-    case GGG.Alias: {
-      const { buffer } = state
-      if ( buffer ) {
-        buffer.name = value
-      }
-      break
-    }
+  const { code, state, value } = arg
+  // L assigns a name; it never selects. Held separately from the R selector
+  // (state.name / state.index) so `G30 R"img" L"icon"` renames one buffer rather
+  // than addressing two.
+  if ( code === GGG.Alias && isString( value ) ) {
+    state.newName = value
   }
 }
 
@@ -36,10 +35,15 @@ export function MatrixInitHookEnd( arg:HookArgs ) {
 
   const ggggx = GXContext( { machine } )
   const { MatrixInit } = ggggx
-  const { index, name, dim, storage  } = state || {}
-  const key = name || index
-  const buffer = MatrixInit({ name, index }, { dim, storage } )
+  const { index, name, newName, dim, storage  } = state || {}
+  // Select with R (index or name); with no R, fall back to the name being
+  // assigned so a bare `G30 L"img"` still creates/addresses "img".
+  const buffer = MatrixInit({ name: name || newName, index }, { dim, storage } )
   buffer.clear( { dim, storage})
+
+  if ( newName && buffer.name !== newName ) {
+    machine.getRegisterList( Matrix ).setItemName( buffer, newName )
+  }
 
   if ( !buffer ) {
     // buffer creation failed

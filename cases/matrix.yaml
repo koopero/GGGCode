@@ -23,7 +23,7 @@
   description: "A register is addressable by name via L; the read replays by index."
   needs: [ ggggx ]
   tags: [ matrix ]
-  program: 'G10 L"r" P0 S3'
+  program: 'G10 R"r" P0 S3'
   values: [ 10, 20, 30 ]
   exact: true
 

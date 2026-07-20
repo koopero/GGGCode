@@ -40,6 +40,8 @@ namespace ggg_conformance {
   static const double values_async_interval[] = { 7.0, 7.0 };
   static const double values_async_unbounded[] = { 7.0, 7.0, 7.0 };
   static const double values_async_no_catchup[] = { 7.0 };
+  static const double values_proc_by_index[] = { 1.0 };
+  static const double values_proc_rename[] = { 2.0 };
   static const double values_hex_1f[] = { 31.0 };
   static const double values_hex_ff[] = { 255.0 };
   static const double values_hex_zero[] = { 0.0 };
@@ -161,9 +163,9 @@ namespace ggg_conformance {
     { "blit_minify_max", "G40 R\"bs\" W\"bd\" T\"box\" M0,6,0,6 F4 E1\nG10 R\"bd\"\n", "OK", values_blit_minify_max, 9, nullptr, nullptr, 0 },
     { "blit_minify_pool", "G40 R\"bs\" W\"bd\" T\"box\" M0,6,0,6 F4,2 E1\nG10 R\"bd\"\n", "OK", values_blit_minify_pool, 9, nullptr, nullptr, 0 },
     { "flow_define_only", "T10 L\"p\"\nP10 V42\nT0\n", "", nullptr, 0, nullptr, nullptr, 0 },
-    { "flow_define_run", "T10 L\"p\"\nP10 V42\nT0\nT11 L\"p\"\n", "OK", values_flow_define_run, 1, nullptr, nullptr, 0 },
-    { "flow_unknown", "T11 L\"nope\"\n", "OZ", nullptr, 0, nullptr, nullptr, 0 },
-    { "flow_nested", "T10 L\"outer\"\nT10 L\"inner\"\nP10 V7\nT0\nT0\nT11 L\"outer\"\nT11 L\"inner\"\n", "OK", values_flow_nested, 1, nullptr, nullptr, 0 },
+    { "flow_define_run", "T10 L\"p\"\nP10 V42\nT0\nT11 R\"p\"\n", "OK", values_flow_define_run, 1, nullptr, nullptr, 0 },
+    { "flow_unknown", "T11 R\"nope\"\n", "OZ", nullptr, 0, nullptr, nullptr, 0 },
+    { "flow_nested", "T10 L\"outer\"\nT10 L\"inner\"\nP10 V7\nT0\nT0\nT11 R\"outer\"\nT11 R\"inner\"\n", "OK", values_flow_nested, 1, nullptr, nullptr, 0 },
     { "cond_all_true", "T9 A1\nP10 V42\nT0\n", "OK", values_cond_all_true, 1, nullptr, nullptr, 0 },
     { "cond_all_false", "T9 A0\nP10 V42\nT0\n", "", nullptr, 0, nullptr, nullptr, 0 },
     { "cond_all_mixed", "T9 A1,0\nP10 V42\nT0\n", "", nullptr, 0, nullptr, nullptr, 0 },
@@ -172,12 +174,16 @@ namespace ggg_conformance {
     { "cond_nested_skip", "T9 A0\nT9 A1\nP10 V1\nT0\nT0\nP10 V2\n", "OK", values_cond_nested_skip, 1, nullptr, nullptr, 0 },
     { "iter_single", "T9 V5 R\"it\"\nP10 V$it\nT0\n", "OK", values_iter_single, 1, nullptr, nullptr, 0 },
     { "iter_zero", "T9 V$x R\"it\"\nP10 V$it\nT0\n", "", nullptr, 0, nullptr, nullptr, 0 },
-    { "async_count", "T10 L\"tick\"\nP10 V7\nT0\nT12 L\"tick\" S0 G3\n", "OK", values_async_count, 3, nullptr, polls_async_count, 5 },
-    { "async_interval", "T10 L\"tick\"\nP10 V7\nT0\nT12 L\"tick\" S500\n", "OK", values_async_interval, 2, nullptr, polls_async_interval, 4 },
-    { "async_unbounded", "T10 L\"tick\"\nP10 V7\nT0\nT12 L\"tick\" S0\n", "OK", values_async_unbounded, 3, nullptr, polls_async_unbounded, 3 },
-    { "async_no_catchup", "T10 L\"tick\"\nP10 V7\nT0\nT12 L\"tick\" S100\n", "OK", values_async_no_catchup, 1, nullptr, polls_async_no_catchup, 2 },
-    { "async_cancel", "T10 L\"tick\"\nP10 V7\nT0\nT12 L\"tick\" S0\nT12 L\"tick\" G0\n", "", nullptr, 0, nullptr, polls_async_cancel, 2 },
-    { "async_unknown", "T12 L\"nope\" S0\n", "OZ", nullptr, 0, nullptr, polls_async_unknown, 1 },
+    { "async_count", "T10 L\"tick\"\nP10 V7\nT0\nT12 R\"tick\" S0 G3\n", "OK", values_async_count, 3, nullptr, polls_async_count, 5 },
+    { "async_interval", "T10 L\"tick\"\nP10 V7\nT0\nT12 R\"tick\" S500\n", "OK", values_async_interval, 2, nullptr, polls_async_interval, 4 },
+    { "async_unbounded", "T10 L\"tick\"\nP10 V7\nT0\nT12 R\"tick\" S0\n", "OK", values_async_unbounded, 3, nullptr, polls_async_unbounded, 3 },
+    { "async_no_catchup", "T10 L\"tick\"\nP10 V7\nT0\nT12 R\"tick\" S100\n", "OK", values_async_no_catchup, 1, nullptr, polls_async_no_catchup, 2 },
+    { "async_cancel", "T10 L\"tick\"\nP10 V7\nT0\nT12 R\"tick\" S0\nT12 R\"tick\" G0\n", "", nullptr, 0, nullptr, polls_async_cancel, 2 },
+    { "async_unknown", "T12 R\"nope\" S0\n", "OZ", nullptr, 0, nullptr, polls_async_unknown, 1 },
+    { "proc_by_index", "T10 L\"p\"\nP10 V1\nT0\nT11 R0\n", "OK", values_proc_by_index, 1, nullptr, nullptr, 0 },
+    { "proc_rename", "T10 L\"old\"\nP10 V1\nT0\nT10 R\"old\" L\"new\"\nP10 V2\nT0\nT11 R\"new\"\n", "OK", values_proc_rename, 1, nullptr, nullptr, 0 },
+    { "proc_rename_old_gone", "T10 L\"old\"\nP10 V1\nT0\nT10 R\"old\" L\"new\"\nP10 V2\nT0\nT11 R\"old\"\n", "OZ", nullptr, 0, nullptr, nullptr, 0 },
+    { "proc_alias_does_not_select", "T10 L\"p\"\nP10 V1\nT0\nT11 L\"p\"\n", "OZ", nullptr, 0, nullptr, nullptr, 0 },
     { "hex_1f", "P10 V0X1F\n", "OK", values_hex_1f, 1, nullptr, nullptr, 0 },
     { "hex_ff", "P10 V0XFF\n", "OK", values_hex_ff, 1, nullptr, nullptr, 0 },
     { "hex_zero", "P10 V0X0\n", "OK", values_hex_zero, 1, nullptr, nullptr, 0 },
@@ -187,7 +193,7 @@ namespace ggg_conformance {
     { "hexnorm1_8", "P10 V0J8\n", "OK", values_hexnorm1_8, 1, nullptr, nullptr, 0 },
     { "matrix_read", "G10 R0 P0 S3\n", "OK", values_matrix_read, 3, "G20 R0 P0 V10,20,30\nOK", nullptr, 0 },
     { "matrix_read_offset", "G10 R0 P1 S2\n", "OK", values_matrix_read_offset, 2, "G20 R0 P1 V20,30\nOK", nullptr, 0 },
-    { "matrix_read_by_name", "G10 L\"r\" P0 S3\n", "OK", values_matrix_read_by_name, 3, "G20 R0 P0 V10,20,30\nOK", nullptr, 0 },
+    { "matrix_read_by_name", "G10 R\"r\" P0 S3\n", "OK", values_matrix_read_by_name, 3, "G20 R0 P0 V10,20,30\nOK", nullptr, 0 },
     { "matrix_read_by_ref", "G10 R\"r\" P0 S3\n", "OK", values_matrix_read_by_ref, 3, "G20 R0 P0 V10,20,30\nOK", nullptr, 0 },
     { "matrix_write_read", "G20 R0 P0 V7,8,9\nG10 R0 P0 S3\n", "OK", values_matrix_write_read, 3, "OK\nG20 R0 P0 V7,8,9\nOK", nullptr, 0 },
     { "op_add", "G20 R0 P0 Q\"add\" V5,5,5\nG10 R0 P0 S3\n", "OK", values_op_add, 3, nullptr, nullptr, 0 },

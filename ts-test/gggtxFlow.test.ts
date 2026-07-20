@@ -36,9 +36,9 @@ describe( "gggtx recursion guard", () => {
     await machine.run( [
       'T10 L"boom"',
       "P10 V1",
-      'T11 L"boom"',
+      'T11 R"boom"',
       "T0",
-      'T11 L"boom"',
+      'T11 R"boom"',
     ].join( "\n" ) )
     expect( out ).toEqual( "V1\nOK\nV1\nOK\nV1\nOK\nV1\nOK\nV1\nOK\nOK F2\n" )
   } )
@@ -50,9 +50,9 @@ describe( "gggtx recursion guard", () => {
     await machine.run( [
       'T10 L"boom"',
       "P10 V1",
-      'T11 L"boom"',
+      'T11 R"boom"',
       "T0",
-      'T11 L"boom"',
+      'T11 R"boom"',
     ].join( "\n" ) )
     // Terminates at all -- the point of the default. 1024 bodies -> ~2k lines.
     expect( lines ).toBeGreaterThan( 0 )
@@ -76,7 +76,7 @@ describe( "gggtx procedures", () => {
       "P10 V1",
       "P10 V2",
       "T0",
-      'T11 L"p"',
+      'T11 R"p"',
     ].join( "\n" ) )
     expect( out ).toEqual( "V1\nOK\nV2\nOK" )
   } )
@@ -89,13 +89,13 @@ describe( "gggtx procedures", () => {
       'T10 L"p"',
       "P10 V2",
       "T0",
-      'T11 L"p"',
+      'T11 R"p"',
     ].join( "\n" ) )
     expect( out ).toEqual( "V2\nOK" )
   } )
 
   test( "running an unknown procedure reports failure", async () => {
-    const out = await runFlow( 'T11 L"nope"' )
+    const out = await runFlow( 'T11 R"nope"' )
     expect( out ).toEqual( "OK F6" )   // OK (id 1) + F6 = GGGFail.ProcedureNotFound
   } )
 
@@ -119,11 +119,11 @@ describe( "gggtx procedures", () => {
     // inner is not defined yet
     expect( machine.getRegisterList( TProcedure ).named["inner"] ).toBeUndefined()
 
-    await machine.run( 'T11 L"outer"' )      // defines inner, no body output
+    await machine.run( 'T11 R"outer"' )      // defines inner, no body output
     expect( normalizeOutput( out ) ).toEqual( "" )
     expect( machine.getRegisterList( TProcedure ).named["inner"] ).toBeDefined()
 
-    await machine.run( 'T11 L"inner"' )      // now runs inner
+    await machine.run( 'T11 R"inner"' )      // now runs inner
     expect( normalizeOutput( out ) ).toEqual( "V7\nOK" )
   } )
 
@@ -133,10 +133,10 @@ describe( "gggtx procedures", () => {
       "P10 V1",
       "T0",
       'T10 L"b"',
-      'T11 L"a"',
+      'T11 R"a"',
       "P10 V2",
       "T0",
-      'T11 L"b"',
+      'T11 R"b"',
     ].join( "\n" ) )
     expect( out ).toEqual( "V1\nOK\nV2\nOK" )
   } )
@@ -157,7 +157,7 @@ describe( "gggtx procedures", () => {
       "P10 V4",
       "P10 V5",
       "T0",
-      'T11 L"big"',
+      'T11 R"big"',
     ].join( "\n" ) )
     expect( normalizeOutput( out ) ).toEqual( "OK F2" )   // OK (id 1) + F2 = GGGFail.QueueOverflow
   } )
@@ -217,7 +217,7 @@ describe( "gggtx conditionals", () => {
       "P10 V2",
       "T0",
       "T0",
-      'T11 L"p"',
+      'T11 R"p"',
     ].join( "\n" ) )
     expect( out ).toEqual( "V1\nOK" )
   } )
@@ -251,7 +251,7 @@ describe( "gggtx iteration", () => {
       "P10 V$i",
       "T0",
       "T0",
-      'T11 L"p"',
+      'T11 R"p"',
     ].join( "\n" ) )
     expect( out ).toEqual( "V1\nOK\nV2\nOK" )
   } )

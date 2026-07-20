@@ -90,6 +90,9 @@ See the [tour](docs/tour.md) for the full progression, with diagrams.
   gives `0.5772…` rather than `947`. A sign negates a code point too: `-☃` is
   `-9731`.
 - **References** into named buffers: `$name`, indexed `$name[1]`, ranged `$name[0:2]`, multi-axis `$name[a|b]`, or offsets `$name@[...]`
+- **Registers** are always addressed by `R` — `R0` by index or `R"img"` by name, for matrix
+  buffers and procedure bodies alike. `L` never selects; it only assigns a name where one is
+  created or edited (`G30`, `T10`).
 
 ### Ranges
 
