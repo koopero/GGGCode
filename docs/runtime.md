@@ -160,6 +160,18 @@ Because time is a parameter rather than something the machine reads, async behav
 deterministic and conformance-testable: a case declares `polls: [ 0, 200, 500 ]` and both
 engines replay the same clock.
 
+The `ggg` CLI is one such host and polls for you (`--tick <ms>`, default 10), so exported
+procedures just run:
+
+```bash
+ggg -a blink.ggg      # T12 L"blink" S200 G5  ->  five runs over ~1s, then exits
+```
+
+Its ticker also decides when the process ends: polling continues while anything is
+scheduled and stops once input has ended and the schedule is empty. A script with a
+bounded export finishes its runs and exits; an unbounded one keeps going until you stop
+it, which is the host-owns-halting property made concrete.
+
 ## Subsystems and the C++ port
 
 The core (`ts/ggg/`) is data + dispatch only; behaviour is supplied as command sets loaded

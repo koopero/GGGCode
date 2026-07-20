@@ -66,6 +66,11 @@ export function addStandardOptions( parser ) {
       alias: "i",
       describe: "Image file output",
       type: "string",
+    },
+    "tick": {
+      alias: "t",
+      describe: "Async poll interval, ms (default 10)",
+      type: "string",
     }
   })
 }
@@ -196,6 +201,31 @@ export function runCLI() {
   rl.on('line', (line) => {
     processLine(line)
   })
+
+  // Async procedures (T12) are run by the HOST, not the language, so the CLI has
+  // to drive them. The ticker also governs process lifetime: a script that
+  // exports ten blinks should finish them before exiting, so polling continues
+  // while anything is scheduled and stops once input has ended and the schedule
+  // is empty -- which lets a plain script exit promptly instead of hanging on a
+  // live timer.
+  //
+  // NB: --server builds a separate machine per connection via machineGenerator;
+  // those are not polled by this ticker.
+  const tickMs = Number( options.tick ) > 0 ? Number( options.tick ) : 10
+  let inputEnded = false
+  let polling = false
+  const ticker = setInterval( () => {
+    if ( polling ) return               // poll() is async; never overlap two drives
+    polling = true
+    machine.poll( Date.now() )
+      .catch( e => console.error( "; " + e.message ) )
+      .then( () => {
+        polling = false
+        if ( inputEnded && !machine.schedule.length ) clearInterval( ticker )
+      } )
+  }, tickMs )
+
+  rl.on( 'close', () => { inputEnded = true } )
 
   if ( options.server ) {
     gggWebSocketServer( { 
