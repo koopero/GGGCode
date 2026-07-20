@@ -74,6 +74,20 @@ See the [tour](docs/tour.md) for the full progression, with diagrams.
   - To end of line: `` `Rest of line becomes string``
 - **Unitary constants** — named numeric literals (ASCII forms case-insensitive):
   `K`=1, `Z`=0, `N`=−1, `π`=Pi, `τ`=2π, `e`=Euler's number, `φ`=golden ratio, `γ`=Euler–Mascheroni
+- **Unicode characters** — every *other* non-ASCII character is a numeric literal
+  for its Unicode code point, and lists like any other value:
+
+  ```
+  P10 V☃            ; -> 9731
+  P10 V你            ; -> 20320
+  P10 V€            ; -> 8364
+  P10 V😀            ; -> 128512      (astral plane: the full code point)
+  P10 V☃,你          ; -> 9731,20320
+  ```
+
+  The constants above are the only exception, and they are otherwise unremarkable
+  letters — `α` is `945` and `β` is `946`, but `γ` is a named constant, so it
+  gives `0.5772…` rather than `947`.
 - **References** into named buffers: `$name`, indexed `$name[1]`, ranged `$name[0:2]`, multi-axis `$name[a|b]`, or offsets `$name@[...]`
 
 ### Ranges
