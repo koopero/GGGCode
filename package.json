@@ -1,6 +1,6 @@
 {
   "name": "gggcode",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "G Code like general purpose meta-language.",
   "keywords": [
     "gcode",
@@ -93,6 +93,9 @@
   },
   "author": "Samm Zuest Cooper <koopero@gmail.com>",
   "license": "ISC",
+  "engines": {
+    "node": ">=18.3.0"
+  },
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "@typescript-eslint/eslint-plugin": "^7.0.1",
@@ -106,7 +109,6 @@
   },
   "dependencies": {
     "fast-png": "^6.2.0",
-    "optimist": "^0.6.1",
-    "ws": "^8.16.0"
+    "ws": "^8.21.1"
   }
 }

@@ -1,6 +1,6 @@
 
 
-import * as optimist from "optimist"
+import { parseArgs } from "node:util"
 import { isArray } from "./common/util"
 import Machine from "./ggg/Machine"
 import * as readline from "readline"
@@ -9,70 +9,61 @@ import { Readable, pipeline } from 'stream'
 import Format from "./ggg/Format"
 import gggWebSocketServer from "./websocket/gggWebSocketServer"
 
-export function addStandardOptions( parser ) {
-  return parser.options({
-    "help": {
-      alias: "h",
-      describe: "Show help",
-      type: "boolean"
-    },
-    "version": {
-      alias: "v",
-      describe: "Show version",
-      type: "boolean"
-    },
-    "client": {
-      alias: "c",
-      describe: "Connect to WebSocket server",
-      type: "string",
-    },
-    "server": {
-      alias: "s",
-      describe: "Start WebSocket server",
-      type: "string",
-    },
-    "extension": {
-      alias: "x",
-      describe: "Load builtin extension",
-      type: "string",
-    },
-    "all": {
-      alias: "a",
-      describe: "Load all builtin extensions",
-      type: "boolean",
-    },
-    "module": {
-      alias: "m",
-      describe: "Load commands from module",
-    },
-    "echo": {
-      alias: "e",
-      describe: "Echo input",
-    },
-    "interpreter": {
-      alias: "i",
-      describe: "Start interactive interpreter",
-    },
-    "quiet": {
-      alias: "q",
-      describe: "Don't print output",
-    },
-    "ok": {
-      alias: "k",
-      describe: "Print 'OK' commands",
-      type: "boolean",
-    },
-    "image": {
-      alias: "o",
-      describe: "Image file output",
-      type: "string",
-    },
-    "tick": {
-      alias: "t",
-      describe: "Async poll interval, ms (default 10)",
-      type: "string",
-    }
-  })
+type OptionSpec = {
+  alias: string
+  describe: string
+  type: "boolean" | "string"
+  multiple?: boolean      // repeatable (-x p -x g); always parsed into an array
+}
+
+// The CLI option surface. Parsing is Node's built-in util.parseArgs rather than
+// a dependency: optimist is abandoned and pinned a minimist with prototype-
+// pollution advisories, and this drops it plus its transitives entirely.
+export const CLI_OPTIONS : Record<string, OptionSpec> = {
+  help:        { alias: "h", describe: "Show help",                        type: "boolean" },
+  version:     { alias: "v", describe: "Show version",                     type: "boolean" },
+  client:      { alias: "c", describe: "Connect to WebSocket server",      type: "string"  },
+  server:      { alias: "s", describe: "Start WebSocket server",           type: "string"  },
+  extension:   { alias: "x", describe: "Load builtin extension",           type: "string", multiple: true },
+  all:         { alias: "a", describe: "Load all builtin extensions",      type: "boolean" },
+  module:      { alias: "m", describe: "Load commands from module",        type: "string", multiple: true },
+  echo:        { alias: "e", describe: "Echo input",                       type: "boolean" },
+  interpreter: { alias: "i", describe: "Start interactive interpreter",    type: "boolean" },
+  quiet:       { alias: "q", describe: "Don't print output",               type: "boolean" },
+  ok:          { alias: "k", describe: "Print 'OK' commands",              type: "boolean" },
+  image:       { alias: "o", describe: "Image file output",                type: "string"  },
+  tick:        { alias: "t", describe: "Async poll interval, ms (default 10)", type: "string" },
+}
+
+// Parse argv into the shape the rest of runCLI expects: named options plus `_`
+// for positional file arguments. strict:false keeps the old parser's leniency,
+// so an unrecognized flag does not abort the run.
+export function parseCLI( args:string[] ) {
+  const options:any = {}
+  for ( const name in CLI_OPTIONS ) {
+    const spec = CLI_OPTIONS[name]
+    // `multiple` must be omitted rather than undefined -- parseArgs type-checks it.
+    options[name] = { type: spec.type, short: spec.alias }
+    if ( spec.multiple ) options[name].multiple = true
+  }
+  const { values, positionals } = parseArgs( {
+    args,
+    options,
+    allowPositionals: true,
+    strict: false,
+  } )
+  return { ...values, _: positionals } as any
+}
+
+export function showHelp() {
+  const width = Math.max( ...Object.keys( CLI_OPTIONS ).map(
+    n => `--${n}, -${CLI_OPTIONS[n].alias}`.length ) )
+  const lines = [ "Usage: ggg [options] [files]", "", "Options:" ]
+  for ( const name in CLI_OPTIONS ) {
+    const flag = `--${name}, -${CLI_OPTIONS[name].alias}`
+    lines.push( `  ${flag.padEnd( width )}  ${CLI_OPTIONS[name].describe}` )
+  }
+  console.log( lines.join( "\n" ) )
 }
 
 
@@ -105,13 +96,10 @@ function loadCommandsFromBuiltinExtension( name:string ) {
 
 
 export function runCLI() {
-  let parser = optimist
-  parser = parser.usage(`Usage: $0 [options] [files]`)
-  parser = addStandardOptions( parser )
-  const options = parser.argv
+  const options = parseCLI( process.argv.slice( 2 ) )
 
   if ( options.help ) {
-    parser.showHelp()
+    showHelp()
     process.exit(0)
   }
 
