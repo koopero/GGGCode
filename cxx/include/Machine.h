@@ -7,6 +7,7 @@
 #include "./Solve.h"
 #include "./Flow.h"
 #include "./ggg/Limits.h"
+#include "./ggg/NumberOps.h"
 
 namespace ggg {
   struct MachineState {
@@ -293,7 +294,7 @@ namespace ggg {
         case 0x03C0: out = (NumberType) 3.141592653589793;  return true;  // π  pi
         case 0x03C4: out = (NumberType) 6.283185307179586;  return true;  // τ  2π
         case 0x03C6: out = (NumberType) 1.618033988749895;  return true;  // φ  golden ratio
-        case 0x221E: out = INFINITY;                        return true;  // ∞  infinity
+        case 0x221E: out = NumberOps<NumberType>::infinity(); return true; // ∞  infinity
         case 0x03B3: out = (NumberType) 0.5772156649;       return true;  // γ  Euler–Mascheroni
         default: return false;
       }
@@ -584,11 +585,14 @@ namespace ggg {
       std::vector<NumberType> numbers;
       std::vector<Char> symbols;
       String num;
+      // Same prefix parse as finishNumber, so both numeric entry points agree on
+      // what a number is (and both tell "parsed nothing" the same way).
       auto flushNumber = [&]() {
         if ( num.empty() ) return;
-        std::stringstream ss( num );
-        NumberType v;
-        if ( ss >> v ) numbers.push_back( v );
+        const char *begin = num.c_str();
+        char *end = nullptr;
+        const NumberType v = NumberOps<NumberType>::parse( begin, &end );
+        if ( end != begin ) numbers.push_back( v );
         num.clear();
       };
       auto flushSegment = [&]() {
@@ -704,11 +708,11 @@ namespace ggg {
         }
         pushCompoundNumber( value );
       } else if ( !state.argBuffer.empty() && ( state.dataMode == GGG::Number || state.dataMode == GGG::Zero ) ) {
-        // strtod, not stringstream: it consumes the longest valid numeric PREFIX,
-        // which is what the reference's parseFloat does. stringstream sets failbit
-        // unless the WHOLE buffer parses, so a trailing float-syntax character --
-        // "5e" (exponent with no digits) or "5X" (hex-float prefix) -- threw the
-        // number away entirely instead of yielding 5.
+        // NumberOps::parse consumes the longest valid numeric PREFIX, which is
+        // what the reference's parseFloat does. A whole-buffer parse would throw
+        // the number away entirely on a trailing float-syntax character -- "5e"
+        // (exponent with no digits) or "5X" (hex-float prefix) -- instead of
+        // yielding 5.
         //
         // Buffer is copied and cleared first: pushCompoundNumber can finish the
         // compound, which re-enters finishNumber.
@@ -720,9 +724,9 @@ namespace ggg {
         }
         const char *begin = buf.c_str();
         char *end = nullptr;
-        const double parsed = strtod( begin, &end );
+        const NumberType parsed = NumberOps<NumberType>::parse( begin, &end );
         if ( end != begin ) {
-          pushCompoundNumber( (NumberType) parsed );
+          pushCompoundNumber( parsed );
         }
       }
     }
