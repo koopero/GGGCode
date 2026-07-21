@@ -7,13 +7,20 @@ namespace ggg {
   // implementations emit identical output: the code letter is written once per
   // argument (a space separates arguments), values are comma-separated, and the
   // line is terminated with End + OK. No response-command prefix is emitted.
-  class PrintNumbers : virtual public CommandType {
+  template <class T = DefaultTraits>
+  class PrintNumbersT : virtual public CommandTypeT<T> {
   public:
+    using Base = CommandTypeT<T>;
+    using Base::machine; using Base::code; using Base::number;
+    using Base::string;  using Base::okay;  using Base::name;
+    using Base::description; using Base::args; using Base::addArg;
+    using Number = typename T::Number;
+
     bool needSeperator = false;
     bool wroteCode = false;
     bool firstValue = true;
 
-    PrintNumbers() {
+    PrintNumbersT() {
       name = PrintNumbersName;
     }
 
@@ -49,13 +56,21 @@ namespace ggg {
       machine->outputOK();
     }
   };
+  using PrintNumbers = PrintNumbersT<>;
 
-  class PrintString : virtual public CommandType {
+  template <class T = DefaultTraits>
+  class PrintStringT : virtual public CommandTypeT<T> {
   protected:
+    using Base = CommandTypeT<T>;
+    using Base::machine; using Base::code; using Base::number;
+    using Base::string;  using Base::okay;  using Base::name;
+    using Base::description; using Base::args; using Base::addArg;
+    using Number = typename T::Number;
+
     bool didStartLine = false;
 
   public:
-    PrintString() {
+    PrintStringT() {
       name = PrintStringName;
     }
 
@@ -112,4 +127,5 @@ namespace ggg {
 
 
   };
+  using PrintString = PrintStringT<>;
 }; // namespace ggg

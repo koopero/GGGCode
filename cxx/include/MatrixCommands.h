@@ -15,12 +15,19 @@ namespace ggg {
   // decimal-only for now). The register is resolved from the machine's table.
 
   // G20 -- write scalar values into a register's matrix starting at offset P.
-  class MatrixWrite : public CommandType {
-    MatrixBase * reg = nullptr;
+  template <class T = DefaultTraits>
+  class MatrixWriteT : public CommandTypeT<T> {
+    using Base = CommandTypeT<T>;
+    using Base::machine; using Base::code; using Base::number;
+    using Base::string;  using Base::okay;  using Base::name;
+    using Base::description; using Base::addArg;
+    using Number = typename T::Number;
+
+    MatrixBaseT<T> * reg = nullptr;
     Index offset = 0;
     String op;                       // Q operator (default "set")
   public:
-    MatrixWrite() {
+    MatrixWriteT() {
       name = "G20";
       description = "Write values into a register.";
       addArg( Register, "register index or name", "(n|s)" );
@@ -39,8 +46,8 @@ namespace ggg {
           if ( !reg ) break;
           // Apply the operator: read the current cell, combine with the incoming
           // value, write back (mirrors TS OperatorApply in MatrixWrite).
-          NumberType current = reg->readScalarFloat( offset, 0. );
-          NumberType result;
+          Number current = reg->readScalarFloat( offset, 0. );
+          Number result;
           if ( applyOperator( op, current, number, result ) ) {
             reg->writeScalarFloat( result, offset );
           } else {
@@ -68,15 +75,23 @@ namespace ggg {
       else machine->outputFail( (Int) GGGFail::BadOperator );
     }
   };
+  using MatrixWrite = MatrixWriteT<>;
 
   // G10 -- read a region of a register's matrix; respond with a G20 Write the
   // client can replay (R index, P start, V values...).
-  class MatrixRead : public CommandType {
-    MatrixBase * reg = nullptr;
+  template <class T = DefaultTraits>
+  class MatrixReadT : public CommandTypeT<T> {
+    using Base = CommandTypeT<T>;
+    using Base::machine; using Base::code; using Base::number;
+    using Base::string;  using Base::okay;  using Base::name;
+    using Base::description; using Base::addArg;
+    using Number = typename T::Number;
+
+    MatrixBaseT<T> * reg = nullptr;
     Index offset = 0;
     Index count = -1;
   public:
-    MatrixRead() {
+    MatrixReadT() {
       name = "G10";
       description = "Read a region of a register (responds with a G20 write).";
       addArg( Register, "register index or name", "(n|s)" );
@@ -127,5 +142,6 @@ namespace ggg {
       else machine->outputFail( (Int) GGGFail::BufferNotFound );
     }
   };
+  using MatrixRead = MatrixReadT<>;
 
 }; // namespace ggg

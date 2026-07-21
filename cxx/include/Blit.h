@@ -163,7 +163,9 @@ namespace ggg {
 
   // Inverse-mapping driver. Returns false iff an unknown combine operator was hit
   // (so the command can report OZ); the matrix is mutated in place.
-  inline bool Blit( MatrixBase *dest, MatrixBase *source, const BlitOptions &o ) {
+  template <class T>
+  inline bool Blit( MatrixBaseT<T> *dest, MatrixBaseT<T> *source, const BlitOptions &o ) {
+    using Number = typename T::Number;
     int dimension = o.dimension;
     int rank = (int) dest->dim.size() - dimension;
     if ( rank < 0 ) rank = 0;
@@ -204,7 +206,7 @@ namespace ggg {
       // Sample per-axis: filter (I) interpolates the point; a fold (F) reduces the
       // footprint when minifying. The Jacobian footprint drives magnify vs minify.
       std::vector<double> fp = blitFootprint( H, cNorm, destSpatial, srcSpatial, rank );
-      std::vector<NumberType> sampled = Sample( source, pos, dimension, o.filter, o.edges, fp );
+      std::vector<Number> sampled = Sample( source, pos, dimension, o.filter, o.edges, fp );
 
       std::vector<double> destPos( (size_t) dimension, 0. );
       destPos.insert( destPos.end(), destCoord.begin(), destCoord.end() );
@@ -212,8 +214,8 @@ namespace ggg {
         if ( dimension > 0 ) destPos[0] = ch;   // single leading channel axis
         Index off = sampleOffset( dest->dim, destPos );
         if ( off < 0 ) continue;
-        NumberType current = dest->readScalarFloat( off, 0. );
-        NumberType result;
+        Number current = dest->readScalarFloat( off, 0. );
+        Number result;
         if ( applyOperator( o.op, current, sampled[ch], result ) )
           dest->writeScalarFloat( result, off );
         else
@@ -234,12 +236,18 @@ namespace ggg {
   // G40 -- blit between registers. Args: R/L source, W dest, M coeffs, T mode,
   // P/S region, D channel dim, Q operator, F per-axis filter (linear/nearest point
   // or mean/min/max/add footprint fold), E per-axis edge.
-  class MatrixBlit : public CommandType {
-    MatrixBase *source = nullptr;
-    MatrixBase *dest = nullptr;
+  template <class T = DefaultTraits>
+  class MatrixBlitT : public CommandTypeT<T> {
+    using Base = CommandTypeT<T>;
+    using Base::machine; using Base::code; using Base::number;
+    using Base::string;  using Base::okay;  using Base::name;
+    using Base::description; using Base::addArg;
+
+    MatrixBaseT<T> *source = nullptr;
+    MatrixBaseT<T> *dest = nullptr;
     BlitOptions opt;
   public:
-    MatrixBlit() {
+    MatrixBlitT() {
       name = "G40";
       description = "Blit (transform-copy) between registers.";
       addArg( Register, "source register index or name", "(n|s)" );
@@ -294,5 +302,6 @@ namespace ggg {
       else machine->outputFail( (Int) GGGFail::BlitFailed );
     }
   };
+  using MatrixBlit = MatrixBlitT<>;
 
 }; // namespace ggg

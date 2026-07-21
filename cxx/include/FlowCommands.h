@@ -26,14 +26,15 @@ namespace ggg {
   // tracking nested block depth so an inner T0 does not close the outer frame.
   // At the matching T0 (depth 0) it runs onClose() and pops. Mirrors the TS
   // captureGate helper in gggtxCommands.ts.
-  class CaptureFrame : public ControlFrame {
+  template <class T = DefaultTraits>
+  class CaptureFrameT : public ControlFrameT<T> {
   public:
     int depth = 0;
     std::vector<String> body;
 
-    virtual void onClose( Machine & ) {}
+    virtual void onClose( MachineT<T> & ) {}
 
-    CommandDecision beforeCommand( Machine & m, const CommandView & view ) override {
+    CommandDecision beforeCommand( MachineT<T> & m, const CommandViewT<T> & view ) override {
       if ( view.command == FlowBlockEnd ) {
         if ( depth == 0 ) {
           onClose( m );              // read members before popFrame deletes this
@@ -53,38 +54,52 @@ namespace ggg {
       body.push_back( source );
     }
   };
+  using CaptureFrame = CaptureFrameT<>;
 
   // T10 body: commit the captured source into the procedure register on close.
-  class ProcedureCaptureFrame : public CaptureFrame {
+  template <class T = DefaultTraits>
+  class ProcedureCaptureFrameT : public CaptureFrameT<T> {
+    using CaptureFrameT<T>::body;
   public:
     TProcedure * reg;
-    ProcedureCaptureFrame( TProcedure * _reg ) : reg( _reg ) {}
-    void onClose( Machine & ) override { reg->lines = body; }
+    ProcedureCaptureFrameT( TProcedure * _reg ) : reg( _reg ) {}
+    void onClose( MachineT<T> & ) override { reg->lines = body; }
   };
+  using ProcedureCaptureFrame = ProcedureCaptureFrameT<>;
 
   // T9 body. Conditional mode: enqueue the captured source once iff the
   // condition held. Iteration mode: enqueue the body once per value, writing
   // each into the iteration register first.
-  class ConditionalCaptureFrame : public CaptureFrame {
+  template <class T = DefaultTraits>
+  class ConditionalCaptureFrameT : public CaptureFrameT<T> {
+    using CaptureFrameT<T>::body;
   public:
     bool iter = false;
     bool cond = false;
-    std::vector<NumberType> values;
+    std::vector<typename T::Number> values;
     bool hasReg = false;
     bool regByName = false;
     String regName;
     Index regIndex = 0;
-    void onClose( Machine & m ) override {
+    void onClose( MachineT<T> & m ) override {
       if ( iter ) m.enqueueLoop( values, body, hasReg, regByName, regName, regIndex );
       else if ( cond ) m.enqueueLines( body );
     }
   };
+  using ConditionalCaptureFrame = ConditionalCaptureFrameT<>;
 
   // T10: define a procedure; opens a capture frame.
-  class ProcedureInit : public CommandType {
+  template <class T = DefaultTraits>
+  class ProcedureInitT : public CommandTypeT<T> {
   public:
+    using Base = CommandTypeT<T>;
+    using Base::machine; using Base::code; using Base::number;
+    using Base::string;  using Base::okay;  using Base::name;
+    using Base::description; using Base::addArg;
+    using Number = typename T::Number;
+
     String procRef, procName;
-    ProcedureInit() {
+    ProcedureInitT() {
       name = FlowProcedureInit;
       description = "Define a procedure; capture following lines until T0";
       addArg( GGG::Register, "procedure to (re)define (index or name)", "(n|s)" );
@@ -107,32 +122,45 @@ namespace ggg {
       if ( !procName.empty() && reg->name != procName ) {
         machine->procedures->setItemName( reg, procName );
       }
-      machine->pushFrame( new ProcedureCaptureFrame( reg ) );
+      machine->pushFrame( new ProcedureCaptureFrameT<T>( reg ) );
     }
   };
+  using ProcedureInit = ProcedureInitT<>;
 
   // T0: end of block. A no-op when dispatched (the gate handles it inside a
   // capture frame); registered so a stray T0 and the D1 catalog stay clean.
-  class BlockEnd : public CommandType {
+  template <class T = DefaultTraits>
+  class BlockEndT : public CommandTypeT<T> {
   public:
-    BlockEnd() {
+    using Base = CommandTypeT<T>;
+    using Base::name; using Base::description;
+
+    BlockEndT() {
       name = FlowBlockEnd;
       description = "End of block";
     }
   };
+  using BlockEnd = BlockEndT<>;
 
   // T9: the block combinator. With V it iterates the body once per value
   // (writing each into the R register so the body reads it as $name/$index);
   // otherwise it is a one-shot conditional (A = all truthy, Y = any). The body
   // is always captured first (so nested blocks compose).
-  class Conditional : public CommandType {
+  template <class T = DefaultTraits>
+  class ConditionalT : public CommandTypeT<T> {
   public:
+    using Base = CommandTypeT<T>;
+    using Base::machine; using Base::code; using Base::number;
+    using Base::string;  using Base::okay;  using Base::name;
+    using Base::description; using Base::addArg;
+    using Number = typename T::Number;
+
     bool hasA, hasY, allTruthy, anyTruthy;
-    std::vector<NumberType> iterValues;
+    std::vector<Number> iterValues;
     bool hasReg, regByName;
     String regName;
     Index regIndex;
-    Conditional() {
+    ConditionalT() {
       name = FlowConditional;
       description = "Block combinator: V iterates, A/O run once if a condition holds";
       addArg( 'A', "run if all values are truthy", "(n+)" );
@@ -155,7 +183,7 @@ namespace ggg {
       if ( code == GGG::Register ) { hasReg = true; regByName = true; regName = string; }
     }
     void hookFinish() override {
-      auto * frame = new ConditionalCaptureFrame();
+      auto * frame = new ConditionalCaptureFrameT<T>();
       if ( !iterValues.empty() ) {
         frame->iter = true;
         frame->values = iterValues;
@@ -173,17 +201,25 @@ namespace ggg {
       machine->pushFrame( frame );
     }
   };
+  using Conditional = ConditionalT<>;
 
   // T11: run a procedure by name; re-enqueues its captured source lines.
   // T12: export a procedure as asynchronous. The body is not run here -- it is
   // handed to the machine's schedule and the HOST runs it by calling poll().
   // That is how the language gets unbounded repetition without owning a loop.
-  class AsyncExport : public CommandType {
+  template <class T = DefaultTraits>
+  class AsyncExportT : public CommandTypeT<T> {
   public:
+    using Base = CommandTypeT<T>;
+    using Base::machine; using Base::code; using Base::number;
+    using Base::string;  using Base::okay;  using Base::name;
+    using Base::description; using Base::addArg;
+    using Number = typename T::Number;
+
     String procRef;
-    NumberType interval;
+    Number interval;
     long count;
-    AsyncExport() {
+    AsyncExportT() {
       name = "T12";
       description = "Export a procedure to run asynchronously on the host's schedule";
       addArg( GGG::Register, "procedure to export (index or name)", "(n|s)" );
@@ -205,11 +241,19 @@ namespace ggg {
       machine->scheduleProcedure( body->name, body, (unsigned long) interval, count );
     }
   };
+  using AsyncExport = AsyncExportT<>;
 
-  class ProcedureRun : public CommandType {
+  template <class T = DefaultTraits>
+  class ProcedureRunT : public CommandTypeT<T> {
   public:
+    using Base = CommandTypeT<T>;
+    using Base::machine; using Base::code; using Base::number;
+    using Base::string;  using Base::okay;  using Base::name;
+    using Base::description; using Base::addArg;
+    using Number = typename T::Number;
+
     String procRef;
-    ProcedureRun() {
+    ProcedureRunT() {
       name = "T11";
       description = "Run a procedure";
       addArg( GGG::Register, "procedure to run (index or name)", "(n|s)" );
@@ -225,5 +269,6 @@ namespace ggg {
       else machine->outputFail( (Int) GGGFail::ProcedureNotFound );
     }
   };
+  using ProcedureRun = ProcedureRunT<>;
 
 }

@@ -110,8 +110,11 @@ namespace ggg {
 
   // Read `length` contiguous channel scalars from the flat offset of `pos`
   // (out-of-range => 0).
-  inline void sampleReadChannels( MatrixBase *buffer, const std::vector<double> &pos,
-      Index length, std::vector<NumberType> &out ) {
+  // T is deduced from the buffer, so call sites are unchanged. The sampler works
+  // in double internally; Number appears only where values enter and leave.
+  template <class T>
+  inline void sampleReadChannels( MatrixBaseT<T> *buffer, const std::vector<double> &pos,
+      Index length, std::vector<typename T::Number> &out ) {
     Index offset = sampleOffset( buffer->dim, pos );
     for ( Index k = 0; k < length; k++ )
       out[k] = ( offset >= 0 ) ? buffer->readScalarFloat( offset + k, 0. ) : 0.;
@@ -130,9 +133,11 @@ namespace ggg {
     return op == SampleOpt::Mean || op == SampleOpt::Min || op == SampleOpt::Max || op == SampleOpt::Add;
   }
 
-  inline std::vector<NumberType> sampleCombineAxis( MatrixBase *buffer, std::vector<double> &pos,
+  template <class T>
+  inline std::vector<typename T::Number> sampleCombineAxis( MatrixBaseT<T> *buffer, std::vector<double> &pos,
       Index dimIndex, Index dimension, Index length,
       const std::vector<String> &filter, const std::vector<String> &edges, const std::vector<double> &footprint ) {
+    using Number = typename T::Number;
     static const String dfltFilter = SampleOpt::Linear;
     static const String dfltEdge = SampleOpt::Repeat;
     const int MAX_TAPS = 8;
@@ -146,10 +151,10 @@ namespace ggg {
     if ( size < 1 ) size = 1;
     double center = ( dimIndex >= 0 && dimIndex < (Index) pos.size() ) ? pos[dimIndex] : 0.;
 
-    auto inner = [&]() -> std::vector<NumberType> {
+    auto inner = [&]() -> std::vector<Number> {
       if ( dimIndex > dimension )
         return sampleCombineAxis( buffer, pos, dimIndex - 1, dimension, length, filter, edges, footprint );
-      std::vector<NumberType> out( length, 0. );
+      std::vector<Number> out( length, 0. );
       sampleReadChannels( buffer, pos, length, out );
       return out;
     };
@@ -166,18 +171,18 @@ namespace ggg {
       for ( int t = 0; t < taps; t++ ) {
         double offset = taps > 1 ? ( ( t + 0.5 ) / taps - 0.5 ) : 0.;
         if ( dimIndex >= 0 ) pos[dimIndex] = resolveAxis( center + fpNorm * offset, size, SampleOpt::Nearest, edge ).index0;
-        std::vector<NumberType> s = inner();
+        std::vector<Number> s = inner();
         for ( Index i = 0; i < length; i++ ) {
           if ( isMin ) acc[i] = std::min( acc[i], (double) s[i] );
           else if ( isMax ) acc[i] = std::max( acc[i], (double) s[i] );
           else acc[i] += s[i];
         }
       }
-      std::vector<NumberType> out( (size_t) length );
+      std::vector<Number> out( (size_t) length );
       if ( op == SampleOpt::Mean )
-        for ( Index i = 0; i < length; i++ ) out[i] = (NumberType)( acc[i] / taps );
+        for ( Index i = 0; i < length; i++ ) out[i] = (Number)( acc[i] / taps );
       else
-        for ( Index i = 0; i < length; i++ ) out[i] = (NumberType) acc[i];
+        for ( Index i = 0; i < length; i++ ) out[i] = (Number) acc[i];
       return out;
     }
 
@@ -188,10 +193,10 @@ namespace ggg {
     }
     ResolvedAxis r = resolveAxis( center, size, SampleOpt::Linear, edge );
     if ( dimIndex >= 0 ) pos[dimIndex] = r.index0;
-    std::vector<NumberType> sampA = inner();
+    std::vector<Number> sampA = inner();
     if ( r.fraction == 0. || r.index0 == r.index1 ) return sampA;
     if ( dimIndex >= 0 ) pos[dimIndex] = r.index1;
-    std::vector<NumberType> sampB = inner();
+    std::vector<Number> sampB = inner();
     for ( Index i = 0; i < length; i++ )
       sampA[i] = sampA[i] * ( 1. - r.fraction ) + sampB[i] * r.fraction;
     return sampA;
@@ -200,16 +205,18 @@ namespace ggg {
   // Sample `buffer` at `position` with the per-axis `filter` op (linear/nearest
   // point, or mean/min/max/add footprint fold) + `edges` + per-axis `footprint`.
   // Returns one value per channel.
-  inline std::vector<NumberType> Sample( MatrixBase *buffer, std::vector<double> position,
+  template <class T>
+  inline std::vector<typename T::Number> Sample( MatrixBaseT<T> *buffer, std::vector<double> position,
       Index dimension = 0, const std::vector<String> &filter = {},
       const std::vector<String> &edges = {}, const std::vector<double> &footprint = {} ) {
+    using Number = typename T::Number;
     Index channels = 1;
     for ( Index d = 0; d < dimension && d < (Index) buffer->dim.size(); d++ )
       channels *= buffer->dim[d];
     if ( channels < 1 ) channels = 1;
 
     if ( position.empty() ) {
-      std::vector<NumberType> out( channels, 0. );
+      std::vector<Number> out( channels, 0. );
       sampleReadChannels( buffer, position, channels, out );
       return out;
     }

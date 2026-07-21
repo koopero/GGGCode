@@ -21,7 +21,9 @@ namespace ggg {
     return result;
   }
 
-  inline String FormatNumber( const NumberType &number ) {
-    return NumberOps<NumberType>::format( number );
+  // N is deduced from the argument, so call sites are unchanged.
+  template <typename N>
+  inline String FormatNumber( const N &number ) {
+    return NumberOps<N>::format( number );
   }
 }; // namespace ggg

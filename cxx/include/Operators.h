@@ -8,7 +8,7 @@ namespace ggg {
   //
   // Scalar write operators (the Q arg of ggggx MatrixWrite). Hand-port of the
   // operator table in ts/ggggx/Operators.ts -- kept in sync by hand (the TS fns
-  // are JS closures, not codegen-able). NumberType is float, so transcendental
+  // are JS closures, not codegen-able). On a float build the transcendental
   // results rely on the conformance value-tolerance to agree with TS double.
   //
   // OperatorApply(op, a, b): a = current cell value, b = the incoming V value.
@@ -17,9 +17,10 @@ namespace ggg {
   //
   // Returns false for an unknown operator (caller decides how to fail).
   //
-  inline bool applyOperator( const String & op, NumberType a, NumberType b, NumberType & out ) {
-    auto guard = [&]( NumberType v ) -> NumberType { return ( b == 0 ) ? v : a; };
-    auto boolOf = [&]( bool v ) -> NumberType { return v ? 1 : 0; };
+  template <typename N>
+  inline bool applyOperator( const String & op, N a, N b, N & out ) {
+    auto guard = [&]( N v ) -> N { return ( b == 0 ) ? v : a; };
+    auto boolOf = [&]( bool v ) -> N { return v ? 1 : 0; };
 
     // --- core ---
     if ( op == "nop" )   { out = a;          return true; }
@@ -27,7 +28,7 @@ namespace ggg {
     if ( op == "bool" )  { out = boolOf( a != 0 );             return true; }
     if ( op == "clamp" ) { out = guard( a < 0 ? 0 : ( a > 1 ? 1 : a ) ); return true; }
     if ( op == "zero" )  { out = guard( 0 );                  return true; }
-    if ( op == "rand" )  { out = guard( (NumberType) std::rand() / ( (NumberType) RAND_MAX + 1 ) ); return true; }
+    if ( op == "rand" )  { out = guard( (N) std::rand() / ( (N) RAND_MAX + 1 ) ); return true; }
 
     // --- unary (guarded by b == 0) ---
     if ( op == "dec" )   { out = guard( a - 1 );   return true; }
@@ -41,7 +42,7 @@ namespace ggg {
     if ( op == "floor" ) { out = guard( std::floor( a ) ); return true; }
     if ( op == "round" ) { out = guard( std::round( a ) ); return true; }
     if ( op == "trunc" ) { out = guard( std::trunc( a ) ); return true; }
-    if ( op == "sign" )  { out = guard( (NumberType)( ( a > 0 ) - ( a < 0 ) ) ); return true; }
+    if ( op == "sign" )  { out = guard( (N)( ( a > 0 ) - ( a < 0 ) ) ); return true; }
     if ( op == "exp" )   { out = guard( std::exp( a ) );   return true; }
     if ( op == "log" )   { out = guard( std::log( a ) );   return true; }
     if ( op == "log10" ) { out = guard( std::log10( a ) ); return true; }
