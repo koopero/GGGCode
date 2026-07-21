@@ -95,6 +95,7 @@ namespace ggg_conformance {
   static const double values_ref_sub_open[] = { 20.0, 30.0 };
   static const double values_ref_sub_open_excl[] = { 20.0, 30.0 };
   static const double values_ref_sub_open_full[] = { 10.0, 20.0, 30.0 };
+  static const double values_ref_sub_bare_open[] = { 10.0, 20.0, 30.0 };
   static const double values_ref_sub_multi[] = { 10.0, 20.0, 20.0, 30.0 };
   static const double values_ref_sub_multi_lone[] = { 30.0 };
   static const double values_off_origin[] = { 0.0 };
@@ -238,6 +239,7 @@ namespace ggg_conformance {
     { "ref_sub_open", "P10 V$r[1:]\n", "OK", values_ref_sub_open, 2, nullptr, nullptr, 0 },
     { "ref_sub_open_excl", "P10 V$r[1>]\n", "OK", values_ref_sub_open_excl, 2, nullptr, nullptr, 0 },
     { "ref_sub_open_full", "P10 V$r[0:]\n", "OK", values_ref_sub_open_full, 3, nullptr, nullptr, 0 },
+    { "ref_sub_bare_open", "P10 V$r[:]\n", "OK", values_ref_sub_bare_open, 3, nullptr, nullptr, 0 },
     { "ref_sub_multi", "P10 V$r[0:1|0:1]\n", "OK", values_ref_sub_multi, 4, nullptr, nullptr, 0 },
     { "ref_sub_multi_lone", "P10 V$r[1|1]\n", "OK", values_ref_sub_multi_lone, 1, nullptr, nullptr, 0 },
     { "off_origin", "P10 V$m@[0|0]\n", "OK", values_off_origin, 1, nullptr, nullptr, 0 },

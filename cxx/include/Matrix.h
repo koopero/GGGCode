@@ -32,6 +32,10 @@ namespace ggg {
     // Type-erased scalar access (the float "lingua franca"). Concrete Matrix
     // overrides these against its typed storage.
     virtual NumberType readScalarFloat( Index index, NumberType defaultValue = 0. ) const { return defaultValue; }
+    // Read-or-fail: false when the index is out of range (or there is no
+    // storage), rather than signalling it with an out-of-band value. Callers
+    // that need to tell "absent" from "read a 0" use this one.
+    virtual bool readScalarChecked( Index index, NumberType &out ) const { return false; }
     virtual void writeScalarFloat( NumberType value, Index index ) {}
     virtual bool allocate() { return false; }
   };
@@ -73,6 +77,12 @@ namespace ggg {
     NumberType readScalarFloat( Index index, NumberType defaultValue = 0. ) const override {
       if ( index < 0 || index >= size || !data ) return defaultValue;
       return (NumberType) data[index];
+    }
+
+    bool readScalarChecked( Index index, NumberType &out ) const override {
+      if ( index < 0 || index >= size || !data ) return false;
+      out = (NumberType) data[index];
+      return true;
     }
 
     void writeScalarFloat( NumberType value, Index index ) override {

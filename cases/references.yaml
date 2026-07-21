@@ -73,6 +73,17 @@
   program: "P10 V$r[0:]"
   values: [ 10, 20, 30 ]
 
+- name: ref_sub_bare_open
+  # A subscript that is nothing but a range symbol has no start either, so both
+  # ends are blank and the axis runs the register's whole dimension -- the same
+  # values a bare $r gives. Pins the blank-start/blank-end interaction, which is
+  # the one place the two blanks have to stay distinguishable from a written 0.
+  description: "$name[:] is an open range with no start: the whole register."
+  needs: [ gggpx ]
+  tags: [ references, subscript ]
+  program: "P10 V$r[:]"
+  values: [ 10, 20, 30 ]
+
 - name: ref_sub_multi
   # Multi-axis subscript: a|b expands coordinate-wise into flat indices
   # (register-less, stride 1 per axis), each reading one scalar.

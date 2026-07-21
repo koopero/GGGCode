@@ -563,12 +563,14 @@ namespace ggg {
       }
     }
 
-    // Read one register scalar by index, appending it as a value. Skips NaN /
-    // out-of-range reads (mirrors Solve.isUsable in the TS reference).
+    // Read one register scalar by index, appending it as a value. Skips
+    // unusable / out-of-range reads (mirrors Solve.isUsable in the TS
+    // reference). The guard is written as !( idxF >= 0 ) so it rejects a NaN
+    // index -- which compares false against everything -- without naming NaN.
     void readReferenceIndex( MatrixBase * reg, NumberType idxF ) {
-      if ( std::isnan( idxF ) ) return;
-      NumberType val = reg->readScalarFloat( (Index) idxF, NAN );
-      if ( !std::isnan( val ) ) dataAppend( val );
+      if ( !( idxF >= 0 ) ) return;
+      NumberType val;
+      if ( reg->readScalarChecked( (Index) idxF, val ) ) dataAppend( val );
     }
 
     // One comma-separated subscript segment: a compound (numbers + the range

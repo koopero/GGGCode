@@ -6,7 +6,7 @@ Each case is one artifact wearing four hats: a behavioural **spec**, a piece of 
 
 See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) · [runtime](runtime.md).
 
-131 cases across 24 tags.
+132 cases across 24 tags.
 
 ## Tags
 
@@ -28,10 +28,10 @@ See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) 
 - [operator](#operator) (6)
 - [procedures](#procedures) (8)
 - [ranges](#ranges) (15)
-- [references](#references) (16)
+- [references](#references) (17)
 - [rotate](#rotate) (3)
 - [signs](#signs) (1)
-- [subscript](#subscript) (8)
+- [subscript](#subscript) (9)
 - [unicode](#unicode) (10)
 - [unitary](#unitary) (14)
 
@@ -2259,6 +2259,17 @@ P10 V$r[0:]
 - values: `[10,20,30]`
 - needs: `gggpx`
 
+### ref_sub_bare_open
+
+$name[:] is an open range with no start: the whole register.
+
+```
+P10 V$r[:]
+```
+
+- values: `[10,20,30]`
+- needs: `gggpx`
+
 ### ref_sub_multi
 
 $name[a:b|c:d] expands axes coordinate-wise into flat indices.
@@ -2456,6 +2467,17 @@ $name[0:] reads the whole register.
 
 ```
 P10 V$r[0:]
+```
+
+- values: `[10,20,30]`
+- needs: `gggpx`
+
+### ref_sub_bare_open
+
+$name[:] is an open range with no start: the whole register.
+
+```
+P10 V$r[:]
 ```
 
 - values: `[10,20,30]`

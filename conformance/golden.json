@@ -2034,6 +2034,26 @@
     "expected": "V10,20,30\nOK"
   },
   {
+    "name": "ref_sub_bare_open",
+    "description": "$name[:] is an open range with no start: the whole register.",
+    "needs": [
+      "gggpx"
+    ],
+    "tags": [
+      "references",
+      "subscript"
+    ],
+    "program": "P10 V$r[:]",
+    "status": "OK",
+    "values": [
+      10,
+      20,
+      30
+    ],
+    "exact": false,
+    "expected": "V10,20,30\nOK"
+  },
+  {
     "name": "ref_sub_multi",
     "description": "$name[a:b|c:d] expands axes coordinate-wise into flat indices.",
     "needs": [
