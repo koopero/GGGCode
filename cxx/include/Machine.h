@@ -10,7 +10,10 @@
 #include "./ggg/NumberOps.h"
 
 namespace ggg {
-  struct MachineState {
+  template <class T = DefaultTraits>
+  struct MachineStateT {
+    using Number = typename T::Number;
+
     GGG lineMode = GGG::Command;
     GGG expressionMode = GGG::Code;
     Char dataMode;  // holds a code from either the GGG or HexEncodings enum
@@ -37,13 +40,13 @@ namespace ggg {
     Index row = 0;
 
     Char code;
-    NumberType value;
+    Number value;
     String string;
     String line;
     String comment;
     String argBuffer;
 
-    std::vector<NumberType> numbers;
+    std::vector<Number> numbers;
     std::vector<Char> symbols;
 
     unsigned long hexAccum;
@@ -59,25 +62,29 @@ namespace ggg {
     // without this the sign is discarded and the value comes out positive.
     bool pendingNegative = false;
   };
+  using MachineState = MachineStateT<>;
 
 
-  class Machine {
+  template <class T = DefaultTraits>
+  class MachineT {
   public:
+    using Number = typename T::Number;
+
     MachineLimits limits;
-    MachineState state;
-    CommandType *command = nullptr;
+    MachineStateT<T> state;
+    CommandTypeT<T> *command = nullptr;
     // Request id (the O<id> arg) echoed on this line's return so it can be
     // correlated; defaults to 1, which renders the terminator as OK.
     Int requestId = 1;
     // Register table of matrices addressed by index (R) or name (L). Populated
     // by addRegister() -- e.g. grizzlar appends one entry per published buffer.
-    List<MatrixBase> *registers = new List<MatrixBase>();
-    List<CommandType> *commands = new List<CommandType>();
+    List<MatrixBaseT<T>> *registers = new List<MatrixBaseT<T>>();
+    List<CommandTypeT<T>> *commands = new List<CommandTypeT<T>>();
 
     // Flow control: active control frames (the command gate consults the top
     // one), procedure bodies (T registers), and a pending-lines queue that T11
     // drains after the current line so re-running a body is not re-entrant.
-    std::vector<ControlFrame*> frames;
+    std::vector<ControlFrameT<T>*> frames;
     List<TProcedure> *procedures = new List<TProcedure>();
     std::vector<PendingItem> pending;
     bool draining = false;
@@ -86,7 +93,7 @@ namespace ggg {
     // Insertion-ordered: due procedures run in the order they were exported.
     std::vector<AsyncProcedure> schedule;
 
-    Machine() {
+    MachineT() {
       resetLine();
     }
 
@@ -177,10 +184,10 @@ namespace ggg {
               state.utf8Remaining--;
               if ( state.utf8Remaining == 0 ) {
                 state.expressionMode = GGG::Encoding;
-                NumberType uval;
+                Number uval;
                 if ( !unitaryValue( state.utf8Accum, uval ) ) {
                   // Any other character decodes to its code point.
-                  uval = (NumberType) state.utf8Accum;
+                  uval = (Number) state.utf8Accum;
                 }
                 // Both kinds feed the compound (state.numbers) rather than being
                 // appended immediately, so a code point works as a range bound
@@ -236,9 +243,10 @@ namespace ggg {
     // Symbolic unitary constants — map a Unicode code point to its value (mirrors
     // the irrational entries of UnitaryValues in ts/ggg/Language.ts). π/τ/φ/γ enter
     // as multi-byte UTF-8 code points. K/Z/N are the
-    // exact unitaries and are handled separately. NumberType is float, so values
-    // round to float precision and rely on the conformance value-tolerance to agree
-    // with the TS double reference.
+    // exact unitaries and are handled separately. The literals are written at
+    // double precision and narrow to whatever Number is, so a float build rounds
+    // and relies on the conformance value-tolerance to agree with the TS double
+    // reference.
     // The ASCII unitary letters (K/Z/N). A number is COMPLETE when one arrives:
     // "5K" is two values, not the number "5K". Euler's e was retired precisely
     // so no unitary collides with the exponent marker, which must keep
@@ -277,7 +285,7 @@ namespace ggg {
     // -3.14159). Consumed here because a constant never reaches finishNumber, so
     // the buffered sign would otherwise be dropped and the value come out
     // POSITIVE. Only a bare sign qualifies.
-    NumberType takePendingSign() {
+    Number takePendingSign() {
       bool negative = false;
       if ( state.dataMode == GGG::Number && ( state.argBuffer == "-" || state.argBuffer == "+" ) ) {
         negative = ( state.argBuffer == "-" );
@@ -286,16 +294,16 @@ namespace ggg {
         negative = true;
       }
       state.pendingNegative = false;
-      return negative ? (NumberType) -1 : (NumberType) 1;
+      return negative ? (Number) -1 : (Number) 1;
     }
 
-    static bool unitaryValue( uint32_t codepoint, NumberType &out ) {
+    static bool unitaryValue( uint32_t codepoint, Number &out ) {
       switch ( codepoint ) {
-        case 0x03C0: out = (NumberType) 3.141592653589793;  return true;  // π  pi
-        case 0x03C4: out = (NumberType) 6.283185307179586;  return true;  // τ  2π
-        case 0x03C6: out = (NumberType) 1.618033988749895;  return true;  // φ  golden ratio
-        case 0x221E: out = NumberOps<NumberType>::infinity(); return true; // ∞  infinity
-        case 0x03B3: out = (NumberType) 0.5772156649;       return true;  // γ  Euler–Mascheroni
+        case 0x03C0: out = (Number) 3.141592653589793;  return true;  // π  pi
+        case 0x03C4: out = (Number) 6.283185307179586;  return true;  // τ  2π
+        case 0x03C6: out = (Number) 1.618033988749895;  return true;  // φ  golden ratio
+        case 0x221E: out = NumberOps<Number>::infinity(); return true; // ∞  infinity
+        case 0x03B3: out = (Number) 0.5772156649;       return true;  // γ  Euler–Mascheroni
         default: return false;
       }
     }
@@ -362,7 +370,7 @@ namespace ggg {
         // values like any number: push them into the compound so they can be a
         // range/axis bound (K:5, Z>10), not emitted immediately. A following
         // separator is handled by the parseEndOfNumber() at the top of parseEncoding().
-        NumberType uval;
+        Number uval;
         const Char cased = CasedString( _char );
         if ( unitaryValue( (uint32_t)(uint8_t)_char, uval ) ) {
           pushCompoundNumber( uval * takePendingSign() );
@@ -545,8 +553,8 @@ namespace ggg {
     // Resolve a register by name, falling back to an index lookup for a numeric
     // name (matches TS NamedList.get, so "0" resolves to register index 0). This
     // is the universal name-or-index resolution the R selector arg uses.
-    MatrixBase * resolveRegisterByName( const String & name ) {
-      MatrixBase * reg = registers->getByName( name );
+    MatrixBaseT<T> * resolveRegisterByName( const String & name ) {
+      MatrixBaseT<T> * reg = registers->getByName( name );
       if ( !reg && !name.empty() ) {
         bool numeric = true;
         for ( char c : name ) if ( c < '0' || c > '9' ) { numeric = false; break; }
@@ -556,7 +564,7 @@ namespace ggg {
     }
 
     void resolveReference( const String & name ) {
-      MatrixBase * reg = resolveRegisterByName( name );
+      MatrixBaseT<T> * reg = resolveRegisterByName( name );
       if ( !reg ) return;                    // unknown register -> no values
       Index n = reg->sizeScalar();
       for ( Index i = 0; i < n; i++ ) {
@@ -568,21 +576,21 @@ namespace ggg {
     // unusable / out-of-range reads (mirrors Solve.isUsable in the TS
     // reference). The guard is written as !( idxF >= 0 ) so it rejects a NaN
     // index -- which compares false against everything -- without naming NaN.
-    void readReferenceIndex( MatrixBase * reg, NumberType idxF ) {
+    void readReferenceIndex( MatrixBaseT<T> * reg, Number idxF ) {
       if ( !( idxF >= 0 ) ) return;
-      NumberType val;
+      Number val;
       if ( reg->readScalarChecked( (Index) idxF, val ) ) dataAppend( val );
     }
 
     // One comma-separated subscript segment: a compound (numbers + the range
     // symbols seen between them), in the ParseData grammar.
-    struct SubSegment { std::vector<NumberType> numbers; std::vector<Char> symbols; };
+    struct SubSegment { std::vector<Number> numbers; std::vector<Char> symbols; };
 
     // Tokenize a subscript into its comma-separated compound segments. Shared by
     // the plain ($x[...]) and offset ($x@[...]) resolvers.
     std::vector<SubSegment> parseSubscriptSegments( const String & sub ) {
       std::vector<SubSegment> segs;
-      std::vector<NumberType> numbers;
+      std::vector<Number> numbers;
       std::vector<Char> symbols;
       String num;
       // Same prefix parse as finishNumber, so both numeric entry points agree on
@@ -591,7 +599,7 @@ namespace ggg {
         if ( num.empty() ) return;
         const char *begin = num.c_str();
         char *end = nullptr;
-        const NumberType v = NumberOps<NumberType>::parse( begin, &end );
+        const Number v = NumberOps<Number>::parse( begin, &end );
         if ( end != begin ) numbers.push_back( v );
         num.clear();
       };
@@ -626,15 +634,15 @@ namespace ggg {
     // read by the resolved indices. Multi-axis (a|b) thus expands coordinate-wise
     // into flat indices exactly like the register-less print compound.
     void resolveReferenceSubscript( const String & name, const String & sub ) {
-      MatrixBase * reg = resolveRegisterByName( name );
+      MatrixBaseT<T> * reg = resolveRegisterByName( name );
       if ( !reg ) return;
       for ( auto & seg : parseSubscriptSegments( sub ) ) {
         if ( seg.numbers.size() == 1 && seg.symbols.empty() ) {
           readReferenceIndex( reg, seg.numbers[0] );
         } else {
           // Coordinates register-less; an open axis sweeps to the register size.
-          CompoundExpansion expansion( buildAxes( seg.numbers, seg.symbols ), (NumberType) reg->sizeScalar() );
-          NumberType v;
+          CompoundExpansionT<T> expansion( buildAxes<T>( seg.numbers, seg.symbols ), (Number) reg->sizeScalar() );
+          Number v;
           while ( expansion.next( v ) ) readReferenceIndex( reg, v );
         }
       }
@@ -647,24 +655,24 @@ namespace ggg {
     // ranges (a:b) still sweep coordinates. Mirrors the offset branch of
     // Solve.solveReference (ts/ggg/Solve.ts).
     void resolveOffsetSubscript( const String & name, const String & sub ) {
-      MatrixBase * reg = resolveRegisterByName( name );
+      MatrixBaseT<T> * reg = resolveRegisterByName( name );
       if ( !reg ) return;
       for ( auto & seg : parseSubscriptSegments( sub ) ) {
-        std::vector<RangeAxis> axes = buildAxes( seg.numbers, seg.symbols );
+        std::vector<RangeAxisT<T>> axes = buildAxes<T>( seg.numbers, seg.symbols );
         // Lone values (blank end) are pinned to a single coordinate inside
         // CompoundExpansion (see pinBlankEnd / Solve.solveRangeAxes).
         // Per-axis dimensions + strides from the register shape (axis 0 innermost,
         // stride 1); axes beyond the register's rank use dimension 1.
-        std::vector<NumberType> dims, strides;
-        NumberType stride = 1;
+        std::vector<Number> dims, strides;
+        Number stride = 1;
         for ( size_t k = 0; k < axes.size(); k++ ) {
-          NumberType d = ( k < reg->dim.size() ) ? (NumberType) reg->dim[k] : 1;
+          Number d = ( k < reg->dim.size() ) ? (Number) reg->dim[k] : 1;
           dims.push_back( d );
           strides.push_back( stride );
           stride *= d;
         }
-        CompoundExpansion expansion( axes, dims, strides );
-        NumberType v;
+        CompoundExpansionT<T> expansion( axes, dims, strides );
+        Number v;
         while ( expansion.next( v ) ) dataAppend( v );   // yield the flat offset
       }
     }
@@ -688,7 +696,7 @@ namespace ggg {
           state.hexDigit++;
         }
         if ( state.hexDigitCount > 0 && state.hexDigit == state.hexDigitCount ) {
-          NumberType value = state.hexAccum;
+          Number value = state.hexAccum;
           if ( state.hexNormalize ) {
             value /= float( (1 << ( state.hexDigit * 4 )) - 1 );
           }
@@ -702,7 +710,7 @@ namespace ggg {
 
     void finishNumber() {
       if ( state.dataMode == HexNumber && state.hexDigit > 0 && state.hexDigitCount == 0 ) {
-        NumberType value = float(state.hexAccum);
+        Number value = float(state.hexAccum);
         if ( state.hexNormalize ) {
           value /= float( (1 << ( state.hexDigit * 4 )) - 1 );
         }
@@ -724,7 +732,7 @@ namespace ggg {
         }
         const char *begin = buf.c_str();
         char *end = nullptr;
-        const NumberType parsed = NumberOps<NumberType>::parse( begin, &end );
+        const Number parsed = NumberOps<Number>::parse( begin, &end );
         if ( end != begin ) {
           pushCompoundNumber( parsed );
         }
@@ -735,7 +743,7 @@ namespace ggg {
     // for its position starts a new value -- the reference parser completes a
     // value when the next one starts. Without this, buildAxes has no symbolBefore
     // to route the number by and silently drops it ("VK5", "V5K", "V<char><char>").
-    void pushCompoundNumber( NumberType value ) {
+    void pushCompoundNumber( Number value ) {
       if ( !state.numbers.empty() && state.symbols.size() < state.numbers.size() ) {
         // emitCompound, NOT finishCompound: this can be reached from inside
         // finishNumber, and finishCompound would re-enter it with the number
@@ -766,8 +774,8 @@ namespace ggg {
         // a time, O(axes) memory, and cancellable mid-flight: we stop pulling
         // the moment skipData is set, since every further value would be
         // discarded by dataAppend anyway.
-        CompoundExpansion expansion( buildAxes( state.numbers, state.symbols ) );
-        NumberType value;
+        CompoundExpansionT<T> expansion( buildAxes<T>( state.numbers, state.symbols ) );
+        Number value;
         while ( expansion.next( value ) ) {
           dataAppend( value );
           if ( state.skipData ) break;
@@ -875,7 +883,7 @@ namespace ggg {
       state.dataMode = GGG::End;
     }
 
-    void dataAppend( NumberType value ) {
+    void dataAppend( Number value ) {
       if ( state.skipData ) {
         return;
       }
@@ -917,7 +925,7 @@ namespace ggg {
     }
 
 
-    void loadCommand( NumberType number ) {
+    void loadCommand( Number number ) {
       if ( state.code ) {
         int commandNumber = number;
 
@@ -930,7 +938,7 @@ namespace ggg {
         // of the line is consumed (Skip mode) without dispatching command hooks;
         // source recording continues so the line can be committed at EOL.
         if ( !frames.empty() ) {
-          CommandView view{ commandName, state.code, number };
+          CommandViewT<T> view{ commandName, state.code, number };
           CommandDecision decision = frames.back()->beforeCommand( *this, view );
           if ( decision != CommandDecision::Run ) {
             if ( decision == CommandDecision::Capture ) state.captureLine = true;
@@ -941,7 +949,7 @@ namespace ggg {
           }
         }
 
-        CommandType *commandNext = commands->getByName( commandName );
+        CommandTypeT<T> *commandNext = commands->getByName( commandName );
 
         if ( commandNext ) {
           command = commandNext;
@@ -969,24 +977,24 @@ namespace ggg {
       }
     }
 
-    void addCommand( CommandType * command ) {
+    void addCommand( CommandTypeT<T> * command ) {
       command->machine = this;
       commands->append( command );
     }
 
     // Register table. append() assigns each matrix item->index in call order, so
     // addRegister() in buffer-index order makes getRegister(R) == that buffer.
-    void addRegister( MatrixBase * matrix ) {
+    void addRegister( MatrixBaseT<T> * matrix ) {
       registers->append( matrix );
     }
 
-    MatrixBase * getRegister( Index index ) {
+    MatrixBaseT<T> * getRegister( Index index ) {
       return registers->getByIndex( index );
     }
 
     // --- Control frames + procedures --------------------------------------
 
-    void pushFrame( ControlFrame * frame ) {
+    void pushFrame( ControlFrameT<T> * frame ) {
       frames.push_back( frame );
     }
 
@@ -1111,10 +1119,10 @@ namespace ggg {
     // Run a captured body once per value, writing each value into the iteration
     // register (callback) immediately before its body copy so the body reads the
     // current value via a reference ($name / $index). Bounded by maxQueue.
-    void enqueueLoop( const std::vector<NumberType> & values, const std::vector<String> & body,
+    void enqueueLoop( const std::vector<Number> & values, const std::vector<String> & body,
                       bool hasReg, bool regByName, const String & regName, Index regIndex ) {
       std::vector<PendingItem> items;
-      for ( NumberType v : values ) {
+      for ( Number v : values ) {
         if ( hasReg ) {
           items.push_back( { true, "", [this, v, hasReg, regByName, regName, regIndex]() {
             this->setIterRegister( regByName, regName, regIndex, v );
@@ -1132,10 +1140,10 @@ namespace ggg {
     // Write a scalar into the iteration register (a single-element Matrix,
     // addressable by name or index), creating it if missing, so a loop body can
     // read it as $name / $index.
-    void setIterRegister( bool byName, const String & name, Index index, NumberType value ) {
-      MatrixBase * reg = byName ? registers->getByName( name ) : registers->getByIndex( index );
+    void setIterRegister( bool byName, const String & name, Index index, Number value ) {
+      MatrixBaseT<T> * reg = byName ? registers->getByName( name ) : registers->getByIndex( index );
       if ( !reg ) {
-        auto * m = new Matrix<float, false>( { 1 } );   // single scalar
+        auto * m = new Matrix<Number, false, T>( { 1 } );   // single scalar
         m->allocate();
         if ( byName ) m->name = name;
         addRegister( m );
@@ -1229,5 +1237,6 @@ namespace ggg {
       output( GGG::End );
     }
   };
+  using Machine = MachineT<>;
 
 }; // namespace ggg

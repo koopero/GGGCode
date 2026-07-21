@@ -24,12 +24,15 @@ namespace ggg {
   // has no NaN to spell it with.
   //
 
-  struct RangeAxis {
-    NumberType start = 0;
-    NumberType end = 0;
-    NumberType step = 0;
-    NumberType count = 0;
-    NumberType multiplier = 0;
+  template <class T = DefaultTraits>
+  struct RangeAxisT {
+    using Number = typename T::Number;
+
+    Number start = 0;
+    Number end = 0;
+    Number step = 0;
+    Number count = 0;
+    Number multiplier = 0;
     // Was the field written by the parser? The value is meaningless when false.
     bool hasStart = false;
     bool hasEnd = false;
@@ -42,10 +45,13 @@ namespace ggg {
     // those from a lone axis value, which parses identically otherwise.
     bool open = false;
   };
+  using RangeAxis = RangeAxisT<>;
 
-  inline std::vector<RangeAxis> buildAxes( const std::vector<NumberType> &numbers, const std::vector<Char> &symbols ) {
-    std::vector<RangeAxis> axes;
-    RangeAxis axis;
+  // T is not deducible from the arguments, so callers name it: buildAxes<T>(...).
+  template <class T = DefaultTraits>
+  inline std::vector<RangeAxisT<T>> buildAxes( const std::vector<typename T::Number> &numbers, const std::vector<Char> &symbols ) {
+    std::vector<RangeAxisT<T>> axes;
+    RangeAxisT<T> axis;
     int axisIndex = 0;
 
     for ( size_t i = 0; i < numbers.size(); i++ ) {
@@ -56,7 +62,7 @@ namespace ggg {
 
       if ( symbolBefore == NextAxis ) {
         axes.push_back( axis );
-        axis = RangeAxis();
+        axis = RangeAxisT<T>();
         axisIndex = 0;
       }
 
@@ -113,21 +119,24 @@ namespace ggg {
   // solveRangeAxis yields ( start + i*step ) * multiplier, so we fold the
   // multiplier into the cached first/step values:
   //   first = start * multiplier,  delta = step * multiplier.
-  inline void resolveAxis( const RangeAxis &in, NumberType dimension, NumberType stride, NumberType &first, NumberType &delta, long &count ) {
+  template <class T = DefaultTraits>
+  inline void resolveAxis( const RangeAxisT<T> &in, typename T::Number dimension, typename T::Number stride,
+                           typename T::Number &first, typename T::Number &delta, long &count ) {
+    using Number = typename T::Number;
     const bool inclusive = in.inclusive;
 
-    NumberType start = in.hasStart ? in.start : 0;              // start = start || 0
+    Number start = in.hasStart ? in.start : 0;              // start = start || 0
 
-    NumberType multiplier = in.hasMultiplier ? in.multiplier : stride;
+    Number multiplier = in.hasMultiplier ? in.multiplier : stride;
 
     // A blank end runs to the dimension whether written ":" or ">"; the two
     // differ only in whether the endpoint itself is included. Callers with no
     // dimension pin the end to the start before getting here.
-    NumberType end = in.hasEnd ? in.end : ( inclusive ? dimension - 1 : dimension );
+    Number end = in.hasEnd ? in.end : ( inclusive ? dimension - 1 : dimension );
 
-    NumberType step = in.step;
+    Number step = in.step;
     bool hasStep = in.hasStep;
-    NumberType c = in.count;
+    Number c = in.count;
     const bool hasCount = in.hasCount;
 
     // Blank OR zero: a written step of 0 is as unusable as an absent one, which
@@ -171,9 +180,12 @@ namespace ggg {
   // Cancellation: a consumer simply stops calling next() (e.g. `break`s the
   // loop) -- no further values are computed.
   //
-  struct CompoundExpansion {
-    std::vector<NumberType> first;   // resolved start*mult per axis
-    std::vector<NumberType> delta;   // resolved step*mult per axis
+  template <class T = DefaultTraits>
+  struct CompoundExpansionT {
+    using Number = typename T::Number;
+
+    std::vector<Number> first;       // resolved start*mult per axis
+    std::vector<Number> delta;       // resolved step*mult per axis
     std::vector<long>       count;   // resolved count per axis
     std::vector<long>       idx;     // odometer: current step per axis
     bool done = false;
@@ -183,14 +195,14 @@ namespace ggg {
     // $name[subscript] -- Solve drops the register inside the subscript array, so
     // the register's shape never sizes subscript ranges).
     // No open dimension in scope: an open axis has nothing to sweep to.
-    explicit CompoundExpansion( const std::vector<RangeAxis> &axes ) {
+    explicit CompoundExpansionT( const std::vector<RangeAxisT<T>> &axes ) {
       init( axes, nullptr, nullptr, 0, false );
     }
 
     // openDim is the dimension an OPEN axis ("1:", "1>") sweeps to -- the size of
     // the register a subscript was written against. Coordinates stay
     // register-less (dimension/stride 1), so only the open END consults it.
-    CompoundExpansion( const std::vector<RangeAxis> &axes, NumberType openDim ) {
+    CompoundExpansionT( const std::vector<RangeAxisT<T>> &axes, Number openDim ) {
       init( axes, nullptr, nullptr, openDim, true );
     }
 
@@ -198,30 +210,30 @@ namespace ggg {
     // Solve.solveRangeAxes with a register). Used by offset references
     // ($x@[...]), where each axis contributes coord*stride to the flat offset.
     // dims/strides must be sized to axes.
-    CompoundExpansion( const std::vector<RangeAxis> &axes,
-                       const std::vector<NumberType> &dims,
-                       const std::vector<NumberType> &strides ) {
+    CompoundExpansionT( const std::vector<RangeAxisT<T>> &axes,
+                        const std::vector<Number> &dims,
+                        const std::vector<Number> &strides ) {
       init( axes, &dims, &strides, 0, false );
     }
 
-    void init( const std::vector<RangeAxis> &axes,
-               const std::vector<NumberType> *dims,
-               const std::vector<NumberType> *strides,
-               NumberType openDim, bool hasOpenDim ) {
+    void init( const std::vector<RangeAxisT<T>> &axes,
+               const std::vector<Number> *dims,
+               const std::vector<Number> *strides,
+               Number openDim, bool hasOpenDim ) {
       const size_t n = axes.size();
       first.resize( n );
       delta.resize( n );
       count.resize( n );
       idx.assign( n, 0 );
       for ( size_t k = 0; k < n; k++ ) {
-        const NumberType dim    = dims    ? (*dims)[k]    : 1;
-        const NumberType stride = strides ? (*strides)[k] : 1;
+        const Number dim    = dims    ? (*dims)[k]    : 1;
+        const Number stride = strides ? (*strides)[k] : 1;
         // An OPEN axis sweeps, but only when a dimension is in scope; a lone
         // coordinate value (blank end, no range symbol) is an EXACT single point
         // and pins to start even when one is. Mirrors solveOneAxis/pinBlankEnd
         // (ts/ggg/Solve.ts).
-        RangeAxis axis = axes[k];
-        const NumberType useDim = hasOpenDim ? openDim : dim;
+        RangeAxisT<T> axis = axes[k];
+        const Number useDim = hasOpenDim ? openDim : dim;
         if ( !axis.hasEnd && !( axis.open && hasOpenDim ) ) {
           axis.end = axis.start;
           // A blank START leaves the end blank too, so resolveAxis still runs it
@@ -230,7 +242,7 @@ namespace ggg {
           axis.hasEnd = axis.hasStart;
           axis.inclusive = true;
         }
-        resolveAxis( axis, useDim, stride, first[k], delta[k], count[k] );
+        resolveAxis<T>( axis, useDim, stride, first[k], delta[k], count[k] );
         // Product semantics: any empty axis means the whole expansion is empty
         // (mirrors solveAxes looping zero times at that level).
         if ( count[k] == 0 ) done = true;
@@ -238,12 +250,12 @@ namespace ggg {
       if ( n == 0 ) done = true;
     }
 
-    bool next( NumberType &out ) {
+    bool next( Number &out ) {
       if ( done ) return false;
 
-      NumberType value = 0;
+      Number value = 0;
       for ( size_t k = 0; k < idx.size(); k++ ) {
-        value += first[k] + (NumberType) idx[k] * delta[k];
+        value += first[k] + (Number) idx[k] * delta[k];
       }
       out = value;
 
@@ -258,4 +270,5 @@ namespace ggg {
       return true;
     }
   };
+  using CompoundExpansion = CompoundExpansionT<>;
 }; // namespace ggg

@@ -5,7 +5,7 @@
 #include <functional>
 
 namespace ggg {
-  class Machine;
+  template <class T> class MachineT;
 
   // Decision returned by a control frame's beforeCommand() once a command is
   // formalized (its name is known). Mirrors the TS CommandDecision in
@@ -15,22 +15,26 @@ namespace ggg {
 
   // Lightweight view of a just-formalized command handed to a control frame
   // before dispatch. The frame inspects the name to decide run/capture/skip.
-  struct CommandView {
-    String command;     // e.g. "P10", "T0"
-    Char code;          // leading code letter
-    NumberType number;  // numeric suffix
+  template <class T = DefaultTraits>
+  struct CommandViewT {
+    String command;             // e.g. "P10", "T0"
+    Char code;                  // leading code letter
+    typename T::Number number;  // numeric suffix
   };
+  using CommandView = CommandViewT<>;
 
   // A control frame sits on the machine's frame stack. Before each subsequent
   // command is dispatched, the top frame decides whether to run it, capture its
   // raw source into a body, skip it, or fail. captureLine() receives the raw
   // source of a captured line at end-of-line.
-  class ControlFrame {
+  template <class T = DefaultTraits>
+  class ControlFrameT {
   public:
-    virtual ~ControlFrame() {}
-    virtual CommandDecision beforeCommand( Machine&, const CommandView& ) = 0;
+    virtual ~ControlFrameT() {}
+    virtual CommandDecision beforeCommand( MachineT<T>&, const CommandViewT<T>& ) = 0;
     virtual void captureLine( const String& ) {}
   };
+  using ControlFrame = ControlFrameT<>;
 
   // A T-extension procedure body: source lines, addressable by name/index via
   // the standard List container.

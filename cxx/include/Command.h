@@ -3,16 +3,20 @@
 #include "./List.h"
 
 namespace ggg {
-  class Machine;
+  template <class T> class MachineT;
 
-  class CommandState : virtual public ListItem {
+  template <class T = DefaultTraits>
+  class CommandStateT : virtual public ListItem {
   public:
-    Machine *machine;
+    using Number = typename T::Number;
+
+    MachineT<T> *machine;
     Char code;
     String string;
-    NumberType number;
+    Number number;
     Int okay;
   };
+  using CommandState = CommandStateT<>;
 
   // Self-documentation metadata (mirrors the TS CommandArgDescribed schema in
   // ts/ggg/Language.ts). Descriptions/formats are compile-time literals, so they
@@ -27,7 +31,8 @@ namespace ggg {
     std::vector<CommandArgOption> options;
   };
 
-  class CommandType : virtual public CommandState {
+  template <class T = DefaultTraits>
+  class CommandTypeT : virtual public CommandStateT<T> {
   public:
     const char* description = "";
     std::vector<CommandArg> args;
@@ -50,6 +55,7 @@ namespace ggg {
     virtual void hookArg() { }
     virtual void hookFinish() {  }
   };
+  using CommandType = CommandTypeT<>;
 
 
 

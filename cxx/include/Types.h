@@ -7,10 +7,13 @@
 #include <cstdlib>
 #include <iostream>
 #include <unordered_map>
+#include "./ggg/Traits.h"
 
 namespace ggg {
   typedef char Char;
-  typedef float NumberType;
+  // The default configuration's number type. Templated code says
+  // `typename T::Number`; this is what the non-templated legacy aliases use.
+  typedef DefaultTraits::Number NumberType;
   typedef int Index;
   typedef int Int;
   typedef std::string String;

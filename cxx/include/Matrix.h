@@ -13,14 +13,17 @@ namespace ggg {
   // buffers plug into (directly, once the header merge lands; via an adapter
   // until then). It is a ListItem so it can live in a List<MatrixBase> register
   // table, addressed by index (R) or name (L).
-  class MatrixBase : public ListItem {
+  template <class T = DefaultTraits>
+  class MatrixBaseT : public ListItem {
   public:
+    using Number = typename T::Number;
+
     DimType dim;
     Index size = 0;           // total scalar count
     Index scalarSize = 0;     // bytes per scalar element
     uint32_t changeIndex = 0; // bumped on every mutation; drives watch/dirty
 
-    virtual ~MatrixBase() {}
+    virtual ~MatrixBaseT() {}
 
     void setChanged() { changeIndex++; }
 
@@ -31,18 +34,27 @@ namespace ggg {
 
     // Type-erased scalar access (the float "lingua franca"). Concrete Matrix
     // overrides these against its typed storage.
-    virtual NumberType readScalarFloat( Index index, NumberType defaultValue = 0. ) const { return defaultValue; }
+    virtual Number readScalarFloat( Index index, Number defaultValue = 0. ) const { return defaultValue; }
     // Read-or-fail: false when the index is out of range (or there is no
     // storage), rather than signalling it with an out-of-band value. Callers
     // that need to tell "absent" from "read a 0" use this one.
-    virtual bool readScalarChecked( Index index, NumberType &out ) const { return false; }
-    virtual void writeScalarFloat( NumberType value, Index index ) {}
+    virtual bool readScalarChecked( Index index, Number &out ) const { return false; }
+    virtual void writeScalarFloat( Number value, Index index ) {}
     virtual bool allocate() { return false; }
   };
+  using MatrixBase = MatrixBaseT<>;
 
-  template <typename Storage,bool Watch>
-  class Matrix : public MatrixBase {
+  template <typename Storage, bool Watch, class T = DefaultTraits>
+  class Matrix : public MatrixBaseT<T> {
+    using Base = MatrixBaseT<T>;
   public :
+    using Number = typename T::Number;
+    // The dependent base's members are not visible unqualified without these.
+    using Base::dim;
+    using Base::size;
+    using Base::scalarSize;
+    using Base::setChanged;
+
     Storage * data = nullptr;
 
     Matrix( DimType _dim, Storage * _data = nullptr ) {
@@ -74,18 +86,18 @@ namespace ggg {
     }
 
     // Type-erased overrides (MatrixBase) -- used by the register/command layer.
-    NumberType readScalarFloat( Index index, NumberType defaultValue = 0. ) const override {
+    Number readScalarFloat( Index index, Number defaultValue = 0. ) const override {
       if ( index < 0 || index >= size || !data ) return defaultValue;
-      return (NumberType) data[index];
+      return (Number) data[index];
     }
 
-    bool readScalarChecked( Index index, NumberType &out ) const override {
+    bool readScalarChecked( Index index, Number &out ) const override {
       if ( index < 0 || index >= size || !data ) return false;
-      out = (NumberType) data[index];
+      out = (Number) data[index];
       return true;
     }
 
-    void writeScalarFloat( NumberType value, Index index ) override {
+    void writeScalarFloat( Number value, Index index ) override {
       if ( index < 0 || index >= size || !data ) return;
       Storage next = value;
       if ( Watch ) {
@@ -107,16 +119,16 @@ namespace ggg {
     }
 
     template <typename Lookup>
-    NumberType readNumber( const Lookup &coord, NumberType defaultValue = 0. ) {
+    Number readNumber( const Lookup &coord, Number defaultValue = 0. ) {
       return readNumber( index(coord), defaultValue );
     }
 
-    NumberType readNumber( const Index & index, NumberType defaultValue = 0. ) {
+    Number readNumber( const Index & index, Number defaultValue = 0. ) {
       if ( index < 0 || index >= size ) return defaultValue;
       return data[index];
     }
 
-    NumberType readNumber( const DimType & coord, NumberType defaultValue = 0. ) {
+    Number readNumber( const DimType & coord, Number defaultValue = 0. ) {
       return readNumber( index(coord), defaultValue );
     }
 
@@ -182,7 +194,7 @@ namespace ggg {
   };
 
   // Backwards-compatible alias: MatrixStatic was the pre-merge name.
-  template <typename Storage, bool Watch>
-  using MatrixStatic = Matrix<Storage, Watch>;
+  template <typename Storage, bool Watch, class T = DefaultTraits>
+  using MatrixStatic = Matrix<Storage, Watch, T>;
 
 }; // namespace ggg
