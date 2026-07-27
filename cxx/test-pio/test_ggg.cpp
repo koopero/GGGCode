@@ -145,7 +145,68 @@ void test_matrix_norm() {
 
   // Clamping
   TEST_ASSERT_EQUAL_FLOAT( 327.67, mat1.readNumber({1, 1, 1}));
-  
+
+}
+
+// A minimal duck-typed vector (num_of_components + operator[]) standing in for a
+// caller's swizzle vecN, to exercise Matrix::read/writeVec without pulling a
+// vector library into GGG.
+template <int N>
+struct TestVec {
+  static const int num_of_components = N;
+  float v[N];
+  TestVec() { for ( int i = 0; i < N; i++ ) v[i] = 0; }
+  float & operator[]( int i ) { return v[i]; }
+  const float & operator[]( int i ) const { return v[i]; }
+};
+
+void test_matrix_vec() {
+  // dim[0] = 3 components, dim[1] = 2 cells -> size 6.
+  auto m = ggg::Matrix<float, false, ggg::FloatTraits>( {3, 2} );
+  m.allocate();
+
+  TestVec<3> a; a[0] = 1; a[1] = 2; a[2] = 3;
+  TEST_ASSERT_EQUAL_INT( 3, m.writeIndexVec( a, 0 ) );   // cell 0 first component at index 0
+  TestVec<3> b; b[0] = 4; b[1] = 5; b[2] = 6;
+  m.writeVec( b, 1 );                                     // cell 1 base = 1*3 = 3
+
+  TEST_ASSERT_EQUAL_FLOAT( 1, m.readNumber( 0 ) );
+  TEST_ASSERT_EQUAL_FLOAT( 6, m.readNumber( 5 ) );
+
+  TestVec<3> r = m.readIndexVec<TestVec<3>>( 0 );
+  TEST_ASSERT_EQUAL_FLOAT( 1, r[0] );
+  TEST_ASSERT_EQUAL_FLOAT( 3, r[2] );
+
+  TestVec<3> r2 = m.readVec<TestVec<3>>( 1 );             // cell 1
+  TEST_ASSERT_EQUAL_FLOAT( 4, r2[0] );
+  TEST_ASSERT_EQUAL_FLOAT( 6, r2[2] );
+
+  // Scalar overload (read): a single component (arithmetic type).
+  float sc = m.readIndexVec<float>( 5 );
+  TEST_ASSERT_EQUAL_FLOAT( 6, sc );
+
+  // Wider V than the matrix has components: the extra lane is left untouched.
+  TestVec<4> wide; wide[3] = 99;
+  wide = m.readIndexVec<TestVec<4>>( 0, wide );
+  TEST_ASSERT_EQUAL_FLOAT( 1, wide[0] );
+  TEST_ASSERT_EQUAL_FLOAT( 3, wide[2] );
+  TEST_ASSERT_EQUAL_FLOAT( 99, wide[3] );
+
+  // Scalar overload (write): mutates a single component -- done last so it does
+  // not disturb the reads above.
+  m.writeVec( 7.0f, 0 );                                  // cell 0, component 0
+  TEST_ASSERT_EQUAL_FLOAT( 7, m.readNumber( 0 ) );
+
+  // Storage != caller element type: a normalized-int16 matrix round-trips via
+  // float lanes, proving the accessor is storage-agnostic (converts through the
+  // element assignment, not a raw copy).
+  auto mn = ggg::Matrix<NormalizedNumber<int16_t, 100, int32_t>, false, ggg::FloatTraits>( {2, 1} );
+  mn.allocate();
+  TestVec<2> nv; nv[0] = 0.5; nv[1] = -0.25;
+  mn.writeIndexVec( nv, 0 );
+  TestVec<2> nr = mn.readIndexVec<TestVec<2>>( 0 );
+  TEST_ASSERT_EQUAL_FLOAT( 0.5, nr[0] );
+  TEST_ASSERT_EQUAL_FLOAT( -0.25, nr[1] );
 }
 
 
@@ -918,6 +979,7 @@ int main() {
   RUN_TEST(test_norm_compare);
   RUN_TEST(test_matrix_int);
   RUN_TEST(test_matrix_norm);
+  RUN_TEST(test_matrix_vec);
   RUN_TEST(test_matrix_commands);
   RUN_TEST(test_doc_commands);
   RUN_TEST(test_string_arg);

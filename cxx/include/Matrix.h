@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <vector>
+#include <type_traits>
 #include "./Types.h"
 #include "./Dim.h"
 #include "./List.h"
@@ -42,6 +43,93 @@ namespace ggg {
     virtual bool readScalarChecked( Index index, Number &out ) const { return false; }
     virtual void writeScalarFloat( Number value, Index index ) {}
     virtual bool allocate() { return false; }
+
+    // --- Type-erased convenience layer -------------------------------------
+    // These let a caller read/write any matrix through the base handle without
+    // knowing its Storage, routing through the virtual scalar accessors. They
+    // are the seam grizzlar's hardware-abstraction layer plugs into (it holds a
+    // MatrixBase& and reads/writes cells as scalars or component-vectors). The
+    // concrete Matrix redeclares the same names against its typed storage, so a
+    // call on a concrete object takes the fast, non-virtual path; a call through
+    // MatrixBase& takes this one.
+
+    template <typename RT>
+    RT readScalar( Index index, RT value = RT() ) const {
+      return (RT) readScalarFloat( index, (Number) value );
+    }
+
+    template <typename WT>
+    void writeScalar( WT value, Index index = 0 ) {
+      writeScalarFloat( (Number) value, index );
+    }
+
+    // Read/write a cell's components. Two overload families, selected by return-
+    // type SFINAE: a VECTOR form for a caller-supplied vecN (duck-typed on
+    // V::num_of_components + operator[]), and a SCALAR form for a single
+    // arithmetic component. `...IndexVec` addresses the cell's first component
+    // directly (scalar base); the `...Vec` forms multiply a cell index by the
+    // component count (dim[0]). Return-type SFINAE (not a defaulted template
+    // param) keeps the two families from colliding as redeclarations.
+
+    template <typename V>
+    auto readIndexVec( Index scalarIndex, V value = V() ) const
+      -> decltype( (void) V::num_of_components, V() ) {
+      const Index n = components();
+      for ( int c = 0; c < (int) V::num_of_components && c < (int) n; c++ ) {
+        Index i = scalarIndex + c;
+        if ( i < 0 || i >= size ) break;
+        value[c] = (float) readScalarFloat( i, 0 );
+      }
+      return value;
+    }
+    template <typename S>
+    auto readIndexVec( Index scalarIndex, S value = S( 0 ) ) const
+      -> typename std::enable_if< std::is_arithmetic<S>::value, S >::type {
+      return readScalar<S>( scalarIndex, value );
+    }
+
+    template <typename V>
+    auto writeIndexVec( const V & value, Index scalarIndex = 0 )
+      -> decltype( (void) V::num_of_components, Index() ) {
+      const Index n = components();
+      Index wrote = 0;
+      for ( int c = 0; c < (int) V::num_of_components && c < (int) n; c++ ) {
+        Index i = scalarIndex + c;
+        if ( i < 0 || i >= size ) break;
+        writeScalarFloat( (Number)(float) value[c], i );
+        wrote++;
+      }
+      return wrote;
+    }
+    template <typename S>
+    auto writeIndexVec( S value, Index scalarIndex = 0 )
+      -> typename std::enable_if< std::is_arithmetic<S>::value, Index >::type {
+      writeScalar<S>( value, scalarIndex );
+      return 1;
+    }
+
+    template <typename V>
+    auto readVec( Index cellIndex = 0, V value = V() ) const
+      -> decltype( (void) V::num_of_components, V() ) {
+      return readIndexVec<V>( cellIndex * components(), value );
+    }
+    template <typename S>
+    auto readVec( Index cellIndex = 0, S value = S( 0 ) ) const
+      -> typename std::enable_if< std::is_arithmetic<S>::value, S >::type {
+      return readScalar<S>( cellIndex * components(), value );
+    }
+
+    template <typename V>
+    auto writeVec( const V & value, Index cellIndex = 0 )
+      -> decltype( (void) V::num_of_components, Index() ) {
+      return writeIndexVec<V>( value, cellIndex * components() );
+    }
+    template <typename S>
+    auto writeVec( S value, Index cellIndex = 0 )
+      -> typename std::enable_if< std::is_arithmetic<S>::value, Index >::type {
+      writeScalar<S>( value, cellIndex * components() );
+      return 1;
+    }
   };
   using MatrixBase = MatrixBaseT<>;
 
@@ -84,6 +172,18 @@ namespace ggg {
       } else {
         return true;
       }
+    }
+
+    // Alias this matrix's storage into an external buffer at an offset, rather
+    // than owning an allocation. Used when another system owns the memory (e.g.
+    // grizzlar's LED strip aliasing a FastLED CRGB array). Unlike allocate(ptr)
+    // it does not guard on existing data -- it re-points unconditionally.
+    // Templated on the source pointer type so a caller can alias a raw byte
+    // buffer into a matrix of any Storage (the offset is in source-element
+    // units, matching the pre-merge void* behaviour).
+    template <typename P>
+    void mapTo( P * base, Index offset = 0 ) {
+      data = reinterpret_cast<Storage *>( &base[offset] );
     }
 
     // Type-erased overrides (MatrixBase) -- used by the register/command layer.
@@ -192,6 +292,11 @@ namespace ggg {
       if ( Watch && result ) setChanged();
       return result;
     }
+
+    // The component-vector / scalar accessors (readIndexVec / writeIndexVec /
+    // readVec / writeVec) live on MatrixBaseT and are inherited here; they route
+    // through the virtual scalar accessors above. (A typed, non-virtual fast
+    // path could be added here later if the shader inner loop needs it.)
   };
 
   // Backwards-compatible alias: MatrixStatic was the pre-merge name.
