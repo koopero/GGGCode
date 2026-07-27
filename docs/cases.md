@@ -6,7 +6,7 @@ Each case is one artifact wearing four hats: a behavioural **spec**, a piece of 
 
 See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) · [runtime](runtime.md).
 
-132 cases across 24 tags.
+136 cases across 25 tags.
 
 ## Tags
 
@@ -21,17 +21,18 @@ See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) 
 - [iteration](#iteration) (2)
 - [lists](#lists) (11)
 - [map](#map) (6)
-- [matrix](#matrix) (11)
+- [matrix](#matrix) (15)
 - [multiaxis](#multiaxis) (4)
 - [normalized](#normalized) (2)
 - [offset](#offset) (5)
-- [operator](#operator) (6)
+- [operator](#operator) (10)
 - [procedures](#procedures) (8)
 - [ranges](#ranges) (15)
 - [references](#references) (17)
 - [rotate](#rotate) (3)
 - [signs](#signs) (1)
 - [subscript](#subscript) (9)
+- [trig](#trig) (4)
 - [unicode](#unicode) (10)
 - [unitary](#unitary) (14)
 
@@ -1624,6 +1625,58 @@ G10 R0 P0 S1
 - values: `[3.1622776601683795]`
 - needs: `ggggx`
 
+### op_sin
+
+Q"sin" computes radians with the fixed backend's integer CORDIC kernel.
+
+```
+G20 R0 P0 V0,1.5707963267948966,-1.5707963267948966
+G20 R0 P0 Q"sin" V0,0,0
+G10 R0 P0 S3
+```
+
+- values: `[0,1,-1]`
+- needs: `ggggx`
+
+### op_cos
+
+Q"cos" covers the principal quadrant axes in radians.
+
+```
+G20 R0 P0 V0,1.5707963267948966,3.141592653589793
+G20 R0 P0 Q"cos" V0,0,0
+G10 R0 P0 S3
+```
+
+- values: `[1,0,-1]`
+- needs: `ggggx`
+
+### op_atan
+
+Q"atan" computes the principal arctangent with integer CORDIC vectoring.
+
+```
+G20 R0 P0 V-1,0,1
+G20 R0 P0 Q"atan" V0,0,0
+G10 R0 P0 S3
+```
+
+- values: `[-0.7853981633974483,0,0.7853981633974483]`
+- needs: `ggggx`
+
+### op_atan2
+
+Q"atan2" resolves all four quadrants from cell Y and incoming X.
+
+```
+G20 R0 P0 V1,1,-1
+G20 R0 P0 Q"atan2" V1,-1,-1
+G10 R0 P0 S3
+```
+
+- values: `[0.7853981633974483,2.356194490192345,-2.356194490192345]`
+- needs: `ggggx`
+
 ## multiaxis
 
 ### multiaxis
@@ -1835,6 +1888,58 @@ G10 R0 P0 S1
 ```
 
 - values: `[3.1622776601683795]`
+- needs: `ggggx`
+
+### op_sin
+
+Q"sin" computes radians with the fixed backend's integer CORDIC kernel.
+
+```
+G20 R0 P0 V0,1.5707963267948966,-1.5707963267948966
+G20 R0 P0 Q"sin" V0,0,0
+G10 R0 P0 S3
+```
+
+- values: `[0,1,-1]`
+- needs: `ggggx`
+
+### op_cos
+
+Q"cos" covers the principal quadrant axes in radians.
+
+```
+G20 R0 P0 V0,1.5707963267948966,3.141592653589793
+G20 R0 P0 Q"cos" V0,0,0
+G10 R0 P0 S3
+```
+
+- values: `[1,0,-1]`
+- needs: `ggggx`
+
+### op_atan
+
+Q"atan" computes the principal arctangent with integer CORDIC vectoring.
+
+```
+G20 R0 P0 V-1,0,1
+G20 R0 P0 Q"atan" V0,0,0
+G10 R0 P0 S3
+```
+
+- values: `[-0.7853981633974483,0,0.7853981633974483]`
+- needs: `ggggx`
+
+### op_atan2
+
+Q"atan2" resolves all four quadrants from cell Y and incoming X.
+
+```
+G20 R0 P0 V1,1,-1
+G20 R0 P0 Q"atan2" V1,-1,-1
+G10 R0 P0 S3
+```
+
+- values: `[0.7853981633974483,2.356194490192345,-2.356194490192345]`
 - needs: `ggggx`
 
 ## procedures
@@ -2504,6 +2609,60 @@ P10 V$r[1|1]
 
 - values: `[30]`
 - needs: `gggpx`
+
+## trig
+
+### op_sin
+
+Q"sin" computes radians with the fixed backend's integer CORDIC kernel.
+
+```
+G20 R0 P0 V0,1.5707963267948966,-1.5707963267948966
+G20 R0 P0 Q"sin" V0,0,0
+G10 R0 P0 S3
+```
+
+- values: `[0,1,-1]`
+- needs: `ggggx`
+
+### op_cos
+
+Q"cos" covers the principal quadrant axes in radians.
+
+```
+G20 R0 P0 V0,1.5707963267948966,3.141592653589793
+G20 R0 P0 Q"cos" V0,0,0
+G10 R0 P0 S3
+```
+
+- values: `[1,0,-1]`
+- needs: `ggggx`
+
+### op_atan
+
+Q"atan" computes the principal arctangent with integer CORDIC vectoring.
+
+```
+G20 R0 P0 V-1,0,1
+G20 R0 P0 Q"atan" V0,0,0
+G10 R0 P0 S3
+```
+
+- values: `[-0.7853981633974483,0,0.7853981633974483]`
+- needs: `ggggx`
+
+### op_atan2
+
+Q"atan2" resolves all four quadrants from cell Y and incoming X.
+
+```
+G20 R0 P0 V1,1,-1
+G20 R0 P0 Q"atan2" V1,-1,-1
+G10 R0 P0 S3
+```
+
+- values: `[0.7853981633974483,2.356194490192345,-2.356194490192345]`
+- needs: `ggggx`
 
 ## unicode
 

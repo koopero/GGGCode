@@ -103,3 +103,43 @@
     G20 R0 P0 Q"sqrt" V0
     G10 R0 P0 S1
   values: [ 3.1622776601683795 ]
+
+- name: op_sin
+  description: "Q\"sin\" computes radians with the fixed backend's integer CORDIC kernel."
+  needs: [ ggggx ]
+  tags: [ matrix, operator, trig ]
+  program: |
+    G20 R0 P0 V0,1.5707963267948966,-1.5707963267948966
+    G20 R0 P0 Q"sin" V0,0,0
+    G10 R0 P0 S3
+  values: [ 0, 1, -1 ]
+
+- name: op_cos
+  description: "Q\"cos\" covers the principal quadrant axes in radians."
+  needs: [ ggggx ]
+  tags: [ matrix, operator, trig ]
+  program: |
+    G20 R0 P0 V0,1.5707963267948966,3.141592653589793
+    G20 R0 P0 Q"cos" V0,0,0
+    G10 R0 P0 S3
+  values: [ 1, 0, -1 ]
+
+- name: op_atan
+  description: "Q\"atan\" computes the principal arctangent with integer CORDIC vectoring."
+  needs: [ ggggx ]
+  tags: [ matrix, operator, trig ]
+  program: |
+    G20 R0 P0 V-1,0,1
+    G20 R0 P0 Q"atan" V0,0,0
+    G10 R0 P0 S3
+  values: [ -0.7853981633974483, 0, 0.7853981633974483 ]
+
+- name: op_atan2
+  description: "Q\"atan2\" resolves all four quadrants from cell Y and incoming X."
+  needs: [ ggggx ]
+  tags: [ matrix, operator, trig ]
+  program: |
+    G20 R0 P0 V1,1,-1
+    G20 R0 P0 Q"atan2" V1,-1,-1
+    G10 R0 P0 S3
+  values: [ 0.7853981633974483, 2.356194490192345, -2.356194490192345 ]

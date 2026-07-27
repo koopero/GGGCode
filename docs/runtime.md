@@ -195,9 +195,9 @@ code. The sampler uses the same `ScaledNumber` primitive with a higher-precision
 coordinate scale; “normalized” and “fixed” are therefore formats of one primitive rather
 than separate numeric systems.
 
-Code that genuinely needs IEEE range or transcendental operators can opt into
-`ggg::FloatTraits` or `ggg::DoubleTraits`, either as a template argument or for the whole
-build:
+Code that genuinely needs IEEE range or math operators absent from the fixed profile can
+opt into `ggg::FloatTraits` or `ggg::DoubleTraits`, either as a template argument or for
+the whole build:
 
 ```cpp
 ggg::MachineT<ggg::FloatTraits> machine;
@@ -206,7 +206,9 @@ ggg::MachineT<ggg::FloatTraits> machine;
 
 The fixed type deliberately has no floating-point constructor or conversion, so an
 accidental float seam fails to compile instead of quietly pulling floating-point helpers
-into embedded firmware. Fixed matrix operators with no integer kernel yet (trigonometric,
+into embedded firmware. Its `sin`, `cos`, `atan`, and `atan2` matrix operators use a
+24-step integer CORDIC kernel with 30 fractional working bits. Fixed matrix operators not
+yet connected to an integer kernel (the remaining trigonometric and hyperbolic functions,
 logarithmic, exponential, and power operators) report the existing `BadOperator` failure.
 
 Conformance cases that require IEEE range or semantics declare `requiresFloat: true` in

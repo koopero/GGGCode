@@ -5,6 +5,7 @@
 #include "./Types.h"
 #include "./ggg/ScaledNumber.h"
 #include "./ggg/NumberOps.h"
+#include "./ggg/ScaledMath.h"
 
 namespace ggg {
   //
@@ -175,9 +176,13 @@ namespace ggg {
       return true;
     }
     if ( op == "sign" )  { out = guard( N( ( a > 0 ) - ( a < 0 ) ) ); return true; }
+    if ( op == "sin" )   { out = guard( ggg::sin( a ) ); return true; }
+    if ( op == "cos" )   { out = guard( ggg::cos( a ) ); return true; }
+    if ( op == "atan" )  { out = guard( ggg::atan( a ) ); return true; }
 
     if ( op == "add" )   { out = a + b; return true; }
     if ( op == "mult" )  { out = a * b; return true; }
+    if ( op == "atan2" ) { out = ggg::atan2( a, b ); return true; }
     if ( op == "mid" )   { out = ( a + b ) / 2; return true; }
     if ( op == "min" )   { out = a < b ? a : b; return true; }
     if ( op == "max" )   { out = a > b ? a : b; return true; }
@@ -208,7 +213,8 @@ namespace ggg {
       return true;
     }
 
-    // exp/log/trig/hyperbolic/pow/atan2 await integer kernels.
+    // exp/log, the remaining trig/hyperbolic functions, and pow are not yet
+    // connected to the language operator table.
     out = a;
     return false;
   }

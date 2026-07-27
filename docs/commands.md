@@ -102,7 +102,7 @@ Arguments:
 | `P` | `(C,X,Y,Z)` | Buffer position (component-first). |
 | `S` | `(n)` | Size |
 
-Examples: [blit_box_default](cases.md#blit_box_default), [blit_box_full](cases.md#blit_box_full), [blit_box_subregion](cases.md#blit_box_subregion), [blit_box_flip_x](cases.md#blit_box_flip_x), [blit_box_flip_y](cases.md#blit_box_flip_y), [blit_box_flip_180](cases.md#blit_box_flip_180), [blit_map_axes](cases.md#blit_map_axes), [blit_map_default](cases.md#blit_map_default), +27 more
+Examples: [blit_box_default](cases.md#blit_box_default), [blit_box_full](cases.md#blit_box_full), [blit_box_subregion](cases.md#blit_box_subregion), [blit_box_flip_x](cases.md#blit_box_flip_x), [blit_box_flip_y](cases.md#blit_box_flip_y), [blit_box_flip_180](cases.md#blit_box_flip_180), [blit_map_axes](cases.md#blit_map_axes), [blit_map_default](cases.md#blit_map_default), +31 more
 
 ### G13
 
@@ -131,7 +131,7 @@ Arguments:
 | `Q` |  | Write operator. |
 | `F` |  | Fill size |
 
-Examples: [blit_operator_add](cases.md#blit_operator_add), [matrix_write_read](cases.md#matrix_write_read), [op_add](cases.md#op_add), [op_sub](cases.md#op_sub), [op_mult](cases.md#op_mult), [op_min](cases.md#op_min), [op_neg](cases.md#op_neg), [op_sqrt](cases.md#op_sqrt)
+Examples: [blit_operator_add](cases.md#blit_operator_add), [matrix_write_read](cases.md#matrix_write_read), [op_add](cases.md#op_add), [op_sub](cases.md#op_sub), [op_mult](cases.md#op_mult), [op_min](cases.md#op_min), [op_neg](cases.md#op_neg), [op_sqrt](cases.md#op_sqrt), +4 more
 
 ### G25
 

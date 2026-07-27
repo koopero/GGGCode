@@ -61,6 +61,10 @@ namespace ggg_conformance {
   static const double values_op_min[] = { 10.0, 15.0, 15.0 };
   static const double values_op_neg[] = { -10.0, -20.0, -30.0 };
   static const double values_op_sqrt[] = { 3.1622776601683795 };
+  static const double values_op_sin[] = { 0.0, 1.0, -1.0 };
+  static const double values_op_cos[] = { 1.0, 0.0, -1.0 };
+  static const double values_op_atan[] = { -0.78539816339744828, 0.0, 0.78539816339744828 };
+  static const double values_op_atan2[] = { 0.78539816339744828, 2.3561944901923448, -2.3561944901923448 };
   static const double values_print_single[] = { 42.0 };
   static const double values_print_request_id[] = { 42.0 };
   static const double values_print_list[] = { 1.0, 2.0, 3.0 };
@@ -205,6 +209,10 @@ namespace ggg_conformance {
     { "op_min", "G20 R0 P0 Q\"min\" V15,15,15\nG10 R0 P0 S3\n", "OK", values_op_min, 3, nullptr, false, nullptr, 0 },
     { "op_neg", "G20 R0 P0 Q\"neg\" V0,0,0\nG10 R0 P0 S3\n", "OK", values_op_neg, 3, nullptr, false, nullptr, 0 },
     { "op_sqrt", "G20 R0 P0 Q\"sqrt\" V0\nG10 R0 P0 S1\n", "OK", values_op_sqrt, 1, nullptr, false, nullptr, 0 },
+    { "op_sin", "G20 R0 P0 V0,1.5707963267948966,-1.5707963267948966\nG20 R0 P0 Q\"sin\" V0,0,0\nG10 R0 P0 S3\n", "OK", values_op_sin, 3, nullptr, false, nullptr, 0 },
+    { "op_cos", "G20 R0 P0 V0,1.5707963267948966,3.141592653589793\nG20 R0 P0 Q\"cos\" V0,0,0\nG10 R0 P0 S3\n", "OK", values_op_cos, 3, nullptr, false, nullptr, 0 },
+    { "op_atan", "G20 R0 P0 V-1,0,1\nG20 R0 P0 Q\"atan\" V0,0,0\nG10 R0 P0 S3\n", "OK", values_op_atan, 3, nullptr, false, nullptr, 0 },
+    { "op_atan2", "G20 R0 P0 V1,1,-1\nG20 R0 P0 Q\"atan2\" V1,-1,-1\nG10 R0 P0 S3\n", "OK", values_op_atan2, 3, nullptr, false, nullptr, 0 },
     { "print_single", "P10 V42\n", "OK", values_print_single, 1, nullptr, false, nullptr, 0 },
     { "print_request_id", "P10 V42 O7\n", "OK", values_print_request_id, 1, "V42\nO7", false, nullptr, 0 },
     { "print_list", "P10 V1,2,3\n", "OK", values_print_list, 3, nullptr, false, nullptr, 0 },

@@ -227,6 +227,8 @@ void test_fixed_presets() {
   FixedQ8_8 half = FixedQ8_8( 3 ) / FixedQ8_8( 2 );          // 1.5 -> raw 384
   TEST_ASSERT_EQUAL_INT( 384, half.raw() );
   TEST_ASSERT_EQUAL_STRING( "1.5", ggg::NumberOps<FixedQ8_8>::format( half ).c_str() );
+  const FixedQ8_8 q8pi = ggg::NumberOps<FixedQ8_8>::pi();
+  TEST_ASSERT_INT_WITHIN( 1, 181, ggg::sin( q8pi / FixedQ8_8( 4 ) ).raw() );
 
   // Q24.8: same 8 fractional bits, wider whole range (int32).
   FixedQ24_8 big = FixedQ24_8( 1000 ) + FixedQ24_8( 1 ) / FixedQ24_8( 4 );  // 1000.25
@@ -251,12 +253,20 @@ void test_fixed_math() {
   TEST_ASSERT_EQUAL_INT( 2 * ONE, ggg::sqrt( Q(4) ).raw() );
   TEST_ASSERT_INT_WITHIN( 8, 92682, ggg::sqrt( Q(2) ).raw() );           // 1.41421 * 65536
 
-  // Trig (Bhaskara approx, ~1.6e-3 -> raw tol ~120).
+  // Circular trig (integer CORDIC). Q16.16 should stay within the shared
+  // conformance epsilon (about 7 raw units).
   const Q pi = ggg::NumberOps<Q>::pi();
-  TEST_ASSERT_INT_WITHIN( 120, ONE, ggg::sin( pi / Q(2) ).raw() );        // sin(pi/2) ~ 1
-  TEST_ASSERT_INT_WITHIN( 120, 0,   ggg::sin( Q(0) ).raw() );
-  TEST_ASSERT_INT_WITHIN( 120, ONE, ggg::cos( Q(0) ).raw() );
-  TEST_ASSERT_INT_WITHIN( 120, 0,   ggg::sin( pi ).raw() );
+  const Q quarterPi = pi / Q( 4 );
+  TEST_ASSERT_INT_WITHIN( 7, ONE, ggg::sin( pi / Q(2) ).raw() );
+  TEST_ASSERT_INT_WITHIN( 7, 0,   ggg::sin( Q(0) ).raw() );
+  TEST_ASSERT_INT_WITHIN( 7, ONE, ggg::cos( Q(0) ).raw() );
+  TEST_ASSERT_INT_WITHIN( 7, 0,   ggg::sin( pi ).raw() );
+  TEST_ASSERT_INT_WITHIN( 7, 46341, ggg::sin( quarterPi ).raw() );
+  TEST_ASSERT_INT_WITHIN( 7, quarterPi.raw(), ggg::atan( Q(1) ).raw() );
+  TEST_ASSERT_INT_WITHIN( 7, -quarterPi.raw(), ggg::atan( Q(-1) ).raw() );
+  TEST_ASSERT_INT_WITHIN( 7, 3 * quarterPi.raw(), ggg::atan2( Q(1), Q(-1) ).raw() );
+  TEST_ASSERT_INT_WITHIN( 7, -3 * quarterPi.raw(), ggg::atan2( Q(-1), Q(-1) ).raw() );
+  TEST_ASSERT_INT_WITHIN( 7, pi.raw(), ggg::atan2( Q(0), Q(-1) ).raw() );
 
   // exp2 / log2 at exact (power-of-two) points -> tight; derived exp/log/pow.
   TEST_ASSERT_INT_WITHIN( 16, 8 * ONE, ggg::exp2( Q(3) ).raw() );
@@ -504,7 +514,7 @@ void test_fixed_number_machine() {
 
   Fixed unsupported;
   TEST_ASSERT_FALSE( ggg::applyOperator(
-    "sin", Fixed( 1 ), Fixed( 0 ), unsupported
+    "sinh", Fixed( 1 ), Fixed( 0 ), unsupported
   ) );
 
   FixedPrintMachine machine;

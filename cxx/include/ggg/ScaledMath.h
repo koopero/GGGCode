@@ -11,9 +11,20 @@
 // depending on this header. Everything is integer-only (no float seam), so it
 // works on an FPU-less target and in a fixed-only build.
 //
-// Accuracy target is "good enough for shader visuals" (~1e-3), not IEEE parity.
-// sin/cos use a Bhaskara-style rational approximation after range reduction.
+// Accuracy is kernel-specific rather than IEEE parity. Circular trig uses an
+// integer-only CORDIC kernel with enough iterations to reach the destination
+// format's raw precision.
 //
+
+// Arduino exposes these GLSL names as function-like macros. They cannot coexist
+// with overloads (even a qualified ggg::radians(value) call is macro-expanded),
+// so prefer the type-safe fixed-point functions in this header.
+#ifdef radians
+  #undef radians
+#endif
+#ifdef degrees
+  #undef degrees
+#endif
 
 namespace ggg {
 
@@ -58,25 +69,193 @@ namespace ggg {
   }
   GGG_SN GGG_N inversesqrt( GGG_N v ) { return GGG_N( 1 ) / sqrt( v ); }
 
-  // --- trig ---------------------------------------------------------------
-  // sin on [0, pi] via Bhaskara I: 16a(pi-a) / (5pi^2 - 4a(pi-a)). Odd-extended
-  // and range-reduced to [-pi, pi]. Max error ~1.6e-3.
-  GGG_SN GGG_N sin( GGG_N x ) {
-    const GGG_N pi  = NumberOps<GGG_N>::pi();
-    const GGG_N tau = NumberOps<GGG_N>::tau();
-    GGG_N r = mod( x + pi, tau ) - pi;          // r in [-pi, pi)
-    GGG_N s = r.raw() < 0 ? GGG_N( -1 ) : GGG_N( 1 );
-    GGG_N a = abs( r );                          // [0, pi]
-    GGG_N ap = a * ( pi - a );
-    GGG_N num = GGG_N( 16 ) * ap;
-    GGG_N den = GGG_N( 5 ) * pi * pi - GGG_N( 4 ) * ap;
-    return s * ( num / den );
+  // --- circular trig (CORDIC) --------------------------------------------
+  //
+  // Constants are 30-fractional-bit integer literals generated offline.
+  // Scaling them into the destination format is constexpr integer arithmetic,
+  // so the firmware contains no floating constants or libm dependency.
+  constexpr std::int64_t ggg_cordic_q30_to_raw(
+    std::int64_t value, std::int64_t scale
+  ) {
+    const std::int64_t magnitude = value < 0 ? -value : value;
+    const std::int64_t raw =
+      ( magnitude * scale + ( std::int64_t( 1 ) << 29 ) ) >> 30;
+    return value < 0 ? -raw : raw;
   }
-  GGG_SN GGG_N cos( GGG_N x ) {
-    const GGG_N pi = NumberOps<GGG_N>::pi();
-    return sin( x + pi / GGG_N( 2 ) );
+
+  constexpr std::int64_t ggg_cordic_raw_to_q30(
+    std::int64_t value, std::int64_t scale
+  ) {
+    const std::int64_t magnitude = value < 0 ? -value : value;
+    const std::int64_t q30 =
+      ( magnitude * ( std::int64_t( 1 ) << 30 ) + scale / 2 ) / scale;
+    return value < 0 ? -q30 : q30;
   }
-  GGG_SN GGG_N tan( GGG_N x ) { return sin( x ) / cos( x ); }
+
+  // Portable arithmetic right shift: floor(value / 2^bits), expressed with
+  // unsigned-magnitude shifts so C++17's signed-right-shift rule is irrelevant.
+  constexpr std::int64_t ggg_cordic_shift(
+    std::int64_t value, unsigned bits
+  ) {
+    if ( bits == 0 ) return value;
+    if ( value >= 0 ) return value >> bits;
+    const std::int64_t magnitude = -value;
+    return -( ( magnitude + ( ( std::int64_t( 1 ) << bits ) - 1 ) ) >> bits );
+  }
+
+  struct CordicQ30 {
+    inline static constexpr std::int64_t pi = INT64_C( 3373259426 );
+    inline static constexpr std::int64_t halfPi = INT64_C( 1686629713 );
+    inline static constexpr std::int64_t tau = INT64_C( 6746518852 );
+    inline static constexpr std::int64_t gainInverse = INT64_C( 652032874 );
+    inline static constexpr std::int32_t atanTable[] = {
+      843314857, 497837829, 263043837, 133525159,
+       67021687,  33543516,  16775851,   8388437,
+        4194283,   2097149,   1048576,    524288,
+         262144,    131072,     65536,     32768,
+          16384,      8192,      4096,      2048,
+           1024,       512,       256,       128,
+    };
+  };
+
+  template <std::int64_t Scale>
+  struct CordicConstants {
+    inline static constexpr std::int64_t piRaw =
+      ggg_cordic_q30_to_raw( CordicQ30::pi, Scale );
+    inline static constexpr std::int64_t halfPiRaw =
+      ggg_cordic_q30_to_raw( CordicQ30::halfPi, Scale );
+    inline static constexpr std::int64_t tauRaw =
+      ggg_cordic_q30_to_raw( CordicQ30::tau, Scale );
+  };
+
+  template <typename N>
+  struct CordicSinCos {
+    N sin;
+    N cos;
+  };
+
+  GGG_SN CordicSinCos<GGG_N> ggg_cordic_sincos( GGG_N angle ) {
+    using I = std::int64_t;
+    static_assert( sizeof( R ) <= sizeof( std::int32_t ),
+      "fixed CORDIC currently supports representations up to 32 bits" );
+
+    I z = ggg_cordic_raw_to_q30( static_cast<I>( angle.raw() ), S )
+      % CordicQ30::tau;
+    if ( z > CordicQ30::pi ) z -= CordicQ30::tau;
+    else if ( z < -CordicQ30::pi ) z += CordicQ30::tau;
+
+    I quadrantSign = 1;
+    if ( z > CordicQ30::halfPi ) {
+      z -= CordicQ30::pi;
+      quadrantSign = -1;
+    } else if ( z < -CordicQ30::halfPi ) {
+      z += CordicQ30::pi;
+      quadrantSign = -1;
+    }
+
+    // Exact axes avoid the small residual a finite CORDIC rotation otherwise
+    // leaves at 0, +/-pi/2, and +/-pi.
+    if ( z == 0 )
+      return { GGG_N::fromRaw( 0 ), GGG_N::fromRaw( quadrantSign * S ) };
+    if ( z == CordicQ30::halfPi )
+      return { GGG_N::fromRaw( quadrantSign * S ), GGG_N::fromRaw( 0 ) };
+    if ( z == -CordicQ30::halfPi )
+      return { GGG_N::fromRaw( -quadrantSign * S ), GGG_N::fromRaw( 0 ) };
+
+    I x = CordicQ30::gainInverse;
+    I y = 0;
+    for ( unsigned i = 0;
+          i < sizeof( CordicQ30::atanTable ) / sizeof( CordicQ30::atanTable[0] );
+          i++ ) {
+      const I step = CordicQ30::atanTable[i];
+      const I oldX = x;
+      const I oldY = y;
+      if ( z >= 0 ) {
+        x = oldX - ggg_cordic_shift( oldY, i );
+        y = oldY + ggg_cordic_shift( oldX, i );
+        z -= step;
+      } else {
+        x = oldX + ggg_cordic_shift( oldY, i );
+        y = oldY - ggg_cordic_shift( oldX, i );
+        z += step;
+      }
+    }
+
+    return {
+      GGG_N::fromRaw( static_cast<W>(
+        ggg_cordic_q30_to_raw( quadrantSign * y, S )
+      ) ),
+      GGG_N::fromRaw( static_cast<W>(
+        ggg_cordic_q30_to_raw( quadrantSign * x, S )
+      ) ),
+    };
+  }
+
+  GGG_SN GGG_N sin( GGG_N x ) { return ggg_cordic_sincos( x ).sin; }
+  GGG_SN GGG_N cos( GGG_N x ) { return ggg_cordic_sincos( x ).cos; }
+  GGG_SN GGG_N tan( GGG_N x ) {
+    CordicSinCos<GGG_N> pair = ggg_cordic_sincos( x );
+    return pair.sin / pair.cos;
+  }
+
+  GGG_SN GGG_N atan2( GGG_N yValue, GGG_N xValue ) {
+    using I = std::int64_t;
+    using C = CordicConstants<S>;
+    static_assert( sizeof( R ) <= sizeof( std::int32_t ),
+      "fixed CORDIC currently supports representations up to 32 bits" );
+
+    I x = static_cast<I>( xValue.raw() );
+    I y = static_cast<I>( yValue.raw() );
+    if ( y == 0 ) return GGG_N::fromRaw( x < 0 ? C::piRaw : 0 );
+    if ( x == 0 )
+      return GGG_N::fromRaw( y > 0 ? C::halfPiRaw : -C::halfPiRaw );
+
+    I z = 0;
+    if ( x < 0 ) {
+      const bool upperHalf = y > 0;
+      x = -x;
+      y = -y;
+      z = upperHalf ? CordicQ30::pi : -CordicQ30::pi;
+    }
+
+    // Vectoring accuracy depends on significant bits in x/y, not their absolute
+    // magnitude. Normalize small vectors before the shift/add iterations.
+    I magnitude = x < 0 ? -x : x;
+    const I absY = y < 0 ? -y : y;
+    if ( absY > magnitude ) magnitude = absY;
+    while ( magnitude < ( I( 1 ) << 30 ) ) {
+      x *= 2;
+      y *= 2;
+      magnitude *= 2;
+    }
+
+    for ( unsigned i = 0;
+          i < sizeof( CordicQ30::atanTable ) / sizeof( CordicQ30::atanTable[0] );
+          i++ ) {
+      const I step = CordicQ30::atanTable[i];
+      const I oldX = x;
+      const I oldY = y;
+      if ( oldY > 0 ) {
+        x = oldX + ggg_cordic_shift( oldY, i );
+        y = oldY - ggg_cordic_shift( oldX, i );
+        z += step;
+      } else {
+        x = oldX - ggg_cordic_shift( oldY, i );
+        y = oldY + ggg_cordic_shift( oldX, i );
+        z -= step;
+      }
+    }
+    return GGG_N::fromRaw( static_cast<W>(
+      ggg_cordic_q30_to_raw( z, S )
+    ) );
+  }
+
+  GGG_SN GGG_N atan( GGG_N x ) {
+    return atan2( x, GGG_N( 1 ) );
+  }
+  GGG_SN GGG_N atan( GGG_N y, GGG_N x ) {
+    return atan2( y, x );
+  }
 
   GGG_SN GGG_N radians( GGG_N d ) { return d * NumberOps<GGG_N>::pi() / GGG_N( 180 ); }
   GGG_SN GGG_N degrees( GGG_N r ) { return r * GGG_N( 180 ) / NumberOps<GGG_N>::pi(); }
