@@ -13,6 +13,7 @@
 #include "FlowCommands.h"
 #include "Sample.h"
 #include "Blit.h"
+#include "ggg/ScaledMath.h"
 #include "gen/conformance_cases.h"
 
 // Test functions
@@ -210,6 +211,53 @@ void test_matrix_vec() {
 }
 
 
+
+void test_fixed_presets() {
+  using ggg::FixedQ8_8;
+  using ggg::FixedQ24_8;
+
+  // Q8.8 matrix: 1.0 -> raw 256.
+  auto m = ggg::Matrix<FixedQ8_8, false, ggg::FixedQ8_8Traits>( {1, 3} );
+  m.allocate();
+  m.write( { 1, 2, 3 } );
+  TEST_ASSERT_EQUAL_INT( 256, m.readNumber( 0 ).raw() );
+  TEST_ASSERT_EQUAL_INT( 768, m.readNumber( 2 ).raw() );
+
+  // Arithmetic + decimal rendering through NumberOps (no float involved).
+  FixedQ8_8 half = FixedQ8_8( 3 ) / FixedQ8_8( 2 );          // 1.5 -> raw 384
+  TEST_ASSERT_EQUAL_INT( 384, half.raw() );
+  TEST_ASSERT_EQUAL_STRING( "1.5", ggg::NumberOps<FixedQ8_8>::format( half ).c_str() );
+
+  // Q24.8: same 8 fractional bits, wider whole range (int32).
+  FixedQ24_8 big = FixedQ24_8( 1000 ) + FixedQ24_8( 1 ) / FixedQ24_8( 4 );  // 1000.25
+  TEST_ASSERT_EQUAL_STRING( "1000.25", ggg::NumberOps<FixedQ24_8>::format( big ).c_str() );
+}
+
+void test_fixed_math() {
+  using Q = ggg::FixedQ16_16;
+  const long ONE = 65536;
+
+  // Algebraic (exact).
+  TEST_ASSERT_EQUAL_INT( ONE,     ggg::floor( Q(3) / Q(2) ).raw() );      // floor(1.5)=1
+  TEST_ASSERT_EQUAL_INT( ONE / 2, ggg::fract( Q(3) / Q(2) ).raw() );      // 0.5
+  TEST_ASSERT_EQUAL_INT( 2 * ONE, ggg::abs( Q(-2) ).raw() );
+  TEST_ASSERT_EQUAL_INT( -ONE,    ggg::sign( Q(-5) ).raw() );
+  TEST_ASSERT_EQUAL_INT( 2 * ONE, ggg::mod( Q(5), Q(3) ).raw() );
+  TEST_ASSERT_EQUAL_INT( ONE,     ggg::clamp( Q(5), Q(0), Q(1) ).raw() );
+  TEST_ASSERT_EQUAL_INT( 5 * ONE, ggg::mix( Q(0), Q(10), Q(1) / Q(2) ).raw() );
+  TEST_ASSERT_EQUAL_INT( ONE / 2, ggg::smoothstep( Q(0), Q(1), Q(1) / Q(2) ).raw() );
+
+  // sqrt.
+  TEST_ASSERT_EQUAL_INT( 2 * ONE, ggg::sqrt( Q(4) ).raw() );
+  TEST_ASSERT_INT_WITHIN( 8, 92682, ggg::sqrt( Q(2) ).raw() );           // 1.41421 * 65536
+
+  // Trig (Bhaskara approx, ~1.6e-3 -> raw tol ~120).
+  const Q pi = ggg::NumberOps<Q>::pi();
+  TEST_ASSERT_INT_WITHIN( 120, ONE, ggg::sin( pi / Q(2) ).raw() );        // sin(pi/2) ~ 1
+  TEST_ASSERT_INT_WITHIN( 120, 0,   ggg::sin( Q(0) ).raw() );
+  TEST_ASSERT_INT_WITHIN( 120, ONE, ggg::cos( Q(0) ).raw() );
+  TEST_ASSERT_INT_WITHIN( 120, 0,   ggg::sin( pi ).raw() );
+}
 
 // Conformance: run each shared corpus program through the machine and compare
 // its output to the TS-produced golden (cxx/test-pio/gen/conformance_cases.h,
@@ -980,6 +1028,8 @@ int main() {
   RUN_TEST(test_matrix_int);
   RUN_TEST(test_matrix_norm);
   RUN_TEST(test_matrix_vec);
+  RUN_TEST(test_fixed_presets);
+  RUN_TEST(test_fixed_math);
   RUN_TEST(test_matrix_commands);
   RUN_TEST(test_doc_commands);
   RUN_TEST(test_string_arg);

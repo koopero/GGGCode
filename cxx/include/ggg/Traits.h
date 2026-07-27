@@ -26,6 +26,13 @@ namespace ggg {
     using Coordinate = FixedCoordinate;
   };
 
+  // Named fixed-point presets. All share the high-precision FixedCoordinate
+  // (Q11.20) for the sampler/blitter working type; only the language/register
+  // Number differs. FixedQ16_16Traits is a spelled-out alias of FixedTraits.
+  struct FixedQ16_16Traits { using Number = FixedQ16_16; using Coordinate = FixedCoordinate; };
+  struct FixedQ24_8Traits  { using Number = FixedQ24_8;  using Coordinate = FixedCoordinate; };
+  struct FixedQ8_8Traits   { using Number = FixedQ8_8;   using Coordinate = FixedCoordinate; };
+
   // The traits every legacy alias (ggg::Machine, ggg::MatrixBase, ...) resolves
   // to, and the default for every template parameter. Override for a whole
   // build with -DGGG_DEFAULT_TRAITS=::ggg::FloatTraits (or custom traits); there

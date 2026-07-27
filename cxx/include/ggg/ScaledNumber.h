@@ -364,4 +364,13 @@ namespace ggg {
   using FixedQ16_16 = ScaledNumber<std::int32_t, 65536, std::int64_t>;
   using FixedCoordinate = ScaledNumber<std::int32_t, 1048576, std::int64_t>;
 
+  // Additional named fixed formats. Scales are powers of two so conversions are
+  // shifts. NOTE: NumberOps reserves the max raw value as the infinity unitary,
+  // so a format whose 1.0 lands on that endpoint (e.g. a true Q15 with scale
+  // 32768 in int16, or a 32767-scaled normalized type) can't represent 1.0 as a
+  // Number -- those belong to storage, not the language Number, and are omitted
+  // here until the sentinel is reworked.
+  using FixedQ24_8 = ScaledNumber<std::int32_t, 256, std::int64_t>;   // wide range, 8 frac bits
+  using FixedQ8_8  = ScaledNumber<std::int16_t, 256, std::int32_t>;   // compact, +/-127.99
+
 } // namespace ggg
