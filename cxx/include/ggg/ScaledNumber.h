@@ -373,4 +373,10 @@ namespace ggg {
   using FixedQ24_8 = ScaledNumber<std::int32_t, 256, std::int64_t>;   // wide range, 8 frac bits
   using FixedQ8_8  = ScaledNumber<std::int16_t, 256, std::int32_t>;   // compact, +/-127.99
 
+  // Shader working type: Q16.16 with float interoperability ENABLED, so GRSL's
+  // float literals (0.5, 1.4, ...) convert at compile time and the occasional
+  // runtime float seam bridges rather than failing to compile. Distinct from
+  // the strict (no-float) FixedQ16_16 used for storage/wire.
+  using FixedShaderQ16_16 = ScaledNumber<std::int32_t, 65536, std::int64_t, true>;
+
 } // namespace ggg
