@@ -163,6 +163,14 @@ T0                ; -> 5
 ```
 → [iter_single](cases.md#iter_single).
 
+`P` selects a flat scalar offset within an iteration register:
+
+```
+T9 V5,6 R"r" P1
+P10 V$r
+T0
+```
+
 **Procedures** capture a body with `T10` and replay it with `T11`:
 
 ```

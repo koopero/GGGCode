@@ -69,7 +69,7 @@ namespace ggg {
 
   // T9 body. Conditional mode: enqueue the captured source once iff the
   // condition held. Iteration mode: enqueue the body once per value, writing
-  // each into the iteration register first.
+  // each into the selected offset of the iteration register first.
   template <class T = DefaultTraits>
   class ConditionalCaptureFrameT : public CaptureFrameT<T> {
     using CaptureFrameT<T>::body;
@@ -81,8 +81,10 @@ namespace ggg {
     bool regByName = false;
     String regName;
     Index regIndex = 0;
+    Index regOffset = 0;
     void onClose( MachineT<T> & m ) override {
-      if ( iter ) m.enqueueLoop( values, body, hasReg, regByName, regName, regIndex );
+      if ( iter )
+        m.enqueueLoop( values, body, hasReg, regByName, regName, regIndex, regOffset );
       else if ( cond ) m.enqueueLines( body );
     }
   };
@@ -143,9 +145,9 @@ namespace ggg {
   using BlockEnd = BlockEndT<>;
 
   // T9: the block combinator. With V it iterates the body once per value
-  // (writing each into the R register so the body reads it as $name/$index);
-  // otherwise it is a one-shot conditional (A = all truthy, Y = any). The body
-  // is always captured first (so nested blocks compose).
+  // (writing each into offset P of the R register so the body reads it as
+  // $name/$index); otherwise it is a one-shot conditional (A = all truthy,
+  // Y = any). The body is always captured first (so nested blocks compose).
   template <class T = DefaultTraits>
   class ConditionalT : public CommandTypeT<T> {
   public:
@@ -160,6 +162,7 @@ namespace ggg {
     bool hasReg, regByName;
     String regName;
     Index regIndex;
+    Index regOffset;
     ConditionalT() {
       name = FlowConditional;
       description = "Block combinator: V iterates, A/O run once if a condition holds";
@@ -167,10 +170,12 @@ namespace ggg {
       addArg( 'Y', "run if any value is truthy", "(n+)" );
       addArg( GGG::Value, "iterate the body once per value", "(n+)" );
       addArg( GGG::Register, "iteration register (name or index)", "" );
+      addArg( GGG::Offset, "scalar offset in the iteration register", "(n)" );
     }
     void hookCommand() override {
       hasA = false; hasY = false; allTruthy = true; anyTruthy = false;
-      iterValues.clear(); hasReg = false; regByName = false; regName.clear(); regIndex = 0;
+      iterValues.clear(); hasReg = false; regByName = false; regName.clear();
+      regIndex = 0; regOffset = 0;
     }
     void hookNumber() override {
       bool truthy = number != 0;
@@ -178,6 +183,7 @@ namespace ggg {
       else if ( code == 'Y' ) { hasY = true; anyTruthy = anyTruthy || truthy; }
       else if ( code == GGG::Value ) { iterValues.push_back( number ); }
       else if ( code == GGG::Register ) { hasReg = true; regByName = false; regIndex = (Index) number; }
+      else if ( code == GGG::Offset ) { regOffset = (Index) number; }
     }
     void hookString() override {
       if ( code == GGG::Register ) { hasReg = true; regByName = true; regName = string; }
@@ -191,6 +197,7 @@ namespace ggg {
         frame->regByName = regByName;
         frame->regName = regName;
         frame->regIndex = regIndex;
+        frame->regOffset = regOffset;
       } else {
         bool cond = true;
         if ( hasA ) cond = cond && allTruthy;

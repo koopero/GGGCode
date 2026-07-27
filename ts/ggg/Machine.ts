@@ -240,31 +240,38 @@ export default class Machine extends EventEmitter  {
     queue.splice( queuePointer + 1, 0, ...items )
   }
 
-  // Write a scalar into the iteration register (a single-element Matrix,
-  // addressable by name or index) so a loop body can read it as $name / $index.
-  setIterRegister( id:string|number, value:number ) {
+  // Write a scalar at a flat offset in the iteration register, addressable by
+  // name or index. An on-demand register is sized through that offset.
+  setIterRegister( id:string|number, value:number, offset:number = 0 ) {
     const list = this.getRegisterList( Matrix )
     let reg = ( ( typeof id === "string" ) ? list.named[id] : list.list[id] ) as Matrix | undefined
+    offset = Math.trunc( offset )
     if ( !reg ) {
-      reg = new Matrix( { dim: [1], data: [value] } )
+      const size = Math.max( 1, offset + 1 )
+      reg = new Matrix( { dim: [size], data: new Array( size ).fill( 0 ) } )
       list.add( reg, ( typeof id === "string" ) ? { name: id } : { index: id } )
-    } else {
-      reg.write( [value] )
     }
+    reg.write( [value], offset )
   }
 
   // Run a captured body once per value, writing each value into the iteration
   // register immediately before its body copy so the body reads the current
   // value via a reference. Writes are interleaved as callback queue items so
   // each pass sees its own value. Bounded by limits.maxQueue.
-  enqueueLoop( values:number[], body:string[], id:string|number|undefined ) {
+  enqueueLoop(
+    values:number[],
+    body:string[],
+    id:string|number|undefined,
+    offset:number = 0
+  ) {
     const { queue, queuePointer, limits } = this
     const bodyLines = ParseLines( body.join( GGG.End ) )
     const items:QueueItem[] = []
     for ( const value of values ) {
       if ( id !== undefined ) {
         const regId = id
-        items.push( { callback: () => this.setIterRegister( regId, value ) } )
+        const regOffset = offset
+        items.push( { callback: () => this.setIterRegister( regId, value, regOffset ) } )
       }
       for ( const line of bodyLines ) {
         items.push( { line, work: true } )

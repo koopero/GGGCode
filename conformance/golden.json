@@ -863,6 +863,32 @@
     "expected": ""
   },
   {
+    "name": "iter_offset",
+    "description": "T9 P writes each iteration value at a scalar offset in the selected register.",
+    "needs": [
+      "gggpx",
+      "gggtx"
+    ],
+    "tags": [
+      "flow",
+      "iteration",
+      "registers"
+    ],
+    "program": "T9 V7,8 R\"r\" P1\nP10 V$r[0:2]\nT0",
+    "status": "OK",
+    "values": [
+      10,
+      7,
+      30,
+      10,
+      8,
+      30
+    ],
+    "exact": false,
+    "requiresFloat": false,
+    "expected": "V10,7,30\nOK\nV10,8,30\nOK"
+  },
+  {
     "name": "async_count",
     "description": "T12 G<n> runs an exported procedure n times, then unschedules it.",
     "needs": [

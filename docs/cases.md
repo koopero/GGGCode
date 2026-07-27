@@ -6,7 +6,7 @@ Each case is one artifact wearing four hats: a behavioural **spec**, a piece of 
 
 See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) · [runtime](runtime.md).
 
-136 cases across 25 tags.
+137 cases across 26 tags.
 
 ## Tags
 
@@ -15,10 +15,10 @@ See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) 
 - [conditionals](#conditionals) (6)
 - [decimals](#decimals) (15)
 - [flip](#flip) (3)
-- [flow](#flow) (22)
+- [flow](#flow) (23)
 - [hex](#hex) (8)
 - [irrational](#irrational) (3)
-- [iteration](#iteration) (2)
+- [iteration](#iteration) (3)
 - [lists](#lists) (11)
 - [map](#map) (6)
 - [matrix](#matrix) (15)
@@ -29,6 +29,7 @@ See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) 
 - [procedures](#procedures) (8)
 - [ranges](#ranges) (15)
 - [references](#references) (17)
+- [registers](#registers) (1)
 - [rotate](#rotate) (3)
 - [signs](#signs) (1)
 - [subscript](#subscript) (9)
@@ -939,6 +940,19 @@ T0
 - status: (no response)
 - needs: `gggpx`, `gggtx`
 
+### iter_offset
+
+T9 P writes each iteration value at a scalar offset in the selected register.
+
+```
+T9 V7,8 R"r" P1
+P10 V$r[0:2]
+T0
+```
+
+- values: `[10,7,30,10,8,30]`
+- needs: `gggpx`, `gggtx`
+
 ### async_count
 
 T12 G<n> runs an exported procedure n times, then unschedules it.
@@ -1256,6 +1270,19 @@ T0
 
 - values: `[]`
 - status: (no response)
+- needs: `gggpx`, `gggtx`
+
+### iter_offset
+
+T9 P writes each iteration value at a scalar offset in the selected register.
+
+```
+T9 V7,8 R"r" P1
+P10 V$r[0:2]
+T0
+```
+
+- values: `[10,7,30,10,8,30]`
 - needs: `gggpx`, `gggtx`
 
 ## lists
@@ -2451,6 +2478,21 @@ P10 V$m@[4]
 
 - values: `[4]`
 - needs: `gggpx`
+
+## registers
+
+### iter_offset
+
+T9 P writes each iteration value at a scalar offset in the selected register.
+
+```
+T9 V7,8 R"r" P1
+P10 V$r[0:2]
+T0
+```
+
+- values: `[10,7,30,10,8,30]`
+- needs: `gggpx`, `gggtx`
 
 ## rotate
 

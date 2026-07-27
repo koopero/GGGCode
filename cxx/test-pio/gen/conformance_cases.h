@@ -37,6 +37,7 @@ namespace ggg_conformance {
   static const double values_cond_any_true[] = { 42.0 };
   static const double values_cond_nested_skip[] = { 2.0 };
   static const double values_iter_single[] = { 5.0 };
+  static const double values_iter_offset[] = { 10.0, 7.0, 30.0, 10.0, 8.0, 30.0 };
   static const double values_async_count[] = { 7.0, 7.0, 7.0 };
   static const double values_async_interval[] = { 7.0, 7.0 };
   static const double values_async_unbounded[] = { 7.0, 7.0, 7.0 };
@@ -181,6 +182,7 @@ namespace ggg_conformance {
     { "cond_nested_skip", "T9 A0\nT9 A1\nP10 V1\nT0\nT0\nP10 V2\n", "OK", values_cond_nested_skip, 1, nullptr, false, nullptr, 0 },
     { "iter_single", "T9 V5 R\"it\"\nP10 V$it\nT0\n", "OK", values_iter_single, 1, nullptr, false, nullptr, 0 },
     { "iter_zero", "T9 V$x R\"it\"\nP10 V$it\nT0\n", "", nullptr, 0, nullptr, false, nullptr, 0 },
+    { "iter_offset", "T9 V7,8 R\"r\" P1\nP10 V$r[0:2]\nT0\n", "OK", values_iter_offset, 6, nullptr, false, nullptr, 0 },
     { "async_count", "T10 L\"tick\"\nP10 V7\nT0\nT12 R\"tick\" S0 G3\n", "OK", values_async_count, 3, nullptr, false, polls_async_count, 5 },
     { "async_interval", "T10 L\"tick\"\nP10 V7\nT0\nT12 R\"tick\" S500\n", "OK", values_async_interval, 2, nullptr, false, polls_async_interval, 4 },
     { "async_unbounded", "T10 L\"tick\"\nP10 V7\nT0\nT12 R\"tick\" S0\n", "OK", values_async_unbounded, 3, nullptr, false, polls_async_unbounded, 3 },

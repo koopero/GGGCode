@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdio>
+#include <limits>
 #include "./Types.h"
 #include "./List.h"
 #include "./Command.h"
@@ -1122,14 +1123,16 @@ namespace ggg {
 
     // Run a captured body once per value, writing each value into the iteration
     // register (callback) immediately before its body copy so the body reads the
-    // current value via a reference ($name / $index). Bounded by maxQueue.
+    // current value via a reference ($name / $index). P selects the flat scalar
+    // offset within the register. Bounded by maxQueue.
     void enqueueLoop( const std::vector<Number> & values, const std::vector<String> & body,
-                      bool hasReg, bool regByName, const String & regName, Index regIndex ) {
+                      bool hasReg, bool regByName, const String & regName, Index regIndex,
+                      Index regOffset = 0 ) {
       std::vector<PendingItem> items;
       for ( Number v : values ) {
         if ( hasReg ) {
-          items.push_back( { true, "", [this, v, hasReg, regByName, regName, regIndex]() {
-            this->setIterRegister( regByName, regName, regIndex, v );
+          items.push_back( { true, "", [this, v, regByName, regName, regIndex, regOffset]() {
+            this->setIterRegister( regByName, regName, regIndex, v, regOffset );
           } } );
         }
         for ( const String & l : body ) items.push_back( { false, l, {} } );
@@ -1141,19 +1144,23 @@ namespace ggg {
       pending.insert( pending.begin(), items.begin(), items.end() );
     }
 
-    // Write a scalar into the iteration register (a single-element Matrix,
-    // addressable by name or index), creating it if missing, so a loop body can
-    // read it as $name / $index.
-    void setIterRegister( bool byName, const String & name, Index index, Number value ) {
+    // Write a scalar at a flat offset in the iteration register, addressable by
+    // name or index. An on-demand register is sized through that offset.
+    void setIterRegister( bool byName, const String & name, Index index, Number value,
+                          Index offset = 0 ) {
       MatrixBaseT<T> * reg = byName ? registers->getByName( name ) : registers->getByIndex( index );
       if ( !reg ) {
-        auto * m = new Matrix<Number, false, T>( { 1 } );   // single scalar
+        const Index size =
+          offset >= 0 && offset < std::numeric_limits<Index>::max()
+          ? offset + 1
+          : 1;
+        auto * m = new Matrix<Number, false, T>( { size } );
         m->allocate();
         if ( byName ) m->name = name;
         addRegister( m );
         reg = m;
       }
-      reg->writeScalarFloat( value, 0 );
+      reg->writeScalarFloat( value, offset );
     }
 
     // Drain queued procedure/loop items by feeding lines back through the parser

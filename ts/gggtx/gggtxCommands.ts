@@ -120,9 +120,9 @@ const ProcedureInitCommand : Command = {
 }
 
 // T9: the block combinator. With V it iterates the body once per value (writing
-// each into the R register so the body can read it as $name/$index); otherwise
-// it is a one-shot conditional (A = all values truthy, Y = any). The body is
-// always captured first (so nested blocks compose).
+// each into offset P of the R register so the body can read it as $name/$index);
+// otherwise it is a one-shot conditional (A = all values truthy, Y = any). The
+// body is always captured first (so nested blocks compose).
 const ConditionalCommand : Command = {
   description: "Block combinator: V iterates, A/Y run once if a condition holds",
   args: {
@@ -130,6 +130,7 @@ const ConditionalCommand : Command = {
     "Y": { description: "run if any value is truthy", type: ArgType.Number },
     [GGG.Value]: { description: "iterate the body once per value", type: ArgType.Number },
     [GGG.Register]: { description: "iteration register (name or index)", type: ArgType.Any },
+    [GGG.Offset]: { description: "scalar offset in the iteration register", type: ArgType.Number },
   },
   [Hooks.Command]: ( args ) => {
     const { state } = args
@@ -137,6 +138,7 @@ const ConditionalCommand : Command = {
     state.condY = null
     state.iterValues = []
     state.iterReg = undefined
+    state.iterOffset = 0
   },
   [Hooks.Value]: ( args ) => {
     const { state, code, value } = args
@@ -145,6 +147,7 @@ const ConditionalCommand : Command = {
     else if ( code === "Y" ) state.condY = ( state.condY === null ? false : state.condY ) || truthy
     else if ( code === GGG.Value && typeof value === "number" ) state.iterValues.push( value )
     else if ( code === GGG.Register ) state.iterReg = value
+    else if ( code === GGG.Offset && typeof value === "number" ) state.iterOffset = Math.trunc( value )
   },
   [Hooks.End]: ( args ) => {
     const { machine, state } = args
@@ -152,7 +155,12 @@ const ConditionalCommand : Command = {
       // Iteration mode.
       machine.pushFrame( {
         command: ConditionalCommand,
-        state: { iter: true, values: state.iterValues.slice(), reg: state.iterReg },
+        state: {
+          iter: true,
+          values: state.iterValues.slice(),
+          reg: state.iterReg,
+          offset: state.iterOffset,
+        },
         capture: [],
         depth: 0,
       } )
@@ -173,7 +181,7 @@ const ConditionalCommand : Command = {
   [Hooks.Stack]: ( args ) => captureGate( args, ( machine, frame ) => {
     const { state } = frame
     if ( state.iter ) {
-      machine.enqueueLoop( state.values, frame.capture, state.reg )
+      machine.enqueueLoop( state.values, frame.capture, state.reg, state.offset )
     } else if ( state.bool ) {
       machine.enqueueLines( frame.capture )
     }

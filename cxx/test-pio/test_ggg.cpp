@@ -867,6 +867,12 @@ void test_flow_iteration() {
     m.run( "T9 V7,8 R0\nP10 V$0\nT0\n" );
     TEST_ASSERT_EQUAL_STRING( "V7\nOK\nV8\nOK\n", m.out.c_str() );
   }
+  // P selects a scalar offset; an on-demand register grows through that cell.
+  {
+    FlowMachine m; m.setup();
+    m.run( "T9 V7,8 R\"it\" P2\nP10 V$it[0:2]\nT0\n" );
+    TEST_ASSERT_EQUAL_STRING( "V0,0,7\nOK\nV0,0,8\nOK\n", m.out.c_str() );
+  }
   // Iteration inside a procedure body.
   {
     FlowMachine m; m.setup();

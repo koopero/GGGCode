@@ -10,7 +10,7 @@ A command is a letter + number (e.g. `G40`, `P10`). Its first argument's code an
 
 Print args as numbers.
 
-Examples: [flow_define_only](cases.md#flow_define_only), [flow_define_run](cases.md#flow_define_run), [flow_nested](cases.md#flow_nested), [cond_all_true](cases.md#cond_all_true), [cond_all_false](cases.md#cond_all_false), [cond_all_mixed](cases.md#cond_all_mixed), [cond_any_true](cases.md#cond_any_true), [cond_any_false](cases.md#cond_any_false), +87 more
+Examples: [flow_define_only](cases.md#flow_define_only), [flow_define_run](cases.md#flow_define_run), [flow_nested](cases.md#flow_nested), [cond_all_true](cases.md#cond_all_true), [cond_all_false](cases.md#cond_all_false), [cond_all_mixed](cases.md#cond_all_mixed), [cond_any_true](cases.md#cond_any_true), [cond_any_false](cases.md#cond_any_false), +88 more
 
 ### P13
 
@@ -22,7 +22,7 @@ Print data as comment string.
 
 End of block
 
-Examples: [flow_define_only](cases.md#flow_define_only), [flow_define_run](cases.md#flow_define_run), [flow_nested](cases.md#flow_nested), [cond_all_true](cases.md#cond_all_true), [cond_all_false](cases.md#cond_all_false), [cond_all_mixed](cases.md#cond_all_mixed), [cond_any_true](cases.md#cond_any_true), [cond_any_false](cases.md#cond_any_false), +12 more
+Examples: [flow_define_only](cases.md#flow_define_only), [flow_define_run](cases.md#flow_define_run), [flow_nested](cases.md#flow_nested), [cond_all_true](cases.md#cond_all_true), [cond_all_false](cases.md#cond_all_false), [cond_all_mixed](cases.md#cond_all_mixed), [cond_any_true](cases.md#cond_any_true), [cond_any_false](cases.md#cond_any_false), +13 more
 
 ### T10
 
@@ -75,8 +75,9 @@ Arguments:
 | `Y` |  | run if any value is truthy |
 | `V` |  | iterate the body once per value |
 | `R` |  | iteration register (name or index) |
+| `P` |  | scalar offset in the iteration register |
 
-Examples: [cond_all_true](cases.md#cond_all_true), [cond_all_false](cases.md#cond_all_false), [cond_all_mixed](cases.md#cond_all_mixed), [cond_any_true](cases.md#cond_any_true), [cond_any_false](cases.md#cond_any_false), [cond_nested_skip](cases.md#cond_nested_skip), [iter_single](cases.md#iter_single), [iter_zero](cases.md#iter_zero)
+Examples: [cond_all_true](cases.md#cond_all_true), [cond_all_false](cases.md#cond_all_false), [cond_all_mixed](cases.md#cond_all_mixed), [cond_any_true](cases.md#cond_any_true), [cond_any_false](cases.md#cond_any_false), [cond_nested_skip](cases.md#cond_nested_skip), [iter_single](cases.md#iter_single), [iter_zero](cases.md#iter_zero), +1 more
 
 ## ggggx — graphics / matrix buffers
 

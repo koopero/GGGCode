@@ -239,6 +239,11 @@ describe( "gggtx iteration", () => {
     expect( out ).toEqual( "V7\nOK\nV8\nOK" )
   } )
 
+  test( "P writes at an offset in an on-demand iteration register", async () => {
+    const out = await runFlow( 'T9 V7,8 R"it" P2\nP10 V$it[0:2]\nT0' )
+    expect( out ).toEqual( "V0,0,7\nOK\nV0,0,8\nOK" )
+  } )
+
   test( "T9 V with no values runs the body zero times", async () => {
     const out = await runFlow( 'T9 V$x R"it"\nP10 V$it\nT0' )
     expect( out ).toEqual( "" )

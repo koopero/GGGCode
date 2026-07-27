@@ -137,6 +137,16 @@
     T0
   values: []
 
+- name: iter_offset
+  description: "T9 P writes each iteration value at a scalar offset in the selected register."
+  needs: [ gggpx, gggtx ]
+  tags: [ flow, iteration, registers ]
+  program: |
+    T9 V7,8 R"r" P1
+    P10 V$r[0:2]
+    T0
+  values: [ 10, 7, 30, 10, 8, 30 ]
+
 # Async procedures (T12). The language has no loop: a procedure is exported and
 # the HOST fires it by calling poll(). `polls` below are the host clock times the
 # harness polls at, which is also what keeps these deterministic.
