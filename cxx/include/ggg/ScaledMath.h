@@ -81,6 +81,54 @@ namespace ggg {
   GGG_SN GGG_N radians( GGG_N d ) { return d * NumberOps<GGG_N>::pi() / GGG_N( 180 ); }
   GGG_SN GGG_N degrees( GGG_N r ) { return r * GGG_N( 180 ) / NumberOps<GGG_N>::pi(); }
 
+  // --- exp / log ----------------------------------------------------------
+  // exp2(x) = 2^x. Split x = i + f (i integral, f in [0,1)); 2^f via a cubic,
+  // 2^i by shifting the raw representation (saturating, format-agnostic).
+  GGG_SN GGG_N exp2( GGG_N x ) {
+    GGG_N i = floor( x );
+    GGG_N f = x - i;                                   // [0,1)
+    const GGG_N A = GGG_N::fromRatio( 6931472, 10000000 );   // ln2
+    const GGG_N B = GGG_N::fromRatio( 2402265, 10000000 );
+    const GGG_N C = GGG_N::fromRatio(  555041, 10000000 );
+    GGG_N p = GGG_N( 1 ) + f * ( A + f * ( B + f * C ) );    // 2^f, ~3e-4
+    int ii = (int) i;
+    W r = static_cast<W>( p.raw() );
+    if ( ii >= 0 ) {
+      for ( int k = 0; k < ii; k++ ) {
+        if ( r > ( std::numeric_limits<W>::max() >> 1 ) ) { r = std::numeric_limits<W>::max(); break; }
+        r <<= 1;
+      }
+    } else {
+      for ( int k = 0; k < -ii && r != 0; k++ ) r >>= 1;
+    }
+    return GGG_N::fromRaw( r );
+  }
+
+  // log2(x) = log2(raw) - log2(Scale). log2(raw) = MSB index + log2(mantissa),
+  // mantissa in [1,2). Scale is a power of two so log2(Scale) is exact.
+  GGG_SN GGG_N log2( GGG_N x ) {
+    if ( x.raw() <= 0 ) return GGG_N( 0 );             // undefined; clamp
+    W raw = static_cast<W>( x.raw() );
+    int p = 0;
+    for ( W t = raw; t > 1; t >>= 1 ) p++;             // floor(log2(raw))
+    int ls = 0;
+    for ( W s = static_cast<W>( S ); s > 1; s >>= 1 ) ls++;   // log2(Scale)
+    GGG_N m = GGG_N::fromRaw( ( raw * static_cast<W>( S ) ) >> p );  // mantissa [1,2)
+    GGG_N u = m - GGG_N( 1 );                          // [0,1)
+    const GGG_N C1 = GGG_N::fromRatio( 14426950, 10000000 );
+    const GGG_N C2 = GGG_N::fromRatio( -7213475, 10000000 );
+    const GGG_N C3 = GGG_N::fromRatio(  4808983, 10000000 );
+    GGG_N logm = u * ( C1 + u * ( C2 + u * C3 ) );     // log2(1+u), ~2e-2
+    return GGG_N( p - ls ) + logm;
+  }
+
+  GGG_SN GGG_N exp( GGG_N x ) { return exp2( x * GGG_N::fromRatio( 14426950, 10000000 ) ); } // *log2(e)
+  GGG_SN GGG_N log( GGG_N x ) { return log2( x ) * GGG_N::fromRatio( 6931472, 10000000 ); }   // *ln2
+  GGG_SN GGG_N pow( GGG_N x, GGG_N y ) {
+    if ( x.raw() <= 0 ) return GGG_N( 0 );
+    return exp2( y * log2( x ) );
+  }
+
   #undef GGG_SN
   #undef GGG_N
 

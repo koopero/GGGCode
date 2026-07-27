@@ -257,6 +257,17 @@ void test_fixed_math() {
   TEST_ASSERT_INT_WITHIN( 120, 0,   ggg::sin( Q(0) ).raw() );
   TEST_ASSERT_INT_WITHIN( 120, ONE, ggg::cos( Q(0) ).raw() );
   TEST_ASSERT_INT_WITHIN( 120, 0,   ggg::sin( pi ).raw() );
+
+  // exp2 / log2 at exact (power-of-two) points -> tight; derived exp/log/pow.
+  TEST_ASSERT_INT_WITHIN( 16, 8 * ONE, ggg::exp2( Q(3) ).raw() );
+  TEST_ASSERT_INT_WITHIN( 16, ONE,     ggg::exp2( Q(0) ).raw() );
+  TEST_ASSERT_INT_WITHIN( 16, 3 * ONE, ggg::log2( Q(8) ).raw() );
+  TEST_ASSERT_INT_WITHIN( 16, 0,       ggg::log2( Q(1) ).raw() );
+  TEST_ASSERT_INT_WITHIN( 64, 1024 * ONE, ggg::pow( Q(2), Q(10) ).raw() );  // 2^10
+  TEST_ASSERT_INT_WITHIN( 16, ONE, ggg::exp( Q(0) ).raw() );   // exp(0)=1
+  TEST_ASSERT_INT_WITHIN( 16, 0,   ggg::log( Q(1) ).raw() );   // log(1)=0
+  // exp2(0.5) = sqrt(2) ~ 1.41421 (poly, looser).
+  TEST_ASSERT_INT_WITHIN( 400, 92682, ggg::exp2( Q(1) / Q(2) ).raw() );
 }
 
 // Conformance: run each shared corpus program through the machine and compare
