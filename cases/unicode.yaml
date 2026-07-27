@@ -32,6 +32,8 @@
   description: "An astral-plane emoji decodes to its full code point."
   needs: [ gggpx ]
   tags: [ unicode ]
+  # The default Q16.16 fixed Number tops out below this code point.
+  requiresFloat: true
   program: "P10 V😀"
   values: [ 128512 ]
 

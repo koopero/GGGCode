@@ -15,7 +15,8 @@ import { golden } from "../ts/cxx/conformance"
 
 type GoldenRecord = {
   name: string, program: string, status: string, values: number[],
-  exact: boolean, expected: string, needs: ( "gggpx" | "gggtx" | "ggggx" )[], tags: string[], description: string
+  exact: boolean, requiresFloat: boolean, expected: string,
+  needs: ( "gggpx" | "gggtx" | "ggggx" )[], tags: string[], description: string
 }
 
 const stored: GoldenRecord[] = JSON.parse(
@@ -28,6 +29,7 @@ describe( "conformance", () => {
   test( "golden.json is in sync with cases/*.yaml", () => {
     expect( stored.map( r => r.name ) ).toEqual( cases.map( c => c.name ) )
     expect( stored.map( r => r.program ) ).toEqual( cases.map( c => c.program ) )
+    expect( stored.map( r => r.requiresFloat ) ).toEqual( cases.map( c => c.requiresFloat ) )
   } )
 
   for ( const c of cases ) {

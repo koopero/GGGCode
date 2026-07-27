@@ -46,7 +46,7 @@ namespace ggg {
           if ( !reg ) break;
           // Apply the operator: read the current cell, combine with the incoming
           // value, write back (mirrors TS OperatorApply in MatrixWrite).
-          Number current = reg->readScalarFloat( offset, 0. );
+          Number current = reg->readScalarFloat( offset, 0 );
           Number result;
           if ( applyOperator( op, current, number, result ) ) {
             reg->writeScalarFloat( result, offset );
@@ -134,7 +134,7 @@ namespace ggg {
         machine->output( (Char) Value );
         for ( Index i = 0; i < n; i++ ) {
           if ( i ) machine->output( (Char) Comma );
-          machine->output( FormatNumber( reg->readScalarFloat( start + i, 0. ) ) );
+          machine->output( FormatNumber( reg->readScalarFloat( start + i, 0 ) ) );
         }
         machine->output( (Char) End );
       }

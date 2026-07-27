@@ -3,6 +3,8 @@
 #include <cmath>
 #include <cstdlib>
 #include "./Types.h"
+#include "./ggg/ScaledNumber.h"
+#include "./ggg/NumberOps.h"
 
 namespace ggg {
   //
@@ -88,5 +90,126 @@ namespace ggg {
 
     out = a;
     return false;   // unknown operator
+  }
+
+  inline std::uint64_t operatorIntegerSqrt( std::uint64_t value ) {
+    // Restoring integer square root: fixed iteration count, no division and no
+    // floating-point helper. Returns floor(sqrt(value)).
+    std::uint64_t result = 0;
+    std::uint64_t bit = std::uint64_t( 1 ) << 62;
+    while ( bit > value ) bit >>= 2;
+    while ( bit ) {
+      if ( value >= result + bit ) {
+        value -= result + bit;
+        result = ( result >> 1 ) + bit;
+      } else {
+        result >>= 1;
+      }
+      bit >>= 2;
+    }
+    return result;
+  }
+
+  //
+  // Float-free operator table for scaled integers. The arithmetic/logical
+  // operators and integer sqrt are supported. Transcendentals that do not yet
+  // have an integer kernel fail explicitly, producing the existing BadOperator
+  // response instead of quietly crossing through libm.
+  //
+  template <typename Rep, std::int64_t Scale, typename Wide, bool FloatInterop>
+  inline bool applyOperator(
+    const String &op,
+    ScaledNumber<Rep, Scale, Wide, FloatInterop> a,
+    ScaledNumber<Rep, Scale, Wide, FloatInterop> b,
+    ScaledNumber<Rep, Scale, Wide, FloatInterop> &out
+  ) {
+    using N = ScaledNumber<Rep, Scale, Wide, FloatInterop>;
+    auto guard = [&]( N v ) -> N { return b == 0 ? v : a; };
+    auto boolOf = [&]( bool v ) -> N { return v ? 1 : 0; };
+
+    if ( op == "nop" )   { out = a; return true; }
+    if ( op == "set" )   { out = b; return true; }
+    if ( op == "bool" )  { out = boolOf( a != 0 ); return true; }
+    if ( op == "clamp" ) { out = guard( a < 0 ? N( 0 ) : ( a > 1 ? N( 1 ) : a ) ); return true; }
+    if ( op == "zero" )  { out = guard( 0 ); return true; }
+    if ( op == "rand" )  {
+      out = guard( N::fromRatio(
+        static_cast<Wide>( std::rand() ),
+        static_cast<Wide>( RAND_MAX ) + 1
+      ) );
+      return true;
+    }
+
+    if ( op == "dec" )   { out = guard( a - 1 ); return true; }
+    if ( op == "inc" )   { out = guard( a + 1 ); return true; }
+    if ( op == "neg" )   { out = guard( -a ); return true; }
+    if ( op == "not" )   { out = guard( boolOf( a == 0 ) ); return true; }
+    if ( op == "sqrt" )  {
+      if ( b != 0 ) { out = a; return true; }
+      if ( a < 0 ) return false;
+      const std::uint64_t radicand =
+        static_cast<std::uint64_t>( a.raw() )
+        * static_cast<std::uint64_t>( Scale );
+      out = N::fromRaw( static_cast<Wide>( operatorIntegerSqrt( radicand ) ) );
+      return true;
+    }
+    if ( op == "inv" )   { out = guard( N( 1 ) / a ); return true; }
+    if ( op == "abs" || op == "hypot" ) {
+      out = guard( a < 0 ? -a : a );
+      return true;
+    }
+    if ( op == "floor" ) { out = guard( NumberOps<N>::floor( a ) ); return true; }
+    if ( op == "trunc" ) { out = guard( N( static_cast<long>( a ) ) ); return true; }
+    if ( op == "ceil" )  {
+      N floor = NumberOps<N>::floor( a );
+      out = guard( a == floor ? floor : floor + 1 );
+      return true;
+    }
+    if ( op == "round" ) {
+      const Wide raw = static_cast<Wide>( a.raw() );
+      const Wide half = static_cast<Wide>( Scale / 2 );
+      const Wide units = raw < 0
+        ? ( raw - half ) / static_cast<Wide>( Scale )
+        : ( raw + half ) / static_cast<Wide>( Scale );
+      out = guard( N( units ) );
+      return true;
+    }
+    if ( op == "sign" )  { out = guard( N( ( a > 0 ) - ( a < 0 ) ) ); return true; }
+
+    if ( op == "add" )   { out = a + b; return true; }
+    if ( op == "mult" )  { out = a * b; return true; }
+    if ( op == "mid" )   { out = ( a + b ) / 2; return true; }
+    if ( op == "min" )   { out = a < b ? a : b; return true; }
+    if ( op == "max" )   { out = a > b ? a : b; return true; }
+    if ( op == "or" )    { out = boolOf( a != 0 || b != 0 ); return true; }
+    if ( op == "and" )   { out = boolOf( a != 0 && b != 0 ); return true; }
+    if ( op == "xor" )   {
+      out = boolOf( ( static_cast<long>( a ) ^ static_cast<long>( b ) ) != 0 );
+      return true;
+    }
+    if ( op == "eq" )    { out = boolOf( a == b ); return true; }
+    if ( op == "ne" )    { out = boolOf( a != b ); return true; }
+    if ( op == "lt" )    { out = boolOf( a < b ); return true; }
+    if ( op == "gt" )    { out = boolOf( a > b ); return true; }
+    if ( op == "le" )    { out = boolOf( a <= b ); return true; }
+    if ( op == "ge" )    { out = boolOf( a >= b ); return true; }
+    if ( op == "sub" )   { out = a - b; return true; }
+    if ( op == "div" )   { out = a / b; return true; }
+    if ( op == "mod" )   {
+      if ( b.raw() == 0 ) return false;
+      out = N::fromRaw( static_cast<Wide>( a.raw() ) % static_cast<Wide>( b.raw() ) );
+      return true;
+    }
+    if ( op == "rsub" )  { out = b - a; return true; }
+    if ( op == "rdiv" )  { out = b / a; return true; }
+    if ( op == "rmod" )  {
+      if ( a.raw() == 0 ) return false;
+      out = N::fromRaw( static_cast<Wide>( b.raw() ) % static_cast<Wide>( a.raw() ) );
+      return true;
+    }
+
+    // exp/log/trig/hyperbolic/pow/atan2 await integer kernels.
+    out = a;
+    return false;
   }
 }

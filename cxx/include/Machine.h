@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdio>
 #include "./Types.h"
 #include "./List.h"
 #include "./Command.h"
@@ -244,9 +245,9 @@ namespace ggg {
     // the irrational entries of UnitaryValues in ts/ggg/Language.ts). π/τ/φ/γ enter
     // as multi-byte UTF-8 code points. K/Z/N are the
     // exact unitaries and are handled separately. The literals are written at
-    // double precision and narrow to whatever Number is, so a float build rounds
-    // and relies on the conformance value-tolerance to agree with the TS double
-    // reference.
+    // NumberOps supplies the representation-specific spelling. The fixed-point
+    // implementation constructs these constants from decimal digits with no
+    // floating-point intermediate.
     // The ASCII unitary letters (K/Z/N). A number is COMPLETE when one arrives:
     // "5K" is two values, not the number "5K". Euler's e was retired precisely
     // so no unitary collides with the exponent marker, which must keep
@@ -299,11 +300,11 @@ namespace ggg {
 
     static bool unitaryValue( uint32_t codepoint, Number &out ) {
       switch ( codepoint ) {
-        case 0x03C0: out = (Number) 3.141592653589793;  return true;  // π  pi
-        case 0x03C4: out = (Number) 6.283185307179586;  return true;  // τ  2π
-        case 0x03C6: out = (Number) 1.618033988749895;  return true;  // φ  golden ratio
+        case 0x03C0: out = NumberOps<Number>::pi();       return true;  // π  pi
+        case 0x03C4: out = NumberOps<Number>::tau();      return true;  // τ  2π
+        case 0x03C6: out = NumberOps<Number>::phi();      return true;  // φ  golden ratio
         case 0x221E: out = NumberOps<Number>::infinity(); return true; // ∞  infinity
-        case 0x03B3: out = (Number) 0.5772156649;       return true;  // γ  Euler–Mascheroni
+        case 0x03B3: out = NumberOps<Number>::gamma();    return true;  // γ  Euler–Mascheroni
         default: return false;
       }
     }
@@ -375,11 +376,11 @@ namespace ggg {
         if ( unitaryValue( (uint32_t)(uint8_t)_char, uval ) ) {
           pushCompoundNumber( uval * takePendingSign() );
         } else if ( cased == GGG::EncodedOne ) {
-          pushCompoundNumber( 1. * takePendingSign() );
+          pushCompoundNumber( takePendingSign() );
         } else if ( cased == EncodedZero ) {
-          pushCompoundNumber( 0. * takePendingSign() );
+          pushCompoundNumber( Number( 0 ) );
         } else if ( cased == EncodedMinusOne ) {
-          pushCompoundNumber( -1. * takePendingSign() );
+          pushCompoundNumber( Number( -1 ) * takePendingSign() );
         } else if ( ( _char >= 'a' && _char <= 'z' ) || ( _char >= 'A' && _char <= 'Z' ) ) {
           // Any other letter where a value was expected is the CODE of the next
           // argument, exactly as it is once a number has started (see parseData).
@@ -568,7 +569,7 @@ namespace ggg {
       if ( !reg ) return;                    // unknown register -> no values
       Index n = reg->sizeScalar();
       for ( Index i = 0; i < n; i++ ) {
-        dataAppend( reg->readScalarFloat( i, 0. ) );
+        dataAppend( reg->readScalarFloat( i, 0 ) );
       }
     }
 
@@ -698,7 +699,9 @@ namespace ggg {
         if ( state.hexDigitCount > 0 && state.hexDigit == state.hexDigitCount ) {
           Number value = state.hexAccum;
           if ( state.hexNormalize ) {
-            value /= float( (1 << ( state.hexDigit * 4 )) - 1 );
+            value = NumberOps<Number>::ratio(
+              state.hexAccum, (1 << ( state.hexDigit * 4 )) - 1
+            );
           }
           state.numbers.push_back( value );
           state.hexDigit = 0;
@@ -710,9 +713,11 @@ namespace ggg {
 
     void finishNumber() {
       if ( state.dataMode == HexNumber && state.hexDigit > 0 && state.hexDigitCount == 0 ) {
-        Number value = float(state.hexAccum);
+        Number value = state.hexAccum;
         if ( state.hexNormalize ) {
-          value /= float( (1 << ( state.hexDigit * 4 )) - 1 );
+          value = NumberOps<Number>::ratio(
+            state.hexAccum, (1 << ( state.hexDigit * 4 )) - 1
+          );
         }
         pushCompoundNumber( value );
       } else if ( !state.argBuffer.empty() && ( state.dataMode == GGG::Number || state.dataMode == GGG::Zero ) ) {
@@ -927,11 +932,10 @@ namespace ggg {
 
     void loadCommand( Number number ) {
       if ( state.code ) {
-        int commandNumber = number;
+        int commandNumber = (int) number;
 
-        std::ostringstream oss;
-        oss << state.code  << commandNumber;
-        String commandName = oss.str();
+        String commandName( 1, state.code );
+        commandName += std::to_string( commandNumber );
 
         // Command gate: before dispatching a now-formalized command, let the top
         // control frame decide run/capture/skip/error. On capture/skip the rest
@@ -1183,10 +1187,11 @@ namespace ggg {
     }
 
     // All command output funnels through write(). Override it to redirect
-    // output -- e.g. to a buffer for conformance tests, or to Serial on
-    // embedded targets where std::cout is unavailable.
+    // output -- e.g. to a buffer for conformance tests, or to Serial on an
+    // embedded target. The fallback uses byte I/O rather than iostreams so a
+    // fixed-only firmware does not link the floating-point locale machinery.
     virtual void write( const String &str ) {
-      std::cout << str;
+      std::fwrite( str.data(), 1, str.size(), stdout );
     }
 
     void output( String str ) {

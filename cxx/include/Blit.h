@@ -29,7 +29,8 @@
 namespace ggg {
 
   // Option vocabularies (index order), mirroring ts/ggggx/Blit.ts + GXLanguage.
-  inline String blitOptionByIndex( const std::vector<String> &list, double n ) {
+  template <typename N>
+  inline String blitOptionByIndex( const std::vector<String> &list, N n ) {
     int i = (int) n;
     if ( i >= 0 && i < (int) list.size() ) return list[i];
     return "";
@@ -54,11 +55,12 @@ namespace ggg {
   // Row-major flat (rank+1)x(rank+1) homogeneous transform from mode + M coeffs.
   // `srcDims` (source spatial dims) is used by `box` to normalize the pixel
   // rectangle and default omitted bounds to the full source extent.
-  inline std::vector<double> blitBuildTransform( const String &mode, const std::vector<double> &M, int rank,
+  template <typename N>
+  inline std::vector<N> blitBuildTransform( const String &mode, const std::vector<N> &M, int rank,
       const std::vector<Index> &srcDims ) {
     int n = rank + 1;
-    std::vector<double> H( (size_t) n * n, 0. );
-    for ( int r = 0; r < n; r++ ) H[ (size_t) r * n + r ] = 1.;
+    std::vector<N> H( (size_t) n * n, N( 0 ) );
+    for ( int r = 0; r < n; r++ ) H[ (size_t) r * n + r ] = 1;
 
     if ( mode == "affine" ) {
       if ( M.empty() ) return H;
@@ -76,9 +78,9 @@ namespace ggg {
       // maps dest-normalized c -> source-normalized ( min + c*(max-min) ) / dim.
       // Omitted min/max default to [0, dim] (full source) => identity copy.
       for ( int i = 0; i < rank; i++ ) {
-        double dim = ( i < (int) srcDims.size() && srcDims[i] > 0 ) ? (double) srcDims[i] : 1.;
-        double lo = ( 2 * i     < (int) M.size() ) ? M[ 2 * i ]     : 0.;
-        double hi = ( 2 * i + 1 < (int) M.size() ) ? M[ 2 * i + 1 ] : dim;
+        N dim = ( i < (int) srcDims.size() && srcDims[i] > 0 ) ? N( srcDims[i] ) : N( 1 );
+        N lo = ( 2 * i     < (int) M.size() ) ? M[ 2 * i ]     : N( 0 );
+        N hi = ( 2 * i + 1 < (int) M.size() ) ? M[ 2 * i + 1 ] : dim;
         H[ (size_t) i * n + i ]    = ( hi - lo ) / dim;
         H[ (size_t) i * n + rank ] = lo / dim;
       }
@@ -91,19 +93,19 @@ namespace ggg {
       // Re-pointing a dest axis at a different source axis SWAPS axes -> transpose /
       // rotation; generalizes box. Built from zero so a remapped axis drops its
       // identity diagonal; unspecified dest axes stay identity.
-      std::fill( H.begin(), H.end(), 0. );
-      H[ (size_t) rank * n + rank ] = 1.;
+      std::fill( H.begin(), H.end(), N( 0 ) );
+      H[ (size_t) rank * n + rank ] = 1;
       int triples = (int) M.size() / 3;
       for ( int i = 0; i < rank; i++ ) {
-        int a = ( i < triples ) ? (int) std::floor( M[ 3 * i ] ) : -1;
+        int a = ( i < triples ) ? (int) NumberOps<N>::floor( M[ 3 * i ] ) : -1;
         if ( a >= 0 && a < rank ) {
-          double dim = ( a < (int) srcDims.size() && srcDims[a] > 0 ) ? (double) srcDims[a] : 1.;
-          double lo = M[ 3 * i + 1 ];
-          double hi = M[ 3 * i + 2 ];
+          N dim = ( a < (int) srcDims.size() && srcDims[a] > 0 ) ? N( srcDims[a] ) : N( 1 );
+          N lo = M[ 3 * i + 1 ];
+          N hi = M[ 3 * i + 2 ];
           H[ (size_t) a * n + i ]    = ( hi - lo ) / dim;   // dest axis i drives source axis a
           H[ (size_t) a * n + rank ] = lo / dim;
         } else {
-          H[ (size_t) i * n + i ] = 1.;                     // unspecified / invalid -> identity
+          H[ (size_t) i * n + i ] = 1;                      // unspecified / invalid -> identity
         }
       }
       return H;
@@ -115,46 +117,52 @@ namespace ggg {
 
   // Apply the homogeneous transform to a normalized coord (perspective divide;
   // affine modes leave w == 1).
-  inline std::vector<double> blitApplyHomogeneous( const std::vector<double> &H, const std::vector<double> &c, int rank ) {
+  template <typename N>
+  inline std::vector<N> blitApplyHomogeneous( const std::vector<N> &H, const std::vector<N> &c, int rank ) {
     int n = rank + 1;
-    double w = H[ (size_t) rank * n + rank ];
+    N w = H[ (size_t) rank * n + rank ];
     for ( int k = 0; k < rank; k++ ) w += H[ (size_t) rank * n + k ] * c[k];
-    std::vector<double> out( (size_t) rank );
+    std::vector<N> out( (size_t) rank );
     for ( int r = 0; r < rank; r++ ) {
-      double v = H[ (size_t) r * n + rank ];
+      N v = H[ (size_t) r * n + rank ];
       for ( int k = 0; k < rank; k++ ) v += H[ (size_t) r * n + k ] * c[k];
-      out[r] = v / ( w != 0. ? w : 1. );
+      out[r] = v / ( w != 0 ? w : N( 1 ) );
     }
     return out;
   }
 
-  struct BlitOptions {
+  template <class T = DefaultTraits>
+  struct BlitOptionsT {
+    using Number = typename T::Number;
+    using Coordinate = typename T::Coordinate;
     int dimension = 0;
     String mode = "box";
-    std::vector<double> matrix;
+    std::vector<Coordinate> matrix;
     std::vector<Index> offset;
     std::vector<Index> size;
     String op = "set";
     std::vector<String> filter;      // F: per-axis filter (continue-last)
     std::vector<String> edges;       // E: per-axis edge (continue-last)
   };
+  using BlitOptions = BlitOptionsT<>;
 
   // Footprint (source texels, per spatial axis) covered by one dest texel, via a
   // numerical Jacobian (step one dest texel per dest axis, measure the source
   // displacement, max over directions). Mirrors ts/ggggx/Blit.ts footprintOf.
-  inline std::vector<double> blitFootprint( const std::vector<double> &H, const std::vector<double> &c,
+  template <typename N>
+  inline std::vector<N> blitFootprint( const std::vector<N> &H, const std::vector<N> &c,
       const std::vector<Index> &destSpatial, const std::vector<Index> &srcSpatial, int rank ) {
-    std::vector<double> src = blitApplyHomogeneous( H, c, rank );
-    std::vector<double> fp( (size_t) rank, 0. );
+    std::vector<N> src = blitApplyHomogeneous( H, c, rank );
+    std::vector<N> fp( (size_t) rank, N( 0 ) );
     for ( int a = 0; a < rank; a++ ) {
-      std::vector<double> cc = c;
+      std::vector<N> cc = c;
       Index ds = ( a < (int) destSpatial.size() ) ? destSpatial[a] : 1;
       if ( ds < 1 ) ds = 1;
-      cc[a] += 1.0 / ds;
-      std::vector<double> src2 = blitApplyHomogeneous( H, cc, rank );
+      cc[a] += N( 1 ) / N( ds );
+      std::vector<N> src2 = blitApplyHomogeneous( H, cc, rank );
       for ( int b = 0; b < rank; b++ ) {
         Index ss = ( b < (int) srcSpatial.size() ) ? srcSpatial[b] : 1;
-        double d = std::fabs( src2[b] - src[b] ) * ( ss ? ss : 1 );
+        N d = NumberOps<N>::abs( src2[b] - src[b] ) * N( ss ? ss : 1 );
         if ( d > fp[b] ) fp[b] = d;
       }
     }
@@ -164,8 +172,9 @@ namespace ggg {
   // Inverse-mapping driver. Returns false iff an unknown combine operator was hit
   // (so the command can report OZ); the matrix is mutated in place.
   template <class T>
-  inline bool Blit( MatrixBaseT<T> *dest, MatrixBaseT<T> *source, const BlitOptions &o ) {
+  inline bool Blit( MatrixBaseT<T> *dest, MatrixBaseT<T> *source, const BlitOptionsT<T> &o ) {
     using Number = typename T::Number;
+    using Coordinate = typename T::Coordinate;
     int dimension = o.dimension;
     int rank = (int) dest->dim.size() - dimension;
     if ( rank < 0 ) rank = 0;
@@ -178,7 +187,7 @@ namespace ggg {
     for ( int a = 0; a < rank; a++ )
       srcSpatial.push_back( ( dimension + a < (int) source->dim.size() ) ? source->dim[ dimension + a ] : 1 );
 
-    std::vector<double> H = blitBuildTransform( o.mode, o.matrix, rank, srcSpatial );
+    std::vector<Coordinate> H = blitBuildTransform( o.mode, o.matrix, rank, srcSpatial );
 
     std::vector<Index> size = !o.size.empty() ? o.size : destSpatial;
     size.resize( rank, 0 );
@@ -189,32 +198,34 @@ namespace ggg {
     // Odometer over the dest region; runs once for rank 0 (a single cell).
     bool more = true;
     while ( more ) {
-      std::vector<double> destCoord( (size_t) rank );
-      std::vector<double> cNorm( (size_t) rank );
+      std::vector<Coordinate> destCoord( (size_t) rank );
+      std::vector<Coordinate> cNorm( (size_t) rank );
       for ( int a = 0; a < rank; a++ ) {
         Index oc = ( a < (int) o.offset.size() ) ? o.offset[a] : 0;
         Index dc = cell[a] + oc;
         destCoord[a] = dc;
-        cNorm[a] = destSpatial[a] ? (double) dc / destSpatial[a] : 0.;
+        cNorm[a] = destSpatial[a]
+          ? Coordinate( dc ) / Coordinate( destSpatial[a] ) : Coordinate( 0 );
       }
 
-      std::vector<double> src = blitApplyHomogeneous( H, cNorm, rank );
+      std::vector<Coordinate> src = blitApplyHomogeneous( H, cNorm, rank );
 
-      std::vector<double> pos( (size_t) dimension, 0. );
+      std::vector<Coordinate> pos( (size_t) dimension, Coordinate( 0 ) );
       pos.insert( pos.end(), src.begin(), src.end() );
 
       // Sample per-axis: filter (I) interpolates the point; a fold (F) reduces the
       // footprint when minifying. The Jacobian footprint drives magnify vs minify.
-      std::vector<double> fp = blitFootprint( H, cNorm, destSpatial, srcSpatial, rank );
+      std::vector<Coordinate> fp =
+        blitFootprint( H, cNorm, destSpatial, srcSpatial, rank );
       std::vector<Number> sampled = Sample( source, pos, dimension, o.filter, o.edges, fp );
 
-      std::vector<double> destPos( (size_t) dimension, 0. );
+      std::vector<Coordinate> destPos( (size_t) dimension, Coordinate( 0 ) );
       destPos.insert( destPos.end(), destCoord.begin(), destCoord.end() );
       for ( int ch = 0; ch < (int) sampled.size(); ch++ ) {
         if ( dimension > 0 ) destPos[0] = ch;   // single leading channel axis
         Index off = sampleOffset( dest->dim, destPos );
         if ( off < 0 ) continue;
-        Number current = dest->readScalarFloat( off, 0. );
+        Number current = dest->readScalarFloat( off, 0 );
         Number result;
         if ( applyOperator( o.op, current, sampled[ch], result ) )
           dest->writeScalarFloat( result, off );
@@ -245,7 +256,7 @@ namespace ggg {
 
     MatrixBaseT<T> *source = nullptr;
     MatrixBaseT<T> *dest = nullptr;
-    BlitOptions opt;
+    BlitOptionsT<T> opt;
   public:
     MatrixBlitT() {
       name = "G40";
@@ -263,7 +274,7 @@ namespace ggg {
     }
 
     void hookCommand() override {
-      source = nullptr; dest = nullptr; opt = BlitOptions(); okay = 1;
+      source = nullptr; dest = nullptr; opt = BlitOptionsT<T>(); okay = 1;
     }
 
     void hookNumber() override {

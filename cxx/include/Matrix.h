@@ -9,7 +9,7 @@ namespace ggg {
 
   // Type-erased, non-template base shared by every matrix. This is the handle
   // the register table / command layer holds (it can read/write any matrix as
-  // float without knowing its Storage type), and the seam that grizzlar's
+  // the configured Number without knowing its Storage type), and the seam that grizzlar's
   // buffers plug into (directly, once the header merge lands; via an adapter
   // until then). It is a ListItem so it can live in a List<MatrixBase> register
   // table, addressed by index (R) or name (L).
@@ -32,9 +32,10 @@ namespace ggg {
     Index components() const { return dim.size() > 0 ? dim[0] : 1; }
     Index sizeVec() const { Index c = components(); return c ? size / c : size; }
 
-    // Type-erased scalar access (the float "lingua franca"). Concrete Matrix
-    // overrides these against its typed storage.
-    virtual Number readScalarFloat( Index index, Number defaultValue = 0. ) const { return defaultValue; }
+    // Type-erased scalar access through the configured language Number.
+    // Concrete Matrix overrides these against its typed storage. The historical
+    // method names remain for source compatibility.
+    virtual Number readScalarFloat( Index index, Number defaultValue = 0 ) const { return defaultValue; }
     // Read-or-fail: false when the index is out of range (or there is no
     // storage), rather than signalling it with an out-of-band value. Callers
     // that need to tell "absent" from "read a 0" use this one.
@@ -86,7 +87,7 @@ namespace ggg {
     }
 
     // Type-erased overrides (MatrixBase) -- used by the register/command layer.
-    Number readScalarFloat( Index index, Number defaultValue = 0. ) const override {
+    Number readScalarFloat( Index index, Number defaultValue = 0 ) const override {
       if ( index < 0 || index >= size || !data ) return defaultValue;
       return (Number) data[index];
     }
@@ -119,16 +120,16 @@ namespace ggg {
     }
 
     template <typename Lookup>
-    Number readNumber( const Lookup &coord, Number defaultValue = 0. ) {
+    Number readNumber( const Lookup &coord, Number defaultValue = 0 ) {
       return readNumber( index(coord), defaultValue );
     }
 
-    Number readNumber( const Index & index, Number defaultValue = 0. ) {
+    Number readNumber( const Index & index, Number defaultValue = 0 ) {
       if ( index < 0 || index >= size ) return defaultValue;
       return data[index];
     }
 
-    Number readNumber( const DimType & coord, Number defaultValue = 0. ) {
+    Number readNumber( const DimType & coord, Number defaultValue = 0 ) {
       return readNumber( index(coord), defaultValue );
     }
 

@@ -51,6 +51,7 @@ type GoldenRecord = {
   status: string
   values: number[]
   exact: boolean
+  requiresFloat: boolean
   expected: string   // rendered TS bytes (snapshot; enforced in C++ only when exact)
 }
 
@@ -79,7 +80,8 @@ async function build() {
     }
     records.push( {
       name: c.name, description: c.description, needs: c.needs, tags: c.tags,
-      program: c.program, status: c.status, values: c.values, exact: c.exact, expected,
+      program: c.program, status: c.status, values: c.values, exact: c.exact,
+      requiresFloat: c.requiresFloat, expected,
     } )
   }
 
@@ -94,6 +96,7 @@ async function build() {
   header += "//\n"
   header += "// Cross-engine contract: decoded `values` within EPSILON (not raw bytes).\n"
   header += "// `expected` bytes are enforced only for `exact` cases.\n"
+  header += "// Fixed backends skip cases whose `requiresFloat` flag is true.\n"
   if ( excluded.length ) {
     header += "//\n// C++-excluded (unsatisfied subsystem `needs`):\n"
     for ( const c of excluded ) header += `//   ${c.name}: needs [${c.needs.join( ", " )}]\n`
@@ -117,6 +120,7 @@ async function build() {
   header += "  struct Case {\n"
   header += "    const char* name; const char* program; const char* status;\n"
   header += "    const double* values; int valueCount; const char* expected;\n"
+  header += "    bool requiresFloat;\n"
   header += "    const unsigned long* polls; int pollCount;\n"
   header += "  };\n"
   header += "  constexpr Case cases[] = {\n"
@@ -128,7 +132,7 @@ async function build() {
     const pollsPtr = c.polls.length === 0 ? "nullptr" : `polls_${c.name}`
     return `    { "${cEscape( c.name )}", "${cEscape( c.program + "\n" )}", ` +
            `"${cEscape( c.status )}", ${valuesPtr}, ${c.values.length}, ${expected}, ` +
-           `${pollsPtr}, ${c.polls.length} }`
+           `${c.requiresFloat}, ${pollsPtr}, ${c.polls.length} }`
   } ).join( ",\n" ) + "\n"
   header += "  };\n"
   header += "  constexpr int caseCount = sizeof( cases ) / sizeof( cases[0] );\n"

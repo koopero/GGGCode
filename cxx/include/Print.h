@@ -96,7 +96,7 @@ namespace ggg {
       if ( code != Data ) return;
       startLine();
 
-      unsigned int codepoint = number;
+      unsigned int codepoint = (unsigned int) number;
       if (codepoint <= 0x7F) {
           // Single byte (ASCII)
           machine->output(static_cast<uint8_t>(codepoint));

@@ -22,6 +22,7 @@
       9
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R3 P0 V1,2,3,4,5,6,7,8,9\nOK"
   },
   {
@@ -47,6 +48,7 @@
       9
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R3 P0 V1,2,3,4,5,6,7,8,9\nOK"
   },
   {
@@ -72,6 +74,7 @@
       9
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R3 P0 V2,2,3,5,5,6,8,8,9\nOK"
   },
   {
@@ -98,6 +101,7 @@
       7
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R3 P0 V3,2,1,6,5,4,9,8,7\nOK"
   },
   {
@@ -124,6 +128,7 @@
       3
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R3 P0 V7,8,9,4,5,6,1,2,3\nOK"
   },
   {
@@ -150,6 +155,7 @@
       1
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R3 P0 V9,8,7,6,5,4,3,2,1\nOK"
   },
   {
@@ -176,6 +182,7 @@
       9
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R3 P0 V4,5,6,4,5,6,7,8,9\nOK"
   },
   {
@@ -202,6 +209,7 @@
       9
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R3 P0 V1,2,3,4,5,6,7,8,9\nOK"
   },
   {
@@ -229,6 +237,7 @@
       9
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R3 P0 V1,4,7,2,5,8,3,6,9\nOK"
   },
   {
@@ -256,6 +265,7 @@
       3
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R3 P0 V7,4,1,8,5,2,9,6,3\nOK"
   },
   {
@@ -283,6 +293,7 @@
       7
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R3 P0 V3,6,9,2,5,8,1,4,7\nOK"
   },
   {
@@ -309,6 +320,7 @@
       9
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R3 P0 V2,2,3,5,5,6,8,8,9\nOK"
   },
   {
@@ -334,6 +346,7 @@
       9
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R3 P0 V1,2,3,4,5,6,7,8,9\nOK"
   },
   {
@@ -359,6 +372,7 @@
       9
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R3 P0 V1,2,3,4,5,6,7,8,9\nOK"
   },
   {
@@ -384,6 +398,7 @@
       5
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R3 P0 V1,1,2,1,1,2,4,4,5\nOK"
   },
   {
@@ -409,6 +424,7 @@
       5
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R3 P0 V1,1.5,2,2.5,2.75,3,4,4.5,5\nOK"
   },
   {
@@ -434,6 +450,7 @@
       5
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R3 P0 V1,1.5,2,1,1.5,2,4,4.5,5\nOK"
   },
   {
@@ -459,6 +476,7 @@
       5
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R3 P0 V1,1.5,2,1,1.5,2,4,4.5,5\nOK"
   },
   {
@@ -484,6 +502,7 @@
       9
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R3 P0 V2,3,3,5,6,6,8,9,9\nOK"
   },
   {
@@ -509,6 +528,7 @@
       19
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nOK\nG20 R3 P0 V11,12,13,14,15,16,17,18,19\nOK"
   },
   {
@@ -534,6 +554,7 @@
       9
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R3 P0 V1,2.5,3,5.5,7.25,7.5,7,8.5,9\nOK"
   },
   {
@@ -559,6 +580,7 @@
       9
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R3 P0 V1,2.75,3,5.5,7.25,7.5,7,8.75,9\nOK"
   },
   {
@@ -584,6 +606,7 @@
       9
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R3 P0 V1,3,3,7,9,9,7,9,9\nOK"
   },
   {
@@ -609,6 +632,7 @@
       9
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R3 P0 V1,3,3,5.5,7.5,7.5,7,9,9\nOK"
   },
   {
@@ -626,6 +650,7 @@
     "status": "",
     "values": [],
     "exact": false,
+    "requiresFloat": false,
     "expected": ""
   },
   {
@@ -645,6 +670,7 @@
       42
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V42\nOK"
   },
   {
@@ -661,6 +687,7 @@
     "status": "OZ",
     "values": [],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK F6"
   },
   {
@@ -680,6 +707,7 @@
       7
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V7\nOK"
   },
   {
@@ -699,6 +727,7 @@
       42
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V42\nOK"
   },
   {
@@ -716,6 +745,7 @@
     "status": "",
     "values": [],
     "exact": false,
+    "requiresFloat": false,
     "expected": ""
   },
   {
@@ -733,6 +763,7 @@
     "status": "",
     "values": [],
     "exact": false,
+    "requiresFloat": false,
     "expected": ""
   },
   {
@@ -752,6 +783,7 @@
       42
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V42\nOK"
   },
   {
@@ -769,6 +801,7 @@
     "status": "",
     "values": [],
     "exact": false,
+    "requiresFloat": false,
     "expected": ""
   },
   {
@@ -788,6 +821,7 @@
       2
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V2\nOK"
   },
   {
@@ -807,6 +841,7 @@
       5
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V5\nOK"
   },
   {
@@ -824,6 +859,7 @@
     "status": "",
     "values": [],
     "exact": false,
+    "requiresFloat": false,
     "expected": ""
   },
   {
@@ -845,6 +881,7 @@
       7
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V7\nOK\nV7\nOK\nV7\nOK"
   },
   {
@@ -865,6 +902,7 @@
       7
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V7\nOK\nV7\nOK"
   },
   {
@@ -886,6 +924,7 @@
       7
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V7\nOK\nV7\nOK\nV7\nOK"
   },
   {
@@ -905,6 +944,7 @@
       7
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V7\nOK"
   },
   {
@@ -922,6 +962,7 @@
     "status": "",
     "values": [],
     "exact": false,
+    "requiresFloat": false,
     "expected": ""
   },
   {
@@ -938,6 +979,7 @@
     "status": "OZ",
     "values": [],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK F6"
   },
   {
@@ -957,6 +999,7 @@
       1
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V1\nOK"
   },
   {
@@ -976,6 +1019,7 @@
       2
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V2\nOK"
   },
   {
@@ -993,6 +1037,7 @@
     "status": "OZ",
     "values": [],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK F6"
   },
   {
@@ -1010,6 +1055,7 @@
     "status": "OZ",
     "values": [],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK F6"
   },
   {
@@ -1027,6 +1073,7 @@
       31
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V31\nOK"
   },
   {
@@ -1044,6 +1091,7 @@
       255
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V255\nOK"
   },
   {
@@ -1061,6 +1109,7 @@
       0
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V0\nOK"
   },
   {
@@ -1078,6 +1127,7 @@
       256
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V256\nOK"
   },
   {
@@ -1099,6 +1149,7 @@
       0
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V15,15,0,0\nOK"
   },
   {
@@ -1117,6 +1168,7 @@
       0.5019607843137255
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V0.5019607843137255\nOK"
   },
   {
@@ -1135,6 +1187,7 @@
       0.5333333333333333
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V0.5333333333333333\nOK"
   },
   {
@@ -1154,6 +1207,7 @@
       30
     ],
     "exact": true,
+    "requiresFloat": false,
     "expected": "G20 R0 P0 V10,20,30\nOK"
   },
   {
@@ -1172,6 +1226,7 @@
       30
     ],
     "exact": true,
+    "requiresFloat": false,
     "expected": "G20 R0 P1 V20,30\nOK"
   },
   {
@@ -1191,6 +1246,7 @@
       30
     ],
     "exact": true,
+    "requiresFloat": false,
     "expected": "G20 R0 P0 V10,20,30\nOK"
   },
   {
@@ -1210,6 +1266,7 @@
       30
     ],
     "exact": true,
+    "requiresFloat": false,
     "expected": "G20 R0 P0 V10,20,30\nOK"
   },
   {
@@ -1229,6 +1286,7 @@
       9
     ],
     "exact": true,
+    "requiresFloat": false,
     "expected": "OK\nG20 R0 P0 V7,8,9\nOK"
   },
   {
@@ -1249,6 +1307,7 @@
       35
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R0 P0 V15,25,35\nOK"
   },
   {
@@ -1269,6 +1328,7 @@
       27
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R0 P0 V9,18,27\nOK"
   },
   {
@@ -1289,6 +1349,7 @@
       60
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R0 P0 V20,40,60\nOK"
   },
   {
@@ -1309,6 +1370,7 @@
       15
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R0 P0 V10,15,15\nOK"
   },
   {
@@ -1329,6 +1391,7 @@
       -30
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R0 P0 V-10,-20,-30\nOK"
   },
   {
@@ -1347,6 +1410,7 @@
       3.1622776601683795
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "OK\nG20 R0 P0 V3.1622776601683795\nOK"
   },
   {
@@ -1364,6 +1428,7 @@
       42
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V42\nOK"
   },
   {
@@ -1381,6 +1446,7 @@
       42
     ],
     "exact": true,
+    "requiresFloat": false,
     "expected": "V42\nO7"
   },
   {
@@ -1401,6 +1467,7 @@
       3
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V1,2,3\nOK"
   },
   {
@@ -1418,6 +1485,7 @@
       0
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V0\nOK"
   },
   {
@@ -1438,6 +1506,7 @@
       15
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V-5,-10,15\nOK"
   },
   {
@@ -1460,6 +1529,7 @@
       6
     ],
     "exact": true,
+    "requiresFloat": false,
     "expected": "V1,2,3 V4,5,6\nOK"
   },
   {
@@ -1479,6 +1549,7 @@
       64
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V255,128,64\nOK"
   },
   {
@@ -1496,6 +1567,7 @@
       -1.5
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V-1.5\nOK"
   },
   {
@@ -1513,6 +1585,7 @@
       0.5
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V0.5\nOK"
   },
   {
@@ -1530,6 +1603,7 @@
       5
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V5\nOK"
   },
   {
@@ -1547,6 +1621,7 @@
       5
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V5\nOK"
   },
   {
@@ -1564,6 +1639,7 @@
       5
     ],
     "exact": true,
+    "requiresFloat": false,
     "expected": "V5 X10\nOK"
   },
   {
@@ -1583,6 +1659,7 @@
       -3
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V5,-3\nOK"
   },
   {
@@ -1601,6 +1678,7 @@
       0
     ],
     "exact": true,
+    "requiresFloat": false,
     "expected": "V0 X10\nOK"
   },
   {
@@ -1619,6 +1697,7 @@
       1
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V0.5,1\nOK"
   },
   {
@@ -1638,6 +1717,7 @@
       0.3
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V1.2,0.3\nOK"
   },
   {
@@ -1659,6 +1739,7 @@
       5
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V1,2,3,4,5\nOK"
   },
   {
@@ -1679,6 +1760,7 @@
       4
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V1,2,3,4\nOK"
   },
   {
@@ -1700,6 +1782,7 @@
       10
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V0,2.5,5,7.5,10\nOK"
   },
   {
@@ -1722,6 +1805,7 @@
       10
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V0,2,4,6,8,10\nOK"
   },
   {
@@ -1744,6 +1828,7 @@
       90
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V30,42,54,66,78,90\nOK"
   },
   {
@@ -1761,6 +1846,7 @@
       20
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V20\nOK"
   },
   {
@@ -1782,6 +1868,7 @@
       9
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V1,2,3,9\nOK"
   },
   {
@@ -1800,6 +1887,7 @@
       6
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V6\nOK"
   },
   {
@@ -1825,6 +1913,7 @@
       222
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V111,112,121,122,211,212,221,222\nOK"
   },
   {
@@ -1843,6 +1932,7 @@
       321
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V321\nOK"
   },
   {
@@ -1860,6 +1950,7 @@
       1
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V1\nOK"
   },
   {
@@ -1879,6 +1970,7 @@
       30
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V10,20,30\nOK"
   },
   {
@@ -1901,6 +1993,7 @@
       30
     ],
     "exact": true,
+    "requiresFloat": false,
     "expected": "V10,20,30 V10,20,30\nOK"
   },
   {
@@ -1916,6 +2009,7 @@
     "status": "OK",
     "values": [],
     "exact": false,
+    "requiresFloat": false,
     "expected": "\nOK"
   },
   {
@@ -1934,6 +2028,7 @@
       20
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V20\nOK"
   },
   {
@@ -1954,6 +2049,7 @@
       30
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V10,20,30\nOK"
   },
   {
@@ -1973,6 +2069,7 @@
       30
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V10,30\nOK"
   },
   {
@@ -1992,6 +2089,7 @@
       30
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V20,30\nOK"
   },
   {
@@ -2011,6 +2109,7 @@
       30
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V20,30\nOK"
   },
   {
@@ -2031,6 +2130,7 @@
       30
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V10,20,30\nOK"
   },
   {
@@ -2051,6 +2151,7 @@
       30
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V10,20,30\nOK"
   },
   {
@@ -2072,6 +2173,7 @@
       30
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V10,20,20,30\nOK"
   },
   {
@@ -2090,6 +2192,7 @@
       30
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V30\nOK"
   },
   {
@@ -2108,6 +2211,7 @@
       0
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V0\nOK"
   },
   {
@@ -2126,6 +2230,7 @@
       5
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V5\nOK"
   },
   {
@@ -2145,6 +2250,7 @@
       2
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V1,2\nOK"
   },
   {
@@ -2168,6 +2274,7 @@
       5
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V0,1,2,3,4,5\nOK"
   },
   {
@@ -2186,6 +2293,7 @@
       4
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V4\nOK"
   },
   {
@@ -2203,6 +2311,7 @@
       9731
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V9731\nOK"
   },
   {
@@ -2220,6 +2329,7 @@
       20320
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V20320\nOK"
   },
   {
@@ -2237,6 +2347,7 @@
       945
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V945\nOK"
   },
   {
@@ -2254,6 +2365,7 @@
       8364
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V8364\nOK"
   },
   {
@@ -2271,6 +2383,7 @@
       128512
     ],
     "exact": false,
+    "requiresFloat": true,
     "expected": "V128512\nOK"
   },
   {
@@ -2290,6 +2403,7 @@
       20320
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V9731,20320\nOK"
   },
   {
@@ -2312,6 +2426,7 @@
       9735
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V9731,9732,9733,9734,9735\nOK"
   },
   {
@@ -2330,6 +2445,7 @@
       30051
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V30051\nOK"
   },
   {
@@ -2349,6 +2465,7 @@
       20320
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V9731,20320\nOK"
   },
   {
@@ -2366,6 +2483,7 @@
       -9731
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V-9731\nOK"
   },
   {
@@ -2383,6 +2501,7 @@
       1
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V1\nOK"
   },
   {
@@ -2400,6 +2519,7 @@
       0
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V0\nOK"
   },
   {
@@ -2417,6 +2537,7 @@
       -1
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V-1\nOK"
   },
   {
@@ -2439,6 +2560,7 @@
       5
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V1,2,3,4,5\nOK"
   },
   {
@@ -2466,6 +2588,7 @@
       9
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V0,1,2,3,4,5,6,7,8,9\nOK"
   },
   {
@@ -2484,6 +2607,7 @@
       3.141592653589793
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V3.141592653589793\nOK"
   },
   {
@@ -2502,6 +2626,7 @@
       6.283185307179586
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V6.283185307179586\nOK"
   },
   {
@@ -2521,6 +2646,7 @@
       5
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V1,5\nOK"
   },
   {
@@ -2540,6 +2666,7 @@
       1
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V5,1\nOK"
   },
   {
@@ -2559,6 +2686,7 @@
       0
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V1,0\nOK"
   },
   {
@@ -2577,6 +2705,7 @@
       50000
     ],
     "exact": false,
+    "requiresFloat": true,
     "expected": "V50000\nOK"
   },
   {
@@ -2594,6 +2723,7 @@
       -1
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V-1\nOK"
   },
   {
@@ -2612,6 +2742,7 @@
       -3.141592653589793
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V-3.141592653589793\nOK"
   },
   {
@@ -2629,6 +2760,7 @@
       1
     ],
     "exact": false,
+    "requiresFloat": false,
     "expected": "V1\nOK"
   }
 ]

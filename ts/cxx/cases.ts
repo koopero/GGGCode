@@ -31,6 +31,8 @@ export type Case = {
   status: string        // control response: "OK" (default), "OZ", or "" (none)
   exact: boolean        // OPT-IN byte check: also assert the generated `expected`
                         // bytes match, where formatting itself is the test
+  requiresFloat: boolean // fixed backends skip this case: it requires IEEE range
+                         // or semantics that the configured fixed type cannot hold
   polls: number[]       // host clock times to call machine.poll() at, AFTER the
                         // program has run. Async procedures (T12) are fired by
                         // the host, so this is the only way the corpus can drive
@@ -91,6 +93,7 @@ function validateCase( raw: any, file: string ): Case {
     values: raw.values.map( Number ),
     status: raw.status ?? "OK",
     exact: raw.exact === true,
+    requiresFloat: raw.requiresFloat === true,
     polls: Array.isArray( raw.polls ) ? raw.polls.map( Number ) : [],
   }
 }

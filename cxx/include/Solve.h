@@ -4,6 +4,7 @@
 #include <vector>
 #include "./Types.h"
 #include "./autogen.h"
+#include "./ggg/NumberOps.h"
 
 namespace ggg {
   //
@@ -154,7 +155,7 @@ namespace ggg {
       // step is necessarily present here (the block above always supplies one),
       // so only its truthiness is left to test.
       if ( step != 0 ) {
-        c = std::floor( ( end - start ) / step );
+        c = NumberOps<Number>::floor( ( end - start ) / step );
         if ( inclusive ) c += 1;
       } else {
         c = 1;

@@ -185,3 +185,30 @@ conformance corpus (`cases/*.yaml`) is compiled into a C++ test table (`buildCon
 The two engines agree on each case's decoded `values` within a global epsilon; byte-exact
 output is asserted only where a case opts in. This is why behaviour documented in
 [cases.md](cases.md) holds for both engines.
+
+### C++ numeric backends
+
+The C++ runtime defaults to `ggg::FixedTraits`: language and register values are signed
+Q16.16 (`int32_t`, step `1/65536`, range approximately `-32768..32768`). Parsing,
+formatting, arithmetic, constants, range solving, and matrix sampling all stay in integer
+code. The sampler uses the same `ScaledNumber` primitive with a higher-precision internal
+coordinate scale; “normalized” and “fixed” are therefore formats of one primitive rather
+than separate numeric systems.
+
+Code that genuinely needs IEEE range or transcendental operators can opt into
+`ggg::FloatTraits` or `ggg::DoubleTraits`, either as a template argument or for the whole
+build:
+
+```cpp
+ggg::MachineT<ggg::FloatTraits> machine;
+// or: -DGGG_DEFAULT_TRAITS=::ggg::FloatTraits
+```
+
+The fixed type deliberately has no floating-point constructor or conversion, so an
+accidental float seam fails to compile instead of quietly pulling floating-point helpers
+into embedded firmware. Fixed matrix operators with no integer kernel yet (trigonometric,
+logarithmic, exponential, and power operators) report the existing `BadOperator` failure.
+
+Conformance cases that require IEEE range or semantics declare `requiresFloat: true` in
+their `cases/*.yaml` record. Float and double backends still run those cases; the fixed
+backend skips only that explicit set.

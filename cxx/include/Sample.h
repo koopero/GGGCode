@@ -7,6 +7,7 @@
 #include "./Types.h"
 #include "./Dim.h"
 #include "./Matrix.h"
+#include "./ggg/NumberOps.h"
 
 //
 // N-D separable sampler -- faithful port of ts/ggggx/Sample.ts. At each spatial
@@ -19,6 +20,28 @@
 //
 
 namespace ggg {
+
+  template <typename N, typename C>
+  inline N sampleWeighted( N value, C weight ) {
+    return static_cast<N>( value * weight );
+  }
+
+  template <typename NRep, std::int64_t NScale, typename NWide, bool NF,
+            typename CRep, std::int64_t CScale, typename CWide, bool CF>
+  inline ScaledNumber<NRep, NScale, NWide, NF> sampleWeighted(
+    ScaledNumber<NRep, NScale, NWide, NF> value,
+    ScaledNumber<CRep, CScale, CWide, CF> weight
+  ) {
+    using N = ScaledNumber<NRep, NScale, NWide, NF>;
+    using Common = typename std::common_type<NWide, CWide, std::int64_t>::type;
+    const Common numerator =
+      static_cast<Common>( value.raw() ) * static_cast<Common>( weight.raw() );
+    const Common denominator = static_cast<Common>( CScale );
+    const Common raw = numerator < 0
+      ? ( numerator - denominator / 2 ) / denominator
+      : ( numerator + denominator / 2 ) / denominator;
+    return N::fromRaw( static_cast<NWide>( raw ) );
+  }
 
   namespace SampleOpt {
     constexpr const char *Linear  = "linear";
@@ -34,10 +57,11 @@ namespace ggg {
     constexpr const char *Add     = "add";
   }
 
-  struct ResolvedAxis {
+  template <typename N>
+  struct ResolvedAxisT {
     Index index0;
     Index index1;
-    double fraction;
+    N fraction;
   };
 
   // Non-negative modulo, matching the TS common/math `mod` (a%n+n)%n.
@@ -48,12 +72,13 @@ namespace ggg {
 
   // Flat offset from an integer-valued coordinate, mirroring ts/ggg/Dim DimOffset:
   // axes past the first are range-checked (out of range => -1), axis 0 is not.
-  inline Index sampleOffset( const DimType &dim, const std::vector<double> &coord ) {
+  template <typename N>
+  inline Index sampleOffset( const DimType &dim, const std::vector<N> &coord ) {
     Index dimIndex = 0;
     Index mult = 1;
     long offset = 0;
     for ( size_t a = 0; a < coord.size(); a++ ) {
-      long arg = (long) std::floor( coord[a] );
+      long arg = (long) NumberOps<N>::floor( coord[a] );
       Index adim = ( dimIndex < (Index) dim.size() && dim[dimIndex] > 0 ) ? dim[dimIndex] : 1;
       if ( dimIndex > 0 && ( arg >= adim || arg < 0 ) ) {
         return -1;
@@ -68,19 +93,20 @@ namespace ggg {
   // Resolve a normalized axis position to texel index(es). `filter` only chooses 1
   // vs 2 taps (nearest vs linear) + the fraction; `edge` clamps/wraps. Coordinate
   // modes (pixel/fence) were dropped -- always normalized (norm = size).
-  inline ResolvedAxis resolveAxis( double val, Index size, const String &filter, const String &edge ) {
-    ResolvedAxis axis { 0, 0, 0. };
+  template <typename N>
+  inline ResolvedAxisT<N> resolveAxis( N val, Index size, const String &filter, const String &edge ) {
+    ResolvedAxisT<N> axis { 0, 0, 0 };
 
     if ( size < 1 ) size = 1;
-    val *= size;
-    axis.index0 = (Index) std::floor( val );
+    val *= N( size );
+    axis.index0 = (Index) NumberOps<N>::floorCoordinate( val );
 
     if ( edge == SampleOpt::Zero ) {
       if ( axis.index0 < 0 || axis.index0 >= size ) axis.index0 = -1;
     } else if ( edge == SampleOpt::Hold ) {
       axis.index0 = std::max( 0, std::min( size - 1, axis.index0 ) );
     } else if ( edge == SampleOpt::Mirror ) {
-      bool mirrored = ( (long) std::floor( val / size ) ) % 2 == 0;
+      bool mirrored = ( (long) NumberOps<N>::floorCoordinate( val / N( size ) ) ) % 2 == 0;
       axis.index0 = mirrored ? sampleMod( axis.index0, size ) : size - 1 - sampleMod( axis.index0, size );
     } else { // Repeat (loop)
       axis.index0 = sampleMod( axis.index0, size );
@@ -88,16 +114,19 @@ namespace ggg {
 
     if ( filter == SampleOpt::Nearest ) {
       axis.index1 = axis.index0;
-      axis.fraction = 0.;
+      axis.fraction = 0;
     } else {
-      axis.fraction = val - std::floor( val );
-      axis.index1 = (Index) std::floor( val + 1 );
+      axis.fraction = val - NumberOps<N>::floorCoordinate( val );
+      if ( axis.fraction < 0 ) axis.fraction = 0;
+      if ( NumberOps<N>::abs( axis.fraction ) <= NumberOps<N>::coordinateEpsilon() )
+        axis.fraction = 0;
+      axis.index1 = (Index) NumberOps<N>::floorCoordinate( val + 1 );
       if ( edge == SampleOpt::Zero ) {
         if ( axis.index1 < 0 || axis.index1 >= size ) axis.index1 = -1;
       } else if ( edge == SampleOpt::Hold ) {
         axis.index1 = std::max( 0, std::min( size - 1, axis.index1 ) );
       } else if ( edge == SampleOpt::Mirror ) {
-        bool mirrored = ( (long) std::floor( ( val + 1 ) / size ) ) % 2 == 0;
+        bool mirrored = ( (long) NumberOps<N>::floorCoordinate( ( val + 1 ) / N( size ) ) ) % 2 == 0;
         axis.index1 = mirrored ? sampleMod( axis.index1, size ) : size - 1 - sampleMod( axis.index1, size );
       } else { // Repeat (loop)
         axis.index1 = sampleMod( axis.index1, size );
@@ -110,14 +139,14 @@ namespace ggg {
 
   // Read `length` contiguous channel scalars from the flat offset of `pos`
   // (out-of-range => 0).
-  // T is deduced from the buffer, so call sites are unchanged. The sampler works
-  // in double internally; Number appears only where values enter and leave.
+  // T is deduced from the buffer; coordinates and accumulation use T::Number so
+  // a fixed machine never detours through a floating-point working type.
   template <class T>
-  inline void sampleReadChannels( MatrixBaseT<T> *buffer, const std::vector<double> &pos,
+  inline void sampleReadChannels( MatrixBaseT<T> *buffer, const std::vector<typename T::Coordinate> &pos,
       Index length, std::vector<typename T::Number> &out ) {
     Index offset = sampleOffset( buffer->dim, pos );
     for ( Index k = 0; k < length; k++ )
-      out[k] = ( offset >= 0 ) ? buffer->readScalarFloat( offset + k, 0. ) : 0.;
+      out[k] = ( offset >= 0 ) ? buffer->readScalarFloat( offset + k, 0 ) : typename T::Number( 0 );
   }
 
   // Continue-last pick from a per-axis option list (one value broadcasts to all).
@@ -134,55 +163,66 @@ namespace ggg {
   }
 
   template <class T>
-  inline std::vector<typename T::Number> sampleCombineAxis( MatrixBaseT<T> *buffer, std::vector<double> &pos,
+  inline std::vector<typename T::Number> sampleCombineAxis(
+      MatrixBaseT<T> *buffer, std::vector<typename T::Coordinate> &pos,
       Index dimIndex, Index dimension, Index length,
-      const std::vector<String> &filter, const std::vector<String> &edges, const std::vector<double> &footprint ) {
+      const std::vector<String> &filter, const std::vector<String> &edges,
+      const std::vector<typename T::Coordinate> &footprint ) {
     using Number = typename T::Number;
+    using Coordinate = typename T::Coordinate;
     static const String dfltFilter = SampleOpt::Linear;
     static const String dfltEdge = SampleOpt::Repeat;
     const int MAX_TAPS = 8;
-    const double EPS = 1e-6;
+    const Coordinate coordEpsilon = NumberOps<Coordinate>::epsilon();
 
     int a = (int) dimIndex - (int) dimension;
     const String &op = samplePick( filter, a, dfltFilter );
     const String &edge = samplePick( edges, a, dfltEdge );
-    double fp = ( a >= 0 && a < (int) footprint.size() ) ? footprint[a] : 0.;
+    Coordinate fp = ( a >= 0 && a < (int) footprint.size() )
+      ? footprint[a] : Coordinate( 0 );
     Index size = ( dimIndex >= 0 && dimIndex < (Index) buffer->dim.size() ) ? buffer->dim[dimIndex] : 1;
     if ( size < 1 ) size = 1;
-    double center = ( dimIndex >= 0 && dimIndex < (Index) pos.size() ) ? pos[dimIndex] : 0.;
+    Coordinate center = ( dimIndex >= 0 && dimIndex < (Index) pos.size() )
+      ? pos[dimIndex] : Coordinate( 0 );
 
     auto inner = [&]() -> std::vector<Number> {
       if ( dimIndex > dimension )
         return sampleCombineAxis( buffer, pos, dimIndex - 1, dimension, length, filter, edges, footprint );
-      std::vector<Number> out( length, 0. );
+      std::vector<Number> out( length, Number( 0 ) );
       sampleReadChannels( buffer, pos, length, out );
       return out;
     };
 
     // MINIFY fold (mean/min/max/add): point-sample the footprint's taps and reduce.
-    if ( sampleIsFold( op ) && fp > 1.0 + EPS ) {
-      int taps = (int) std::ceil( fp - EPS );
+    if ( sampleIsFold( op ) && fp > Coordinate( 1 ) + coordEpsilon ) {
+      Coordinate floored = NumberOps<Coordinate>::floor( fp - coordEpsilon );
+      int taps = (int) floored;
+      if ( floored < fp - coordEpsilon ) taps++;
       if ( taps < 1 ) taps = 1;
       if ( taps > MAX_TAPS ) taps = MAX_TAPS;
-      double fpNorm = fp / size;
+      Coordinate fpNorm = fp / Coordinate( size );
       bool isMin = ( op == SampleOpt::Min ), isMax = ( op == SampleOpt::Max );
-      double init = isMin ? INFINITY : isMax ? -INFINITY : 0.;
-      std::vector<double> acc( (size_t) length, init );
+      Number init = isMin ? NumberOps<Number>::infinity()
+                          : isMax ? -NumberOps<Number>::infinity() : Number( 0 );
+      std::vector<Number> acc( (size_t) length, init );
       for ( int t = 0; t < taps; t++ ) {
-        double offset = taps > 1 ? ( ( t + 0.5 ) / taps - 0.5 ) : 0.;
+        Coordinate offset = taps > 1
+          ? NumberOps<Coordinate>::ratio( 2 * t + 1, 2 * taps )
+            - NumberOps<Coordinate>::ratio( 1, 2 )
+          : Coordinate( 0 );
         if ( dimIndex >= 0 ) pos[dimIndex] = resolveAxis( center + fpNorm * offset, size, SampleOpt::Nearest, edge ).index0;
         std::vector<Number> s = inner();
         for ( Index i = 0; i < length; i++ ) {
-          if ( isMin ) acc[i] = std::min( acc[i], (double) s[i] );
-          else if ( isMax ) acc[i] = std::max( acc[i], (double) s[i] );
+          if ( isMin ) acc[i] = std::min( acc[i], s[i] );
+          else if ( isMax ) acc[i] = std::max( acc[i], s[i] );
           else acc[i] += s[i];
         }
       }
       std::vector<Number> out( (size_t) length );
       if ( op == SampleOpt::Mean )
-        for ( Index i = 0; i < length; i++ ) out[i] = (Number)( acc[i] / taps );
+        for ( Index i = 0; i < length; i++ ) out[i] = acc[i] / Number( taps );
       else
-        for ( Index i = 0; i < length; i++ ) out[i] = (Number) acc[i];
+        for ( Index i = 0; i < length; i++ ) out[i] = acc[i];
       return out;
     }
 
@@ -191,14 +231,15 @@ namespace ggg {
       if ( dimIndex >= 0 ) pos[dimIndex] = resolveAxis( center, size, SampleOpt::Nearest, edge ).index0;
       return inner();
     }
-    ResolvedAxis r = resolveAxis( center, size, SampleOpt::Linear, edge );
+    ResolvedAxisT<Coordinate> r = resolveAxis( center, size, SampleOpt::Linear, edge );
     if ( dimIndex >= 0 ) pos[dimIndex] = r.index0;
     std::vector<Number> sampA = inner();
-    if ( r.fraction == 0. || r.index0 == r.index1 ) return sampA;
+    if ( r.fraction == 0 || r.index0 == r.index1 ) return sampA;
     if ( dimIndex >= 0 ) pos[dimIndex] = r.index1;
     std::vector<Number> sampB = inner();
     for ( Index i = 0; i < length; i++ )
-      sampA[i] = sampA[i] * ( 1. - r.fraction ) + sampB[i] * r.fraction;
+      sampA[i] = sampleWeighted( sampA[i], Coordinate( 1 ) - r.fraction )
+        + sampleWeighted( sampB[i], r.fraction );
     return sampA;
   }
 
@@ -206,9 +247,11 @@ namespace ggg {
   // point, or mean/min/max/add footprint fold) + `edges` + per-axis `footprint`.
   // Returns one value per channel.
   template <class T>
-  inline std::vector<typename T::Number> Sample( MatrixBaseT<T> *buffer, std::vector<double> position,
+  inline std::vector<typename T::Number> Sample(
+      MatrixBaseT<T> *buffer, std::vector<typename T::Coordinate> position,
       Index dimension = 0, const std::vector<String> &filter = {},
-      const std::vector<String> &edges = {}, const std::vector<double> &footprint = {} ) {
+      const std::vector<String> &edges = {},
+      const std::vector<typename T::Coordinate> &footprint = {} ) {
     using Number = typename T::Number;
     Index channels = 1;
     for ( Index d = 0; d < dimension && d < (Index) buffer->dim.size(); d++ )
@@ -216,7 +259,7 @@ namespace ggg {
     if ( channels < 1 ) channels = 1;
 
     if ( position.empty() ) {
-      std::vector<Number> out( channels, 0. );
+      std::vector<Number> out( channels, Number( 0 ) );
       sampleReadChannels( buffer, position, channels, out );
       return out;
     }

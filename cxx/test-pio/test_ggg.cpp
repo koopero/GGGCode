@@ -107,7 +107,7 @@ void test_norm_compare() {
 
 // Test functions
 void test_matrix_int() {
-  auto mat1 = ggg::MatrixStatic<int, false>({2, 2, 2});
+  auto mat1 = ggg::MatrixStatic<int, false, ggg::FloatTraits>({2, 2, 2});
   mat1.allocate();
   mat1.write( { 100, 200, 300 } );
   mat1.write( 333, 2 );
@@ -123,7 +123,10 @@ void test_matrix_int() {
 }
 
 void test_matrix_norm() {
-  auto mat1 = ggg::MatrixStatic<NormalizedNumber<int16_t, 100, int32_t>, false>({2, 2, 2});
+  auto mat1 =
+    ggg::MatrixStatic<NormalizedNumber<int16_t, 100, int32_t>, false, ggg::FloatTraits>(
+      {2, 2, 2}
+    );
   mat1.allocate();
   mat1.write( { 10, 20, 30 } );
   mat1.write( 33, 2 );
@@ -270,9 +273,17 @@ static Decoded decodeOutput( const std::string &text ) {
 }
 
 template <class T>
-static void runConformance() {
+static void runConformance(
+  bool requireExactOutput = true,
+  bool includeFloatRequired = true,
+  int *skippedForFloat = nullptr
+) {
   for ( int i = 0; i < ggg_conformance::caseCount; i++ ) {
     const auto &c = ggg_conformance::cases[i];
+    if ( c.requiresFloat && !includeFloatRequired ) {
+      if ( skippedForFloat ) ( *skippedForFloat )++;
+      continue;
+    }
     ConformanceMachineT<T> machine;
     machine.setup();
     machine.run( c.program );
@@ -281,7 +292,6 @@ static void runConformance() {
     for ( int k = 0; k < c.pollCount; k++ ) machine.poll( c.polls[k] );
     std::string got = conformanceStrip( machine.out );
     Decoded d = decodeOutput( got );
-
     // value-tolerance contract
     TEST_ASSERT_EQUAL_INT_MESSAGE( c.valueCount, (int) d.values.size(), c.name );
     for ( int k = 0; k < c.valueCount && k < (int) d.values.size(); k++ ) {
@@ -297,7 +307,8 @@ static void runConformance() {
     }
 
     // opt-in byte exactness, where formatting itself is the test
-    if ( c.expected ) TEST_ASSERT_EQUAL_STRING_MESSAGE( c.expected, got.c_str(), c.name );
+    if ( requireExactOutput && c.expected )
+      TEST_ASSERT_EQUAL_STRING_MESSAGE( c.expected, got.c_str(), c.name );
   }
 }
 
@@ -312,11 +323,17 @@ void test_conformance() {
 // significant digits, which hides the extra width.
 static_assert( sizeof( ggg::MachineT<ggg::FloatTraits>::Number ) == 4, "float traits" );
 static_assert( sizeof( ggg::MachineT<ggg::DoubleTraits>::Number ) == 8, "double traits" );
+static_assert( sizeof( ggg::MachineT<ggg::FixedTraits>::Number ) == 4, "fixed traits" );
 static_assert( !std::is_same<ggg::MachineT<ggg::FloatTraits>,
                              ggg::MachineT<ggg::DoubleTraits>>::value,
                "the two instantiations are distinct types" );
-// ...and the legacy alias still names the default configuration, which is what
-// keeps every unmodified subclass in this file (and grizzlar) compiling.
+static_assert( !std::is_convertible<double, ggg::FixedTraits::Number>::value,
+               "fixed machine numbers cannot silently enter through double" );
+static_assert( !std::is_convertible<ggg::FixedTraits::Number, double>::value,
+               "fixed machine numbers cannot silently leave through double" );
+static_assert( std::is_same<ggg::DefaultTraits, ggg::FixedTraits>::value,
+               "Q16.16 fixed point is the default backend" );
+// ...and the legacy alias names that fixed default configuration.
 static_assert( std::is_same<ggg::Machine, ggg::MachineT<ggg::DefaultTraits>>::value,
                "ggg::Machine is the default instantiation" );
 
@@ -328,18 +345,70 @@ void test_conformance_double() {
   runConformance<ggg::DoubleTraits>();
 }
 
+void test_conformance_fixed() {
+  // Fixed-point quantization may render a longer decimal spelling than the
+  // reference, so this uses the corpus's numeric tolerance + control responses
+  // but deliberately skips its opt-in byte-exact formatting assertions and
+  // cases explicitly marked as requiring an IEEE floating backend.
+  int skippedForFloat = 0;
+  runConformance<ggg::FixedTraits>( false, false, &skippedForFloat );
+  TEST_ASSERT_EQUAL_INT( 2, skippedForFloat );
+}
+
+struct FixedPrintMachine : public ggg::MachineT<ggg::FixedTraits> {
+  std::string out;
+  void write( const ggg::String &s ) override { out += s; }
+  void setup() override {
+    this->addCommand( new ggg::PrintNumbersT<ggg::FixedTraits>() );
+  }
+};
+
+void test_fixed_number_machine() {
+  using Fixed = ggg::FixedTraits::Number;
+  using Ops = ggg::NumberOps<Fixed>;
+
+  TEST_ASSERT_EQUAL_INT32( 65536, Fixed( 1 ).raw() );
+  TEST_ASSERT_EQUAL_INT32( 256, Fixed::fromRatio( 1, 256 ).raw() );
+  TEST_ASSERT_EQUAL_INT32( 256, ( Fixed( 1 ) / Fixed( 256 ) ).raw() );
+  TEST_ASSERT_EQUAL_INT32( 98304, Fixed::fromRatio( 3, 2 ).raw() );
+  TEST_ASSERT_EQUAL_INT32(
+    49152,
+    ( Fixed::fromRatio( 3, 2 ) * Fixed::fromRatio( 1, 2 ) ).raw()
+  );
+
+  char *end = nullptr;
+  Fixed parsed = Ops::parse( "-12.375e1x", &end );
+  TEST_ASSERT_EQUAL_INT32( -8110080, parsed.raw() );
+  TEST_ASSERT_EQUAL_CHAR( 'x', *end );
+  TEST_ASSERT_EQUAL_STRING( "-123.75", Ops::format( parsed ).c_str() );
+
+  Fixed unsupported;
+  TEST_ASSERT_FALSE( ggg::applyOperator(
+    "sin", Fixed( 1 ), Fixed( 0 ), unsupported
+  ) );
+
+  FixedPrintMachine machine;
+  machine.setup();
+  machine.run( "P10 V1.5,-2.25,1:3\n" );
+  TEST_ASSERT_EQUAL_STRING( "V1.5,-2.25,1,2,3\nOK\n", machine.out.c_str() );
+
+  machine.out.clear();
+  machine.run( "P10 V0H80\n" );
+  TEST_ASSERT_EQUAL_STRING( "V0.5019683837890625\nOK\n", machine.out.c_str() );
+}
+
 // Matrix command layer: register table + G20 Write / G10 Read round-trip.
-struct MatrixCmdMachine : public ggg::Machine {
+struct MatrixCmdMachine : public ggg::MachineT<ggg::FloatTraits> {
   std::string out;
   void write( const ggg::String &s ) override { out += s; }
 };
 
 void test_matrix_commands() {
   MatrixCmdMachine m;
-  m.addCommand( new ggg::MatrixWrite() );
-  m.addCommand( new ggg::MatrixRead() );
+  m.addCommand( new ggg::MatrixWriteT<ggg::FloatTraits>() );
+  m.addCommand( new ggg::MatrixReadT<ggg::FloatTraits>() );
 
-  auto mat = new ggg::Matrix<float,true>({1,4});  // 1 comp x 4 = size 4, watched
+  auto mat = new ggg::Matrix<float,true,ggg::FloatTraits>({1,4});  // 1 comp x 4 = size 4, watched
   mat->allocate();
   mat->name = "buf0";
   m.addRegister( mat );
@@ -406,8 +475,8 @@ void test_matrix_commands() {
 // Self-documentation: D1 streams the command catalog (name + per-arg docs).
 void test_doc_commands() {
   MatrixCmdMachine m;
-  m.addCommand( new ggg::MatrixWrite() );
-  m.addCommand( new ggg::CommandsList() );
+  m.addCommand( new ggg::MatrixWriteT<ggg::FloatTraits>() );
+  m.addCommand( new ggg::CommandsListT<ggg::FloatTraits>() );
   m.run( "D1\n" );
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "D-1 ; List available commands" ) );
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "; G20 : Write values into a register." ) );
@@ -419,7 +488,7 @@ void test_doc_commands() {
 // reach hookString() with the buffered text, and following args must still
 // parse. Guards the parser fix in Machine.h (dataAppend(String) delivering the
 // value + quote-mode exit so trailing args parse).
-struct StringArgCmd : public ggg::CommandType {
+struct StringArgCmd : public ggg::CommandTypeT<ggg::FloatTraits> {
   std::string gotName;
   std::vector<float> vals;
   StringArgCmd() { name = "U20"; }
@@ -428,7 +497,7 @@ struct StringArgCmd : public ggg::CommandType {
   void hookNumber() override { if ( code == 'V' ) vals.push_back( (float) number ); }
 };
 
-struct StringArgMachine : public ggg::Machine {
+struct StringArgMachine : public ggg::MachineT<ggg::FloatTraits> {
   std::string out;
   StringArgCmd cmd;
   void write( const ggg::String &s ) override { out += s; }
@@ -455,15 +524,15 @@ void test_string_arg() {
 }
 
 // Flow control: procedures via the command gate (T10 define / T0 end / T11 run).
-struct FlowMachine : public ggg::Machine {
+struct FlowMachine : public ggg::MachineT<ggg::FloatTraits> {
   std::string out;
   void write( const ggg::String &s ) override { out += s; }
   void setup() override {
-    addCommand( new ggg::PrintNumbers() );
-    addCommand( new ggg::ProcedureInit() );
-    addCommand( new ggg::BlockEnd() );
-    addCommand( new ggg::ProcedureRun() );
-    addCommand( new ggg::Conditional() );
+    addCommand( new ggg::PrintNumbersT<ggg::FloatTraits>() );
+    addCommand( new ggg::ProcedureInitT<ggg::FloatTraits>() );
+    addCommand( new ggg::BlockEndT<ggg::FloatTraits>() );
+    addCommand( new ggg::ProcedureRunT<ggg::FloatTraits>() );
+    addCommand( new ggg::ConditionalT<ggg::FloatTraits>() );
   }
 };
 
@@ -537,15 +606,15 @@ void test_flow_procedures() {
 }
 
 // References: a bare $name reads the whole register; unknown -> no values.
-struct RefMachine : public ggg::Machine {
+struct RefMachine : public ggg::MachineT<ggg::FloatTraits> {
   std::string out;
   void write( const ggg::String &s ) override { out += s; }
-  void setup() override { addCommand( new ggg::PrintNumbers() ); }
+  void setup() override { addCommand( new ggg::PrintNumbersT<ggg::FloatTraits>() ); }
 };
 
 void test_references() {
   RefMachine m; m.setup();
-  auto mat = new ggg::Matrix<float,false>( {1,3} );   // 1 component x 3 = size 3
+  auto mat = new ggg::Matrix<float,false,ggg::FloatTraits>( {1,3} );   // 1 component x 3 = size 3
   mat->allocate();
   mat->name = "r";
   mat->writeScalarFloat( 10, 0 );
@@ -681,7 +750,7 @@ void test_flow_iteration() {
 // reads the integer-rounded coordinate, so linear-center is 6.25, not 7.0.
 void test_sample() {
   // 1-D buffer [10,20,30] (normalized coords; val = pos * size).
-  auto *line = new ggg::Matrix<float,false>( {3} );
+  auto *line = new ggg::Matrix<float,false,ggg::FloatTraits>( {3} );
   line->allocate();
   line->write( {10,20,30} );
   TEST_ASSERT_EQUAL_FLOAT( 10, ggg::Sample( line, {0.0}, 0, {"linear"} )[0] );
@@ -698,7 +767,7 @@ void test_sample() {
   TEST_ASSERT_EQUAL_FLOAT( 20, ggg::Sample( line, {0.5}, 0, {"nearest"}, {}, fp3 )[0] );
 
   // 3x3 [1..9]: the in-place pos-mutation quirk => linear-center is 6.25, not 7.0.
-  auto *src = new ggg::Matrix<float,false>( {3,3} );
+  auto *src = new ggg::Matrix<float,false,ggg::FloatTraits>( {3,3} );
   src->allocate();
   src->write( {1,2,3,4,5,6,7,8,9} );
   TEST_ASSERT_EQUAL_FLOAT( 5,    ggg::Sample( src, {0.5,0.5}, 0, {"nearest"} )[0] );
@@ -707,7 +776,7 @@ void test_sample() {
   TEST_ASSERT_EQUAL_FLOAT( 5.5,  ggg::Sample( src, {0.5,0.5}, 0, {"linear","nearest"} )[0] );
 
   // multi-channel: 3ch x 3px (dimension 1); linear half px0->px1 = [0.5,0.5,0].
-  auto *rgb = new ggg::Matrix<float,false>( {3,3} );
+  auto *rgb = new ggg::Matrix<float,false,ggg::FloatTraits>( {3,3} );
   rgb->allocate();
   rgb->write( {1,0,0, 0,1,0, 0,0,1} );
   auto c = ggg::Sample( rgb, {0, 1.0/6}, 1, {"linear"} );
@@ -721,11 +790,11 @@ void test_sample() {
 // Expected dest data mirrors the TS MatrixBlit.test.ts cases.
 void test_blit() {
   MatrixCmdMachine m;
-  m.addCommand( new ggg::MatrixWrite() );
-  m.addCommand( new ggg::MatrixBlit() );
+  m.addCommand( new ggg::MatrixWriteT<ggg::FloatTraits>() );
+  m.addCommand( new ggg::MatrixBlitT<ggg::FloatTraits>() );
 
-  auto *src = new ggg::Matrix<float,false>( {3,3} ); src->allocate(); src->name = "src"; m.addRegister( src ); // 0
-  auto *dst = new ggg::Matrix<float,false>( {3,3} ); dst->allocate(); dst->name = "dst"; m.addRegister( dst ); // 1
+  auto *src = new ggg::Matrix<float,false,ggg::FloatTraits>( {3,3} ); src->allocate(); src->name = "src"; m.addRegister( src ); // 0
+  auto *dst = new ggg::Matrix<float,false,ggg::FloatTraits>( {3,3} ); dst->allocate(); dst->name = "dst"; m.addRegister( dst ); // 1
 
   m.run( "G20 R0 V1,2,3,4,5,6,7,8,9\n" );
 
@@ -860,6 +929,8 @@ int main() {
   RUN_TEST(test_blit);
   RUN_TEST(test_conformance);
   RUN_TEST(test_conformance_double);
+  RUN_TEST(test_conformance_fixed);
+  RUN_TEST(test_fixed_number_machine);
   UNITY_END();
   return 0;
 }
