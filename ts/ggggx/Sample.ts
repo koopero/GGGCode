@@ -42,6 +42,7 @@ export interface SampleOptions {
   filter?: string[]     // per spatial axis (continue-last); default linear
   edges?: string[]      // per spatial axis (continue-last); default loop (=repeat)
   footprint?: number[]  // per spatial axis, source-texel extent; default 0 (point)
+  pixelCoordinates?: boolean // internal: spatial positions are pixels, not normalized
 }
 
 // Continue-last pick from a per-axis list (a single value broadcasts to all axes).
@@ -56,13 +57,14 @@ function pick( list: string[] | undefined, a: IntT, dflt: string ): string {
 // filters with no footprint reduction (so a minifying linear just lerps the centre
 // and aliases); mean/min/max/add reduce the footprint when MINIFYING by
 // point-sampling its taps and folding them (and degrade to a point when
-// magnifying). Edge handling is per axis (always normalized coords). The leading
-// `dimension` axes are channels, read as one contiguous block. The sampling
-// primitive under MatrixBlit (G40).
+// magnifying). Edge handling is per axis. Coordinates are normalized unless the
+// internal pixel-coordinate path is selected. The leading `dimension` axes are
+// channels, read as one contiguous block. The sampling primitive under
+// MatrixBlit (G40).
 //
 export default function Sample( buffer:Matrix, position:VecArg = 0, options:SampleOptions = {} ):number[] {
   const { dim } = buffer
-  const { dimension = 0, filter, edges, footprint } = options
+  const { dimension = 0, filter, edges, footprint, pixelCoordinates = false } = options
   const pos = toVector( position ).slice()
 
   let channels = 1
@@ -70,6 +72,11 @@ export default function Sample( buffer:Matrix, position:VecArg = 0, options:Samp
   if ( channels < 1 ) channels = 1
 
   function read():number[] {
+    // Edge.Zero resolves an out-of-range spatial axis to -1. Matrix's flat
+    // offset intentionally permits axis-0 offsets for contiguous access, so
+    // consume the sampler sentinel here before it can alias the previous row.
+    for ( let d = dimension; d < pos.length; d++ )
+      if ( pos[d] < 0 ) return new Array( channels ).fill( 0 )
     return buffer.read( pos, new Array( channels ) ) as number[]
   }
 
@@ -86,12 +93,14 @@ export default function Sample( buffer:Matrix, position:VecArg = 0, options:Samp
     // MINIFY fold (mean/min/max/add): point-sample the footprint's taps and reduce.
     if ( isFold( op ) && fp > 1 + EPS ) {
       const taps = max( 1, min( MAX_TAPS, ceil( fp - EPS ) ) )
-      const fpNorm = fp / size
+      const fpStep = pixelCoordinates ? fp : fp / size
       const init = op === "min" ? Infinity : op === "max" ? -Infinity : 0
       const acc = new Array( channels ).fill( init )
       for ( let t = 0; t < taps; t++ ) {
         const offset = taps > 1 ? ( t + 0.5 ) / taps - 0.5 : 0
-        pos[dimIndex] = resolveAxis( center + fpNorm * offset, size, Filter.Nearest, edge ).index0
+        pos[dimIndex] = resolveAxis(
+          center + fpStep * offset, size, Filter.Nearest, edge, pixelCoordinates
+        ).index0
         const s = inner()
         for ( let i = 0; i < channels; i++ ) {
           if ( op === "min" ) acc[i] = min( acc[i], s[i] )
@@ -105,10 +114,14 @@ export default function Sample( buffer:Matrix, position:VecArg = 0, options:Samp
 
     // linear lerps; nearest (and a fold op when magnifying) point-samples the centre.
     if ( op !== Filter.Linear ) {
-      pos[dimIndex] = resolveAxis( center, size, Filter.Nearest, edge ).index0
+      pos[dimIndex] = resolveAxis(
+        center, size, Filter.Nearest, edge, pixelCoordinates
+      ).index0
       return inner()
     }
-    const { index0, index1, fraction } = resolveAxis( center, size, Filter.Linear, edge )
+    const { index0, index1, fraction } = resolveAxis(
+      center, size, Filter.Linear, edge, pixelCoordinates
+    )
     pos[dimIndex] = index0
     const sampA = inner()
     if ( fraction === 0 || index0 === index1 ) return sampA
@@ -123,14 +136,16 @@ export default function Sample( buffer:Matrix, position:VecArg = 0, options:Samp
 }
 
 
-// Resolve a normalized axis position to texel index(es). `filter` only chooses 1
-// vs 2 taps (nearest vs linear) + the fraction; `edge` clamps/wraps out-of-range.
-// Coordinate modes (pixel/fence) were dropped -- the blit is always normalized.
-function resolveAxis( val: FloatT, size: IntT, filter: string, edge: string ): ResolvedAxis {
+// Resolve a normalized (default) or pixel-space axis position to texel index(es).
+// `filter` only chooses 1 vs 2 taps; `edge` clamps/wraps out-of-range.
+function resolveAxis(
+  val: FloatT, size: IntT, filter: string, edge: string,
+  pixelCoordinates:boolean = false
+): ResolvedAxis {
   const axis: ResolvedAxis = { index0: 0, index1: 0, fraction: 0 }
 
   size = max( 1, size )
-  val *= size
+  if ( !pixelCoordinates ) val *= size
   axis.index0 = floor( val )
 
   switch ( edge ) {

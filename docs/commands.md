@@ -103,7 +103,7 @@ Arguments:
 | `P` | `(C,X,Y,Z)` | Buffer position (component-first). |
 | `S` | `(n)` | Size |
 
-Examples: [blit_box_default](cases.md#blit_box_default), [blit_box_full](cases.md#blit_box_full), [blit_box_subregion](cases.md#blit_box_subregion), [blit_box_flip_x](cases.md#blit_box_flip_x), [blit_box_flip_y](cases.md#blit_box_flip_y), [blit_box_flip_180](cases.md#blit_box_flip_180), [blit_map_axes](cases.md#blit_map_axes), [blit_map_default](cases.md#blit_map_default), +31 more
+Examples: [blit_box_default](cases.md#blit_box_default), [blit_box_full](cases.md#blit_box_full), [blit_box_subregion](cases.md#blit_box_subregion), [blit_box_flip_x](cases.md#blit_box_flip_x), [blit_box_flip_y](cases.md#blit_box_flip_y), [blit_box_flip_180](cases.md#blit_box_flip_180), [blit_map_axes](cases.md#blit_map_axes), [blit_map_default](cases.md#blit_map_default), +35 more
 
 ### G13
 
@@ -170,8 +170,8 @@ Arguments:
 | --- | --- | --- |
 | `R` | `(n\|S)` | buffer specifier |
 | `W` |  | Destination buffer (index or name). |
-| `M` | `(n+)` | Transform coefficients (per mode): box = source min,max pairs; map = (srcAxis,min,max) triples per dest axis; affine = matrix. |
-| `T` |  | Transform mode: box (default) / affine / map (index or name). |
+| `M` | `(n+)` | Transform coefficients (per mode): box = source min,max pairs; map = (srcAxis,min,max) triples per dest axis; affine = matrix; offset = source pixel offsets. |
+| `T` |  | Transform mode: box (default) / affine / map / offset (index or name). |
 | `P` | `(C,X,Y,Z)` | Buffer position (component-first). |
 | `S` | `(n)` | Size |
 | `D` | `(C,X,Y,Z)` | dimensions (component-first) |
@@ -179,7 +179,7 @@ Arguments:
 | `F` | `(*)` | Per-axis filter (list, continue-last): 0 linear / 1 nearest / 2 mean / 3 min / 4 max / 5 add. |
 | `E` | `(*)` | Per-axis edge (list, continue-last): 0 loop / 1 hold / 2 mirror / 3 zero. |
 
-Examples: [blit_box_default](cases.md#blit_box_default), [blit_box_full](cases.md#blit_box_full), [blit_box_subregion](cases.md#blit_box_subregion), [blit_box_flip_x](cases.md#blit_box_flip_x), [blit_box_flip_y](cases.md#blit_box_flip_y), [blit_box_flip_180](cases.md#blit_box_flip_180), [blit_map_axes](cases.md#blit_map_axes), [blit_map_default](cases.md#blit_map_default), +16 more
+Examples: [blit_box_default](cases.md#blit_box_default), [blit_box_full](cases.md#blit_box_full), [blit_box_subregion](cases.md#blit_box_subregion), [blit_box_flip_x](cases.md#blit_box_flip_x), [blit_box_flip_y](cases.md#blit_box_flip_y), [blit_box_flip_180](cases.md#blit_box_flip_180), [blit_map_axes](cases.md#blit_map_axes), [blit_map_default](cases.md#blit_map_default), +20 more
 
 ## Responses & failures
 

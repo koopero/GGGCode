@@ -68,6 +68,39 @@ describe( "Blit", () => {
     expect( r.data ).toEqual( [ 7, 4, 1, 8, 5, 2, 9, 6, 3 ] )
   } )
 
+  test( "offset adds a source-pixel lookup displacement without scaling", () => {
+    const d = mk( [ 3, 3 ] )
+    Blit( d, mk( [ 3, 3 ], srcData ), {
+      mode: "offset", matrix: [ 1, 0 ], filter: [ "nearest" ], edges: [ "zero" ]
+    } )
+    expect( d.data ).toEqual( [ 2, 3, 0, 5, 6, 0, 8, 9, 0 ] )
+  } )
+
+  test( "offset keeps one-to-one pixel scale when source and dest sizes differ", () => {
+    const d = mk( [ 4 ] )
+    Blit( d, mk( [ 2 ], [ 10, 20 ] ), {
+      mode: "offset", filter: [ "nearest" ], edges: [ "zero" ]
+    } )
+    expect( d.data ).toEqual( [ 10, 20, 0, 0 ] )
+  } )
+
+  test( "fractional offset composes with linear filtering", () => {
+    const d = mk( [ 3, 3 ] )
+    Blit( d, mk( [ 3, 3 ], srcData ), {
+      mode: "offset", matrix: [ 0.5, 0 ], edges: [ "hold" ]
+    } )
+    expect( d.data ).toEqual( [ 1.5, 2.5, 3, 4.5, 5.5, 6, 7.5, 8.5, 9 ] )
+  } )
+
+  test( "offset uses absolute destination coordinates inside a P/S region", () => {
+    const d = mk( [ 3, 3 ] )
+    Blit( d, mk( [ 3, 3 ], srcData ), {
+      mode: "offset", matrix: [ -1, -1 ], offset: [ 1, 1 ], size: [ 1, 1 ],
+      filter: [ "nearest" ], edges: [ "zero" ]
+    } )
+    expect( d.data ).toEqual( [ 0, 0, 0, 0, 1, 0, 0, 0, 0 ] )
+  } )
+
   test( "axis-0 shifted box (nearest, hold) shifts along the innermost axis", () => {
     const d = mk( [ 3, 3 ] )
     // box [1.2,4.2] on axis 0 == old scale 1 + translate 0.4 (1.2/3); held at edge.

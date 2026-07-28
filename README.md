@@ -48,6 +48,20 @@ G10 R"bd"                                  ; -> 3,2,1,6,5,4,9,8,7  (blit_box_fli
 
 See the [tour](docs/tour.md) for the full progression, with diagrams.
 
+## CLI image output
+
+With the graphics extension loaded, `-o` / `--output` writes the matrix from
+each `G13` display command as a PNG. Use `%d` for a zero-based frame number or
+add zero-padding, such as `%04d`:
+
+```bash
+ggg -a --output frame-%04d.png animation.gggx
+# frame-0000.png, frame-0001.png, ...
+```
+
+A path without a frame marker, such as `--output latest.png`, is overwritten
+on each `G13` and therefore contains the most recent frame.
+
 ## Arguments
 
 - **Numbers**

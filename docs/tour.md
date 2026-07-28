@@ -138,6 +138,17 @@ G10 R"bd"                                  ; -> 1,4,7, 2,5,8, 3,6,9
 rotate, filters (`F`), edges (`E`), and write operators (`Q`) — is under the
 [blit](cases.md#blit) tag.
 
+An **offset** performs a one-to-one source lookup in pixel coordinates, which is
+particularly useful for neighbourhood and stencil operations:
+
+```
+G40 R"bs" W"bd" T"offset" M-1,0 F1 E3   ; dest[x,y] = source[x-1,y]
+```
+
+Unlike a box, offset mode never stretches when the source and destination sizes
+differ. Missing `M` axes default to zero, while the usual filter (`F`) and edge
+(`E`) rules still apply.
+
 ---
 
 ## 6. Flow control

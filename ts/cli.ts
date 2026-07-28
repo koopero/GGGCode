@@ -4,10 +4,12 @@ import { parseArgs } from "node:util"
 import { isArray } from "./common/util"
 import Machine from "./ggg/Machine"
 import * as readline from "readline"
-import { createReadStream, ReadStream  } from "fs"
+import { createReadStream, ReadStream, writeFileSync } from "fs"
 import { Readable, pipeline } from 'stream'
 import Format from "./ggg/Format"
 import gggWebSocketServer from "./websocket/gggWebSocketServer"
+import { MatrixEvents } from "./ggggx/GXLanguage"
+import SavePNG from "./ggggx/SavePNG"
 
 type OptionSpec = {
   alias: string
@@ -31,7 +33,7 @@ export const CLI_OPTIONS : Record<string, OptionSpec> = {
   interpreter: { alias: "i", describe: "Start interactive interpreter",    type: "boolean" },
   quiet:       { alias: "q", describe: "Don't print output",               type: "boolean" },
   ok:          { alias: "k", describe: "Print 'OK' commands",              type: "boolean" },
-  image:       { alias: "o", describe: "Image file output",                type: "string"  },
+  output:      { alias: "o", describe: "PNG output path (%d or %04d per G13)", type: "string" },
   tick:        { alias: "t", describe: "Async poll interval, ms (default 10)", type: "string" },
 }
 
@@ -64,6 +66,24 @@ export function showHelp() {
     lines.push( `  ${flag.padEnd( width )}  ${CLI_OPTIONS[name].describe}` )
   }
   console.log( lines.join( "\n" ) )
+}
+
+// Expand a printf-style frame marker. A path without a marker is returned
+// unchanged, preserving the convenient "latest frame" overwrite behaviour.
+export function formatOutputPath( template:string, sequence:number ) {
+  return template.replace( /%%|%0(\d+)d|%d/g, ( marker, width ) => {
+    if ( marker === "%%" ) return "%"
+    const value = sequence.toString()
+    return width ? value.padStart( Number( width ), "0" ) : value
+  } )
+}
+
+export function attachPNGOutput( machine:Machine, template:string ) {
+  let sequence = 0
+  machine.on( MatrixEvents.Display, ( { buffer } ) => {
+    const path = formatOutputPath( template, sequence++ )
+    writeFileSync( path, SavePNG( buffer ) )
+  } )
 }
 
 
@@ -163,6 +183,10 @@ export function runCLI() {
     process.stdout.write( Format( token ) )
   })
 
+  if ( options.output ) {
+    attachPNGOutput( machine, options.output )
+  }
+
   const files = options._
   let inputStream:Readable = process.stdin
 
@@ -246,5 +270,3 @@ function concatenateStreams(streams: ReadStream[]): Readable {
 
   return concatenatedStream
 }
-
-

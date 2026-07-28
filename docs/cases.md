@@ -6,12 +6,12 @@ Each case is one artifact wearing four hats: a behavioural **spec**, a piece of 
 
 See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) · [runtime](runtime.md).
 
-137 cases across 26 tags.
+141 cases across 27 tags.
 
 ## Tags
 
 - [async](#async) (6)
-- [blit](#blit) (24)
+- [blit](#blit) (28)
 - [conditionals](#conditionals) (6)
 - [decimals](#decimals) (15)
 - [flip](#flip) (3)
@@ -24,11 +24,12 @@ See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) 
 - [matrix](#matrix) (15)
 - [multiaxis](#multiaxis) (4)
 - [normalized](#normalized) (2)
-- [offset](#offset) (5)
+- [offset](#offset) (9)
 - [operator](#operator) (10)
 - [procedures](#procedures) (8)
 - [ranges](#ranges) (15)
 - [references](#references) (17)
+- [region](#region) (1)
 - [registers](#registers) (1)
 - [rotate](#rotate) (3)
 - [signs](#signs) (1)
@@ -319,6 +320,62 @@ G10 R"bd"
 ![blit_mode_by_index: blit source to result](img/blit_mode_by_index.svg)
 
 - values: `[1,2,3,4,5,6,7,8,9]`
+- needs: `ggggx`
+
+### blit_offset
+
+Offset mode uses direct pixel coordinates: M1,0 means dest[x,y] = source[x+1,y]. Zero edge exposes the vacated final column.
+
+```
+G40 R"bs" W"bd" T"offset" M1,0 F1 E3
+G10 R"bd"
+```
+
+![blit_offset: blit source to result](img/blit_offset.svg)
+
+- values: `[2,3,0,5,6,0,8,9,0]`
+- needs: `ggggx`
+
+### blit_offset_by_index
+
+The transform mode index T3 selects offset. M-1,0 samples the source pixel immediately to the left, with zero beyond the edge.
+
+```
+G40 R"bs" W"bd" T3 M-1,0 F1 E3
+G10 R"bd"
+```
+
+![blit_offset_by_index: blit source to result](img/blit_offset_by_index.svg)
+
+- values: `[0,1,2,0,4,5,0,7,8]`
+- needs: `ggggx`
+
+### blit_offset_fractional
+
+Offset remains composable with filtering: M0.5,0 linearly interpolates halfway between horizontal source pixels; hold edge keeps the last column.
+
+```
+G40 R"bs" W"bd" T"offset" M0.5,0 E1
+G10 R"bd"
+```
+
+![blit_offset_fractional: blit source to result](img/blit_offset_fractional.svg)
+
+- values: `[1.5,2.5,3,4.5,5.5,6,7.5,8.5,9]`
+- needs: `ggggx`
+
+### blit_offset_region
+
+P/S clips writes in absolute destination coordinates. At destination [1,1], offset M-1,-1 samples source [0,0].
+
+```
+G40 R"bs" W"bd" T"offset" M-1,-1 P1,1 S1,1 F1 E3
+G10 R"bd"
+```
+
+![blit_offset_region: blit source to result](img/blit_offset_region.svg)
+
+- values: `[0,0,0,0,1,0,0,0,0]`
 - needs: `ggggx`
 
 ### blit_magnify_nearest
@@ -1788,6 +1845,62 @@ P10 V0J8
 
 ## offset
 
+### blit_offset
+
+Offset mode uses direct pixel coordinates: M1,0 means dest[x,y] = source[x+1,y]. Zero edge exposes the vacated final column.
+
+```
+G40 R"bs" W"bd" T"offset" M1,0 F1 E3
+G10 R"bd"
+```
+
+![blit_offset: blit source to result](img/blit_offset.svg)
+
+- values: `[2,3,0,5,6,0,8,9,0]`
+- needs: `ggggx`
+
+### blit_offset_by_index
+
+The transform mode index T3 selects offset. M-1,0 samples the source pixel immediately to the left, with zero beyond the edge.
+
+```
+G40 R"bs" W"bd" T3 M-1,0 F1 E3
+G10 R"bd"
+```
+
+![blit_offset_by_index: blit source to result](img/blit_offset_by_index.svg)
+
+- values: `[0,1,2,0,4,5,0,7,8]`
+- needs: `ggggx`
+
+### blit_offset_fractional
+
+Offset remains composable with filtering: M0.5,0 linearly interpolates halfway between horizontal source pixels; hold edge keeps the last column.
+
+```
+G40 R"bs" W"bd" T"offset" M0.5,0 E1
+G10 R"bd"
+```
+
+![blit_offset_fractional: blit source to result](img/blit_offset_fractional.svg)
+
+- values: `[1.5,2.5,3,4.5,5.5,6,7.5,8.5,9]`
+- needs: `ggggx`
+
+### blit_offset_region
+
+P/S clips writes in absolute destination coordinates. At destination [1,1], offset M-1,-1 samples source [0,0].
+
+```
+G40 R"bs" W"bd" T"offset" M-1,-1 P1,1 S1,1 F1 E3
+G10 R"bd"
+```
+
+![blit_offset_region: blit source to result](img/blit_offset_region.svg)
+
+- values: `[0,0,0,0,1,0,0,0,0]`
+- needs: `ggggx`
+
 ### off_origin
 
 $x@[0|0] is the flat offset of the origin coordinate.
@@ -2478,6 +2591,22 @@ P10 V$m@[4]
 
 - values: `[4]`
 - needs: `gggpx`
+
+## region
+
+### blit_offset_region
+
+P/S clips writes in absolute destination coordinates. At destination [1,1], offset M-1,-1 samples source [0,0].
+
+```
+G40 R"bs" W"bd" T"offset" M-1,-1 P1,1 S1,1 F1 E3
+G10 R"bd"
+```
+
+![blit_offset_region: blit source to result](img/blit_offset_region.svg)
+
+- values: `[0,0,0,0,1,0,0,0,0]`
+- needs: `ggggx`
 
 ## registers
 

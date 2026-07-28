@@ -14,9 +14,10 @@
 // axis it combines the source texels the destination cell's footprint covers, per
 // that axis's `combine` op: linear interpolates up (footprint <= 1) and box-means
 // down (footprint > 1); nearest is a point; min/max/add fold (pool). Edge handling
-// (loop/hold/mirror/zero) is per axis; coordinates are always normalized. The
-// leading `dimension` axes are channels, read as one contiguous block. This is the
-// sampling primitive under MatrixBlit (G40).
+// (loop/hold/mirror/zero) is per axis. Coordinates are normalized by default;
+// the blit's offset mode uses the internal pixel-coordinate path so integer
+// stencil offsets remain exact. The leading `dimension` axes are channels, read
+// as one contiguous block. This is the sampling primitive under MatrixBlit (G40).
 //
 
 namespace ggg {
@@ -90,15 +91,15 @@ namespace ggg {
     return offset < 0 ? -1 : (Index) offset;
   }
 
-  // Resolve a normalized axis position to texel index(es). `filter` only chooses 1
-  // vs 2 taps (nearest vs linear) + the fraction; `edge` clamps/wraps. Coordinate
-  // modes (pixel/fence) were dropped -- always normalized (norm = size).
+  // Resolve a normalized (default) or pixel-space axis position to texel
+  // index(es). `filter` only chooses 1 vs 2 taps; `edge` clamps/wraps.
   template <typename N>
-  inline ResolvedAxisT<N> resolveAxis( N val, Index size, const String &filter, const String &edge ) {
+  inline ResolvedAxisT<N> resolveAxis( N val, Index size, const String &filter,
+      const String &edge, bool pixelCoordinates = false ) {
     ResolvedAxisT<N> axis { 0, 0, 0 };
 
     if ( size < 1 ) size = 1;
-    val *= N( size );
+    if ( !pixelCoordinates ) val *= N( size );
     axis.index0 = (Index) NumberOps<N>::floorCoordinate( val );
 
     if ( edge == SampleOpt::Zero ) {
@@ -144,6 +145,15 @@ namespace ggg {
   template <class T>
   inline void sampleReadChannels( MatrixBaseT<T> *buffer, const std::vector<typename T::Coordinate> &pos,
       Index length, std::vector<typename T::Number> &out ) {
+    // Edge.Zero resolves an out-of-range spatial axis to -1. sampleOffset
+    // permits axis-0 offsets for contiguous channel access, so consume the
+    // sentinel before it can alias the preceding row.
+    for ( size_t a = 0; a < pos.size(); a++ ) {
+      if ( pos[a] < typename T::Coordinate( 0 ) ) {
+        std::fill( out.begin(), out.end(), typename T::Number( 0 ) );
+        return;
+      }
+    }
     Index offset = sampleOffset( buffer->dim, pos );
     for ( Index k = 0; k < length; k++ )
       out[k] = ( offset >= 0 ) ? buffer->readScalarFloat( offset + k, 0 ) : typename T::Number( 0 );
@@ -167,7 +177,8 @@ namespace ggg {
       MatrixBaseT<T> *buffer, std::vector<typename T::Coordinate> &pos,
       Index dimIndex, Index dimension, Index length,
       const std::vector<String> &filter, const std::vector<String> &edges,
-      const std::vector<typename T::Coordinate> &footprint ) {
+      const std::vector<typename T::Coordinate> &footprint,
+      bool pixelCoordinates ) {
     using Number = typename T::Number;
     using Coordinate = typename T::Coordinate;
     static const String dfltFilter = SampleOpt::Linear;
@@ -187,7 +198,8 @@ namespace ggg {
 
     auto inner = [&]() -> std::vector<Number> {
       if ( dimIndex > dimension )
-        return sampleCombineAxis( buffer, pos, dimIndex - 1, dimension, length, filter, edges, footprint );
+        return sampleCombineAxis( buffer, pos, dimIndex - 1, dimension, length,
+          filter, edges, footprint, pixelCoordinates );
       std::vector<Number> out( length, Number( 0 ) );
       sampleReadChannels( buffer, pos, length, out );
       return out;
@@ -200,7 +212,7 @@ namespace ggg {
       if ( floored < fp - coordEpsilon ) taps++;
       if ( taps < 1 ) taps = 1;
       if ( taps > MAX_TAPS ) taps = MAX_TAPS;
-      Coordinate fpNorm = fp / Coordinate( size );
+      Coordinate fpStep = pixelCoordinates ? fp : fp / Coordinate( size );
       bool isMin = ( op == SampleOpt::Min ), isMax = ( op == SampleOpt::Max );
       Number init = isMin ? NumberOps<Number>::infinity()
                           : isMax ? -NumberOps<Number>::infinity() : Number( 0 );
@@ -210,7 +222,10 @@ namespace ggg {
           ? NumberOps<Coordinate>::ratio( 2 * t + 1, 2 * taps )
             - NumberOps<Coordinate>::ratio( 1, 2 )
           : Coordinate( 0 );
-        if ( dimIndex >= 0 ) pos[dimIndex] = resolveAxis( center + fpNorm * offset, size, SampleOpt::Nearest, edge ).index0;
+        if ( dimIndex >= 0 ) pos[dimIndex] = resolveAxis(
+          center + fpStep * offset, size, SampleOpt::Nearest, edge,
+          pixelCoordinates
+        ).index0;
         std::vector<Number> s = inner();
         for ( Index i = 0; i < length; i++ ) {
           if ( isMin ) acc[i] = std::min( acc[i], s[i] );
@@ -228,10 +243,14 @@ namespace ggg {
 
     // linear lerps; nearest (and a fold op when magnifying) point-samples the centre.
     if ( op != SampleOpt::Linear ) {
-      if ( dimIndex >= 0 ) pos[dimIndex] = resolveAxis( center, size, SampleOpt::Nearest, edge ).index0;
+      if ( dimIndex >= 0 ) pos[dimIndex] = resolveAxis(
+        center, size, SampleOpt::Nearest, edge, pixelCoordinates
+      ).index0;
       return inner();
     }
-    ResolvedAxisT<Coordinate> r = resolveAxis( center, size, SampleOpt::Linear, edge );
+    ResolvedAxisT<Coordinate> r = resolveAxis(
+      center, size, SampleOpt::Linear, edge, pixelCoordinates
+    );
     if ( dimIndex >= 0 ) pos[dimIndex] = r.index0;
     std::vector<Number> sampA = inner();
     if ( r.fraction == 0 || r.index0 == r.index1 ) return sampA;
@@ -251,7 +270,8 @@ namespace ggg {
       MatrixBaseT<T> *buffer, std::vector<typename T::Coordinate> position,
       Index dimension = 0, const std::vector<String> &filter = {},
       const std::vector<String> &edges = {},
-      const std::vector<typename T::Coordinate> &footprint = {} ) {
+      const std::vector<typename T::Coordinate> &footprint = {},
+      bool pixelCoordinates = false ) {
     using Number = typename T::Number;
     Index channels = 1;
     for ( Index d = 0; d < dimension && d < (Index) buffer->dim.size(); d++ )
@@ -265,7 +285,7 @@ namespace ggg {
     }
 
     return sampleCombineAxis( buffer, position, (Index) position.size() - 1,
-        dimension, channels, filter, edges, footprint );
+        dimension, channels, filter, edges, footprint, pixelCoordinates );
   }
 
 }; // namespace ggg

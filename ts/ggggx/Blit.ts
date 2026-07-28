@@ -11,10 +11,11 @@ import { isString } from "../common/util"
 // Inverse mapping is hole-free. Sampling (interpolation, edge/coord modes,
 // channels) is delegated to Sample (./Sample.ts).
 //
-// The transform is affine, selected by `mode`, which says how the flat `matrix`
-// (M) coefficients fill the internal (rank+1)x(rank+1) homogeneous matrix. The
-// rank is the destination's spatial rank ( dim.length - dimension ); `dimension`
-// is the count of leading channel dims (0 = single-channel, all axes spatial).
+// The general transform path is affine: `mode` says how the flat `matrix` (M)
+// coefficients fill the internal (rank+1)x(rank+1) homogeneous matrix. `offset`
+// deliberately bypasses that path and maps exact pixel coordinates. The rank is
+// the destination's spatial rank ( dim.length - dimension ); `dimension` is the
+// count of leading channel dims (0 = single-channel, all axes spatial).
 //
 // Modes (M reused per mode):
 //   box (default) -- M = a source rectangle, min,max pairs per axis in SOURCE
@@ -27,13 +28,17 @@ import { isString } from "../common/util"
 //                    each axis at its own position). Unspecified dest axes stay
 //                    identity.
 //   affine        -- M = the general rank x (rank+1) matrix (rotation/shear/...).
+//   offset        -- M = a per-axis SOURCE lookup offset in PIXEL coords:
+//                    source[a] = dest[a] + M[a]. No scale; omitted axes are zero.
+//                    This bypasses normalized transform math so integer offsets
+//                    remain exact (important for stencil operations).
 //
 // (An identity copy is just the default box, so there is no separate identity
 // mode.) Non-affine / arbitrary warp is a separate (future) command; the
 // homogeneous form here leaves room for a projective mode later.
 //
 
-export const BlitModes = [ "box", "affine", "map" ] as const
+export const BlitModes = [ "box", "affine", "map", "offset" ] as const
 export type BlitMode = typeof BlitModes[number]
 
 export function resolveMode( mode: string | number | undefined ): BlitMode {
@@ -119,6 +124,9 @@ export function buildTransform( mode: BlitMode, M: number[], rank: number, srcDi
     return H
   }
 
+  // Offset bypasses the homogeneous transform in Blit().
+  if ( mode === "offset" ) return H
+
   // unknown / unset mode -> identity passthrough (the default box covers identity)
   return H
 }
@@ -167,6 +175,7 @@ export function Blit( dest: Matrix, source: Matrix, options: BlitOptions = {} ):
   const destSpatial = dest.dim.slice( dimension )
   const srcSpatial = source.dim.slice( dimension )
   const H = buildTransform( mode, M, rank, srcSpatial )
+  const pixelCoordinates = mode === "offset"
 
   const size = options.size && options.size.length ? options.size : destSpatial
   const offset = options.offset ?? []
@@ -178,14 +187,22 @@ export function Blit( dest: Matrix, source: Matrix, options: BlitOptions = {} ):
     const destCoord = cell.map( ( v, a ) => v + ( offset[a] || 0 ) )
     // Normalized [0,1] destination coordinate.
     const c = destCoord.map( ( v, a ) => destSpatial[a] ? v / destSpatial[a] : 0 )
-    // Inverse-map to a normalized source coordinate.
-    const src = applyHomogeneous( H, c, rank )
+    // Offset is deliberately evaluated in pixel space. Besides being clearer
+    // for one-cell stencil shifts, this avoids normalized floating/fixed-point
+    // round trips moving an exact integer just below a texel boundary.
+    const src = pixelCoordinates
+      ? destCoord.map( ( v, a ) => v + ( M[a] ?? 0 ) )
+      : applyHomogeneous( H, c, rank )
 
     // Sample per-axis: the filter (F) op samples/combines (linear/nearest point, or
     // mean/min/max/add fold the footprint when minifying). The Jacobian footprint
     // drives magnify vs minify.
-    const footprint = footprintOf( H, c, destSpatial, srcSpatial, rank )
-    const sampled = Sample( source, channelPrefix.concat( src ), { dimension, filter, edges, footprint } )
+    const footprint = pixelCoordinates
+      ? new Array( rank ).fill( 1 )
+      : footprintOf( H, c, destSpatial, srcSpatial, rank )
+    const sampled = Sample( source, channelPrefix.concat( src ), {
+      dimension, filter, edges, footprint, pixelCoordinates
+    } )
 
     const destPos = channelPrefix.concat( destCoord )
     for ( let ch = 0; ch < sampled.length; ch++ ) {

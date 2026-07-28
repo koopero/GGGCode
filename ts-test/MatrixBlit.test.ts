@@ -57,6 +57,20 @@ describe( "MatrixBlit (G40)", () => {
       .toEqual( [ 7, 4, 1, 8, 5, 2, 9, 6, 3 ] )
   } )
 
+  test( "offset directly shifts source lookup coordinates in pixels", async () => {
+    expect( await blit( 'G40 R0 W1 T"offset" M1,0 F1 E3' ) )
+      .toEqual( [ 2, 3, 0, 5, 6, 0, 8, 9, 0 ] )
+    expect( await blit( 'G40 R0 W1 T3 M-1,0 F1 E3' ) )
+      .toEqual( [ 0, 1, 2, 0, 4, 5, 0, 7, 8 ] )
+  } )
+
+  test( "offset composes with fractional filtering and destination regions", async () => {
+    expect( await blit( 'G40 R0 W1 T"offset" M0.5,0 E1' ) )
+      .toEqual( [ 1.5, 2.5, 3, 4.5, 5.5, 6, 7.5, 8.5, 9 ] )
+    expect( await blit( 'G40 R0 W1 T"offset" M-1,-1 P1,1 S1,1 F1 E3' ) )
+      .toEqual( [ 0, 0, 0, 0, 1, 0, 0, 0, 0 ] )
+  } )
+
   test( "half-extent box [0,1.5] nearest magnifies the top-left (F1 = nearest)", async () => {
     expect( await blit( 'G40 R0 W1 T"box" M0,1.5,0,1.5 F1' ) )
       .toEqual( [ 1, 1, 2, 1, 1, 2, 4, 4, 5 ] )

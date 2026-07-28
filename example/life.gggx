@@ -1,0 +1,60 @@
+; Conway's Game of Life, rendered as a 96x64 grayscale image.
+;
+; Run:
+;   node bin/ggg.js -a -q --output example/life.png example/life.gggx
+;
+; "state" is the current generation, "count" accumulates the eight
+; neighbours, and "next" is the double buffer. The three small matrices are
+; constants magnified across the board by G40.
+
+G30 L"state" S1,96,64
+G30 L"count" S1,96,64
+G30 L"next" S1,96,64
+G30 L"image" S1,384,256
+G30 L"zero" S1,2,2
+G30 L"two" S1,2,2
+G30 L"three" S1,2,2
+G20 R"two" V2,2,2,2
+G20 R"three" V3,3,3,3
+
+; R-pentomino seed near the centre. It remains active for over 1,000
+; generations, so generation 64 makes a useful non-trivial demonstration.
+G20 R"state" P0,47,31 V1,1
+G20 R"state" P0,46,32 V1,1
+G20 R"state" P0,47,33 V1
+
+T10 L"life-step"
+  ; Clear the neighbour accumulator.
+  G40 R"zero" W"count" D1 F1
+
+  ; Add the eight one-cell source lookup offsets. E3 makes cells beyond the
+  ; image dead; offset mode keeps these integer translations in pixel space.
+  G40 R"state" W"count" D1 T"offset" M-1,-1 F1 E3 Q"add"
+  G40 R"state" W"count" D1 T"offset" M0,-1 F1 E3 Q"add"
+  G40 R"state" W"count" D1 T"offset" M1,-1 F1 E3 Q"add"
+  G40 R"state" W"count" D1 T"offset" M-1,0 F1 E3 Q"add"
+  G40 R"state" W"count" D1 T"offset" M1,0 F1 E3 Q"add"
+  G40 R"state" W"count" D1 T"offset" M-1,1 F1 E3 Q"add"
+  G40 R"state" W"count" D1 T"offset" M0,1 F1 E3 Q"add"
+  G40 R"state" W"count" D1 T"offset" M1,1 F1 E3 Q"add"
+
+  ; next = (count == 3) OR ((count == 2) AND state)
+  G40 R"count" W"next" D1 F1
+  G40 R"three" W"next" D1 F1 Q"eq"
+  G40 R"two" W"count" D1 F1 Q"eq"
+  G40 R"state" W"count" D1 F1 Q"and"
+  G40 R"count" W"next" D1 F1 Q"or"
+
+  ; Commit this generation.
+  G40 R"next" W"state" D1 F1
+T0
+
+; Run 64 generations. Each iteration expands to the 15-command procedure;
+; with the T11 calls this is exactly the default 1,024-work safety budget.
+T9 V1:64
+  T11 R"life-step"
+T0
+
+; Magnify each cell to a 4x4 pixel block and render the final generation.
+G40 R"state" W"image" D1 F1 E3
+G13 R"image"

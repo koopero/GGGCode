@@ -21,6 +21,10 @@ namespace ggg_conformance {
   static const double values_blit_map_by_index[] = { 2.0, 2.0, 3.0, 5.0, 5.0, 6.0, 8.0, 8.0, 9.0 };
   static const double values_blit_affine_identity[] = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0 };
   static const double values_blit_mode_by_index[] = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0 };
+  static const double values_blit_offset[] = { 2.0, 3.0, 0.0, 5.0, 6.0, 0.0, 8.0, 9.0, 0.0 };
+  static const double values_blit_offset_by_index[] = { 0.0, 1.0, 2.0, 0.0, 4.0, 5.0, 0.0, 7.0, 8.0 };
+  static const double values_blit_offset_fractional[] = { 1.5000000000000000, 2.5000000000000000, 3.0, 4.5000000000000000, 5.5000000000000000, 6.0, 7.5000000000000000, 8.5000000000000000, 9.0 };
+  static const double values_blit_offset_region[] = { 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0 };
   static const double values_blit_magnify_nearest[] = { 1.0, 1.0, 2.0, 1.0, 1.0, 2.0, 4.0, 4.0, 5.0 };
   static const double values_blit_magnify_linear[] = { 1.0, 1.5000000000000000, 2.0, 2.5000000000000000, 2.7500000000000000, 3.0, 4.0, 4.5000000000000000, 5.0 };
   static const double values_blit_filter_per_axis[] = { 1.0, 1.5000000000000000, 2.0, 1.0, 1.5000000000000000, 2.0, 4.0, 4.5000000000000000, 5.0 };
@@ -160,6 +164,10 @@ namespace ggg_conformance {
     { "blit_map_by_index", "G40 R\"bs\" W\"bd\" T2 M0,1,3 F1\nG10 R\"bd\"\n", "OK", values_blit_map_by_index, 9, nullptr, false, nullptr, 0 },
     { "blit_affine_identity", "G40 R\"bs\" W\"bd\" T\"affine\" M1,0,0,0,1,0\nG10 R\"bd\"\n", "OK", values_blit_affine_identity, 9, nullptr, false, nullptr, 0 },
     { "blit_mode_by_index", "G40 R\"bs\" W\"bd\" T1 M1,0,0,0,1,0\nG10 R\"bd\"\n", "OK", values_blit_mode_by_index, 9, nullptr, false, nullptr, 0 },
+    { "blit_offset", "G40 R\"bs\" W\"bd\" T\"offset\" M1,0 F1 E3\nG10 R\"bd\"\n", "OK", values_blit_offset, 9, nullptr, false, nullptr, 0 },
+    { "blit_offset_by_index", "G40 R\"bs\" W\"bd\" T3 M-1,0 F1 E3\nG10 R\"bd\"\n", "OK", values_blit_offset_by_index, 9, nullptr, false, nullptr, 0 },
+    { "blit_offset_fractional", "G40 R\"bs\" W\"bd\" T\"offset\" M0.5,0 E1\nG10 R\"bd\"\n", "OK", values_blit_offset_fractional, 9, nullptr, false, nullptr, 0 },
+    { "blit_offset_region", "G40 R\"bs\" W\"bd\" T\"offset\" M-1,-1 P1,1 S1,1 F1 E3\nG10 R\"bd\"\n", "OK", values_blit_offset_region, 9, nullptr, false, nullptr, 0 },
     { "blit_magnify_nearest", "G40 R\"bs\" W\"bd\" T\"box\" M0,1.5,0,1.5 F1\nG10 R\"bd\"\n", "OK", values_blit_magnify_nearest, 9, nullptr, false, nullptr, 0 },
     { "blit_magnify_linear", "G40 R\"bs\" W\"bd\" T\"box\" M0,1.5,0,1.5\nG10 R\"bd\"\n", "OK", values_blit_magnify_linear, 9, nullptr, false, nullptr, 0 },
     { "blit_filter_per_axis", "G40 R\"bs\" W\"bd\" T\"box\" M0,1.5,0,1.5 F0,1\nG10 R\"bd\"\n", "OK", values_blit_filter_per_axis, 9, nullptr, false, nullptr, 0 },

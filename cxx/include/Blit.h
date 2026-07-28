@@ -22,8 +22,9 @@
 // to fill the dest (omitted -> full source [0,dim] = identity copy); affine = the
 // general matrix; map = (srcAxis,min,max) triples positional by dest axis (dest
 // axis k samples source axis srcAxis over [min,max]) -- swaps axes for transpose /
-// rotation, and generalizes box. Box subsumes the old scale+translate; a bare box
-// is the identity.
+// rotation, and generalizes box; offset = direct per-axis source lookup offsets
+// in pixel coordinates. Box subsumes the old scale+translate; a bare box is the
+// identity.
 //
 
 namespace ggg {
@@ -36,7 +37,7 @@ namespace ggg {
     return "";
   }
   inline const std::vector<String> & blitModes() {
-    static const std::vector<String> v = { "box", "affine", "map" };
+    static const std::vector<String> v = { "box", "affine", "map", "offset" };
     return v;
   }
   // Per-axis filter (F arg) and edge (E arg) vocabularies; index order is the
@@ -110,6 +111,9 @@ namespace ggg {
       }
       return H;
     }
+
+    // Offset bypasses the homogeneous transform in Blit().
+    if ( mode == "offset" ) return H;
 
     // unknown / unset mode -> identity passthrough (the default box covers identity)
     return H;
@@ -188,6 +192,7 @@ namespace ggg {
       srcSpatial.push_back( ( dimension + a < (int) source->dim.size() ) ? source->dim[ dimension + a ] : 1 );
 
     std::vector<Coordinate> H = blitBuildTransform( o.mode, o.matrix, rank, srcSpatial );
+    const bool pixelCoordinates = o.mode == "offset";
 
     std::vector<Index> size = !o.size.empty() ? o.size : destSpatial;
     size.resize( rank, 0 );
@@ -208,16 +213,31 @@ namespace ggg {
           ? Coordinate( dc ) / Coordinate( destSpatial[a] ) : Coordinate( 0 );
       }
 
-      std::vector<Coordinate> src = blitApplyHomogeneous( H, cNorm, rank );
+      // Offset is deliberately evaluated in pixel space. This avoids a
+      // normalized divide/multiply round trip moving an exact integer below a
+      // texel boundary, especially with fixed-point Coordinate types.
+      std::vector<Coordinate> src( (size_t) rank );
+      if ( pixelCoordinates ) {
+        for ( int a = 0; a < rank; a++ ) {
+          Coordinate delta = a < (int) o.matrix.size()
+            ? o.matrix[a] : Coordinate( 0 );
+          src[a] = destCoord[a] + delta;
+        }
+      } else {
+        src = blitApplyHomogeneous( H, cNorm, rank );
+      }
 
       std::vector<Coordinate> pos( (size_t) dimension, Coordinate( 0 ) );
       pos.insert( pos.end(), src.begin(), src.end() );
 
       // Sample per-axis: filter (I) interpolates the point; a fold (F) reduces the
       // footprint when minifying. The Jacobian footprint drives magnify vs minify.
-      std::vector<Coordinate> fp =
-        blitFootprint( H, cNorm, destSpatial, srcSpatial, rank );
-      std::vector<Number> sampled = Sample( source, pos, dimension, o.filter, o.edges, fp );
+      std::vector<Coordinate> fp = pixelCoordinates
+        ? std::vector<Coordinate>( (size_t) rank, Coordinate( 1 ) )
+        : blitFootprint( H, cNorm, destSpatial, srcSpatial, rank );
+      std::vector<Number> sampled = Sample(
+        source, pos, dimension, o.filter, o.edges, fp, pixelCoordinates
+      );
 
       std::vector<Coordinate> destPos( (size_t) dimension, Coordinate( 0 ) );
       destPos.insert( destPos.end(), destCoord.begin(), destCoord.end() );
@@ -263,8 +283,8 @@ namespace ggg {
       description = "Blit (transform-copy) between registers.";
       addArg( Register, "source register index or name", "(n|s)" );
       addArg( Target, "destination register index or name", "(n|s)" );
-      addArg( Transform, "transform coeffs (per mode): box = source min,max pairs; map = (srcAxis,min,max) triples per dest axis; affine = matrix", "(n+)" );
-      addArg( Storage, "transform mode: box (default) / affine / map", "(n|s)" );
+      addArg( Transform, "transform coeffs (per mode): box = source min,max pairs; map = (srcAxis,min,max) triples per dest axis; affine = matrix; offset = source pixel offsets", "(n+)" );
+      addArg( Storage, "transform mode: box (default) / affine / map / offset", "(n|s)" );
       addArg( Offset, "dest region offset", "(n+)" );
       addArg( Size, "dest region size", "(n+)" );
       addArg( Dimension, "channel dimension count", "(n)" );
