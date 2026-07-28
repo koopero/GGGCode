@@ -1,4 +1,6 @@
 #pragma once
+#include "./Config.h"
+#if GGGTX_ENABLE
 #include "./Machine.h"
 
 //
@@ -97,15 +99,16 @@ namespace ggg {
     using Base = CommandTypeT<T>;
     using Base::machine; using Base::code; using Base::number;
     using Base::string;  using Base::okay;  using Base::name;
-    using Base::description; using Base::addArg;
+    using Base::describe; using Base::addArg;
     using Number = typename T::Number;
 
     String procRef, procName;
     ProcedureInitT() {
       name = FlowProcedureInit;
-      description = "Define a procedure; capture following lines until T0";
-      addArg( GGG::Register, "procedure to (re)define (index or name)", "(n|s)" );
-      addArg( GGG::Alias, "name to give the procedure", "(s)" );
+      describe( "Define a procedure; capture following lines until T0" );
+      addArg( GGG::Register, "procedure to (re)define (index or name)", "",
+        ArgumentKind::Reference, (Int) EnumGroupIndex::ProcedureRegister );
+      addArg( GGG::Alias, "name to give the procedure", "", ArgumentKind::String );
     }
     void hookCommand() override { procRef.clear(); procName.clear(); }
     void hookString() override {
@@ -135,11 +138,11 @@ namespace ggg {
   class BlockEndT : public CommandTypeT<T> {
   public:
     using Base = CommandTypeT<T>;
-    using Base::name; using Base::description;
+    using Base::name; using Base::describe;
 
     BlockEndT() {
       name = FlowBlockEnd;
-      description = "End of block";
+      describe( "End of block" );
     }
   };
   using BlockEnd = BlockEndT<>;
@@ -154,7 +157,7 @@ namespace ggg {
     using Base = CommandTypeT<T>;
     using Base::machine; using Base::code; using Base::number;
     using Base::string;  using Base::okay;  using Base::name;
-    using Base::description; using Base::addArg;
+    using Base::describe; using Base::addArg;
     using Number = typename T::Number;
 
     bool hasA, hasY, allTruthy, anyTruthy;
@@ -165,12 +168,13 @@ namespace ggg {
     Index regOffset;
     ConditionalT() {
       name = FlowConditional;
-      description = "Block combinator: V iterates, A/O run once if a condition holds";
-      addArg( 'A', "run if all values are truthy", "(n+)" );
-      addArg( 'Y', "run if any value is truthy", "(n+)" );
-      addArg( GGG::Value, "iterate the body once per value", "(n+)" );
-      addArg( GGG::Register, "iteration register (name or index)", "" );
-      addArg( GGG::Offset, "scalar offset in the iteration register", "(n)" );
+      describe( "Block combinator: V iterates, A/O run once if a condition holds" );
+      addArg( 'A', "run if all values are truthy", "comma-list:number;one-or-more", ArgumentKind::Number );
+      addArg( 'Y', "run if any value is truthy", "comma-list:number;one-or-more", ArgumentKind::Number );
+      addArg( GGG::Value, "iterate the body once per value", "comma-list:number;one-or-more", ArgumentKind::Number );
+      addArg( GGG::Register, "iteration matrix register (name or index)", "",
+        ArgumentKind::Reference, (Int) EnumGroupIndex::MatrixRegister );
+      addArg( GGG::Offset, "scalar offset in the iteration register", "", ArgumentKind::Number );
     }
     void hookCommand() override {
       hasA = false; hasY = false; allTruthy = true; anyTruthy = false;
@@ -220,7 +224,7 @@ namespace ggg {
     using Base = CommandTypeT<T>;
     using Base::machine; using Base::code; using Base::number;
     using Base::string;  using Base::okay;  using Base::name;
-    using Base::description; using Base::addArg;
+    using Base::describe; using Base::addArg;
     using Number = typename T::Number;
 
     String procRef;
@@ -228,10 +232,11 @@ namespace ggg {
     long count;
     AsyncExportT() {
       name = "T12";
-      description = "Export a procedure to run asynchronously on the host's schedule";
-      addArg( GGG::Register, "procedure to export (index or name)", "(n|s)" );
-      addArg( GGG::Size, "interval in milliseconds", "(n)" );
-      addArg( GGG::Repeat, "run count; omit for unbounded, 0 cancels", "(n)" );
+      describe( "Export a procedure to run asynchronously on the host's schedule" );
+      addArg( GGG::Register, "procedure to export (index or name)", "",
+        ArgumentKind::Reference, (Int) EnumGroupIndex::ProcedureRegister );
+      addArg( GGG::Size, "interval in milliseconds", "", ArgumentKind::Number );
+      addArg( GGG::Repeat, "run count; omit for unbounded, 0 cancels", "", ArgumentKind::Number );
     }
     void hookCommand() override { procRef.clear(); interval = 0; count = -1; }
     void hookString() override { if ( code == GGG::Register ) procRef = string; }
@@ -256,14 +261,15 @@ namespace ggg {
     using Base = CommandTypeT<T>;
     using Base::machine; using Base::code; using Base::number;
     using Base::string;  using Base::okay;  using Base::name;
-    using Base::description; using Base::addArg;
+    using Base::describe; using Base::addArg;
     using Number = typename T::Number;
 
     String procRef;
     ProcedureRunT() {
       name = "T11";
-      description = "Run a procedure";
-      addArg( GGG::Register, "procedure to run (index or name)", "(n|s)" );
+      describe( "Run a procedure" );
+      addArg( GGG::Register, "procedure to run (index or name)", "",
+        ArgumentKind::Reference, (Int) EnumGroupIndex::ProcedureRegister );
     }
     void hookCommand() override { procRef.clear(); }
     void hookString() override { if ( code == GGG::Register ) procRef = string; }
@@ -279,3 +285,4 @@ namespace ggg {
   using ProcedureRun = ProcedureRunT<>;
 
 }
+#endif

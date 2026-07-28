@@ -54,7 +54,9 @@ export default class NamedList<T extends NamedListItem> {
     const { name = "" } = keyedItem
 
 
-    if ( index < 0 || isNaN( index ) )
+    // -1 remains the historical "unassigned" sentinel. Other negative
+    // indexes are real wire values (for example gggdx result records).
+    if ( index === -1 || isNaN( index ) )
       index = list.length
 
     item.index = index
@@ -101,14 +103,17 @@ export default class NamedList<T extends NamedListItem> {
     return undefined
   }
 
+  values() {
+    // Array iteration skips named properties such as list[-40]. Object.values
+    // includes both ordinary array slots and explicitly negative indexes.
+    return Object.values( this.list ).filter( Boolean ) as T[]
+  }
+
   eachPair( callback:( item:T, key:string ) => any ) {
-    const { list } = this
-  
-    for ( const item of list ) {
-      if ( !item) continue
+    for ( const item of this.values() ) {
       const { name, index = -1 } = item
       let key = ""
-      if ( index >= 0 ) {
+      if ( !isNaN( index ) ) {
         key = index.toString()
       }
 

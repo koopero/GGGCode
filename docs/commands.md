@@ -30,10 +30,10 @@ Define a procedure; capture following lines until T0
 
 Arguments:
 
-| code | format | meaning |
-| --- | --- | --- |
-| `R` |  | procedure to (re)define (index or name) |
-| `L` |  | name to give the procedure |
+| code | kind | domain | format | meaning |
+| --- | --- | --- | --- | --- |
+| `R` | `reference` | `gggtx.procedure` |  | procedure to (re)define (index or name) |
+| `L` | `string` |  |  | name to give the procedure |
 
 Examples: [flow_define_only](cases.md#flow_define_only), [flow_define_run](cases.md#flow_define_run), [flow_nested](cases.md#flow_nested), [async_count](cases.md#async_count), [async_interval](cases.md#async_interval), [async_unbounded](cases.md#async_unbounded), [async_no_catchup](cases.md#async_no_catchup), [async_cancel](cases.md#async_cancel), +4 more
 
@@ -43,9 +43,9 @@ Run a procedure
 
 Arguments:
 
-| code | format | meaning |
-| --- | --- | --- |
-| `R` |  | procedure to run (index or name) |
+| code | kind | domain | format | meaning |
+| --- | --- | --- | --- | --- |
+| `R` | `reference` | `gggtx.procedure` |  | procedure to run (index or name) |
 
 Examples: [flow_define_run](cases.md#flow_define_run), [flow_unknown](cases.md#flow_unknown), [flow_nested](cases.md#flow_nested), [proc_by_index](cases.md#proc_by_index), [proc_rename](cases.md#proc_rename), [proc_rename_old_gone](cases.md#proc_rename_old_gone), [proc_alias_does_not_select](cases.md#proc_alias_does_not_select)
 
@@ -55,11 +55,11 @@ Export a procedure to run asynchronously on the host's schedule
 
 Arguments:
 
-| code | format | meaning |
-| --- | --- | --- |
-| `R` |  | procedure to export (index or name) |
-| `S` |  | interval in milliseconds |
-| `G` |  | run count; omit for unbounded, 0 cancels |
+| code | kind | domain | format | meaning |
+| --- | --- | --- | --- | --- |
+| `R` | `reference` | `gggtx.procedure` |  | procedure to export (index or name) |
+| `S` | `number` |  |  | interval in milliseconds |
+| `G` | `number` |  |  | run count; omit for unbounded, 0 cancels |
 
 Examples: [async_count](cases.md#async_count), [async_interval](cases.md#async_interval), [async_unbounded](cases.md#async_unbounded), [async_no_catchup](cases.md#async_no_catchup), [async_cancel](cases.md#async_cancel), [async_unknown](cases.md#async_unknown)
 
@@ -69,13 +69,13 @@ Block combinator: V iterates, A/Y run once if a condition holds
 
 Arguments:
 
-| code | format | meaning |
-| --- | --- | --- |
-| `A` |  | run if all values are truthy |
-| `Y` |  | run if any value is truthy |
-| `V` |  | iterate the body once per value |
-| `R` |  | iteration register (name or index) |
-| `P` |  | scalar offset in the iteration register |
+| code | kind | domain | format | meaning |
+| --- | --- | --- | --- | --- |
+| `A` | `number` |  | `comma-list:number;one-or-more` | run if all values are truthy |
+| `Y` | `number` |  | `comma-list:number;one-or-more` | run if any value is truthy |
+| `V` | `number` |  | `comma-list:number;one-or-more` | iterate the body once per value |
+| `R` | `reference` | `ggggx.register` |  | iteration matrix register (name or index) |
+| `P` | `number` |  |  | scalar offset in the iteration register |
 
 Examples: [cond_all_true](cases.md#cond_all_true), [cond_all_false](cases.md#cond_all_false), [cond_all_mixed](cases.md#cond_all_mixed), [cond_any_true](cases.md#cond_any_true), [cond_any_false](cases.md#cond_any_false), [cond_nested_skip](cases.md#cond_nested_skip), [iter_single](cases.md#iter_single), [iter_zero](cases.md#iter_zero), +1 more
 
@@ -96,27 +96,33 @@ Read from buffer.
 
 Arguments:
 
-| code | format | meaning |
-| --- | --- | --- |
-| `R` | `(n\|S)` | buffer specifier |
-| `E` |  | string encoding |
-| `P` | `(C,X,Y,Z)` | Buffer position (component-first). |
-| `S` | `(n)` | Size |
+| code | kind | domain | format | meaning |
+| --- | --- | --- | --- | --- |
+| `R` | `reference` | `ggggx.register` |  | buffer specifier |
+| `E` | `enum` | `ggggx.encoding` |  | string encoding |
+| `P` | `number` |  | `comma-list:axes=C,X,Y,Z` | Buffer position (component-first). |
+| `S` | `number` |  |  | Size |
+
+Responses:
+
+- `G20` — Replayable buffer write.
+- `OK` — Buffer read successfully.
 
 Examples: [blit_box_default](cases.md#blit_box_default), [blit_box_full](cases.md#blit_box_full), [blit_box_subregion](cases.md#blit_box_subregion), [blit_box_flip_x](cases.md#blit_box_flip_x), [blit_box_flip_y](cases.md#blit_box_flip_y), [blit_box_flip_180](cases.md#blit_box_flip_180), [blit_map_axes](cases.md#blit_map_axes), [blit_map_default](cases.md#blit_map_default), +35 more
 
 ### G13
 
-Display buffer.
+Emit the whole buffer to the host display.
 
 Arguments:
 
-| code | format | meaning |
-| --- | --- | --- |
-| `R` | `(n\|S)` | buffer specifier |
-| `E` |  | string encoding |
-| `P` | `(C,X,Y,Z)` | Buffer position (component-first). |
-| `S` | `(n)` | Size |
+| code | kind | domain | format | meaning |
+| --- | --- | --- | --- | --- |
+| `R` | `reference` | `ggggx.register` |  | buffer specifier |
+
+Responses:
+
+- `OK` — Display event emitted.
 
 ### G20
 
@@ -124,13 +130,13 @@ Write to buffer.
 
 Arguments:
 
-| code | format | meaning |
-| --- | --- | --- |
-| `R` | `(n\|S)` | buffer specifier |
-| `P` | `(C,X,Y,Z)` | Buffer position (component-first). |
-| `V` | `(n+)` | Values to write. |
-| `Q` |  | Write operator. |
-| `F` |  | Fill size |
+| code | kind | domain | format | meaning |
+| --- | --- | --- | --- | --- |
+| `R` | `reference` | `ggggx.register` |  | buffer specifier |
+| `P` | `number` |  | `comma-list:axes=C,X,Y,Z` | Buffer position (component-first). |
+| `V` | `number` |  | `comma-list:number;one-or-more` | Values to write. |
+| `Q` | `enum` | `ggggx.operator` |  | Write operator. |
+| `F` | `number` |  |  | Fill size |
 
 Examples: [blit_operator_add](cases.md#blit_operator_add), [matrix_write_read](cases.md#matrix_write_read), [op_add](cases.md#op_add), [op_sub](cases.md#op_sub), [op_mult](cases.md#op_mult), [op_min](cases.md#op_min), [op_neg](cases.md#op_neg), [op_sqrt](cases.md#op_sqrt), +4 more
 
@@ -140,12 +146,12 @@ Watch buffer.
 
 Arguments:
 
-| code | format | meaning |
-| --- | --- | --- |
-| `R` | `(n\|S)` | buffer specifier |
-| `E` |  | string encoding |
-| `P` | `(C,X,Y,Z)` | Buffer position (component-first). |
-| `S` | `(n)` | Size |
+| code | kind | domain | format | meaning |
+| --- | --- | --- | --- | --- |
+| `R` | `reference` | `ggggx.register` |  | buffer specifier |
+| `E` | `enum` | `ggggx.encoding` |  | string encoding |
+| `P` | `number` |  | `comma-list:axes=C,X,Y,Z` | Buffer position (component-first). |
+| `S` | `number` |  |  | Size |
 
 ### G30
 
@@ -153,12 +159,12 @@ Init buffer
 
 Arguments:
 
-| code | format | meaning |
-| --- | --- | --- |
-| `R` | `(n\|S)` | buffer specifier |
-| `T` |  | storage type |
-| `S` | `(C,X,Y,Z)` | dimensions (component-first) |
-| `L` | `(S)` | buffer name. |
+| code | kind | domain | format | meaning |
+| --- | --- | --- | --- | --- |
+| `R` | `reference` | `ggggx.register` |  | buffer specifier |
+| `T` | `enum` | `ggggx.storage` |  | storage type |
+| `S` | `number` |  | `comma-list:axes=C,X,Y,Z` | dimensions (component-first) |
+| `L` | `string` |  |  | buffer name. |
 
 ### G40
 
@@ -166,20 +172,169 @@ Blit (transform-copy) between buffers.
 
 Arguments:
 
-| code | format | meaning |
-| --- | --- | --- |
-| `R` | `(n\|S)` | buffer specifier |
-| `W` |  | Destination buffer (index or name). |
-| `M` | `(n+)` | Transform coefficients (per mode): box = source min,max pairs; map = (srcAxis,min,max) triples per dest axis; affine = matrix; offset = source pixel offsets. |
-| `T` |  | Transform mode: box (default) / affine / map / offset (index or name). |
-| `P` | `(C,X,Y,Z)` | Buffer position (component-first). |
-| `S` | `(n)` | Size |
-| `D` | `(C,X,Y,Z)` | dimensions (component-first) |
-| `Q` |  | Combine operator into the destination cell. |
-| `F` | `(*)` | Per-axis filter (list, continue-last): 0 linear / 1 nearest / 2 mean / 3 min / 4 max / 5 add. |
-| `E` | `(*)` | Per-axis edge (list, continue-last): 0 loop / 1 hold / 2 mirror / 3 zero. |
+| code | kind | domain | format | meaning |
+| --- | --- | --- | --- | --- |
+| `R` | `reference` | `ggggx.register` |  | buffer specifier |
+| `W` | `reference` | `ggggx.register` |  | Destination buffer (index or name). |
+| `M` | `number` |  | `comma-list:number;one-or-more` | Transform coefficients (per mode): box = source min,max pairs; map = (srcAxis,min,max) triples per dest axis; affine = matrix; offset = source pixel offsets. |
+| `T` | `enum` | `ggggx.transform` |  | Transform mode: box (default) / affine / map / offset (index or name). |
+| `P` | `number` |  | `comma-list:axes=C,X,Y,Z` | Buffer position (component-first). |
+| `S` | `number` |  |  | Size |
+| `D` | `number` |  | `comma-list:axes=C,X,Y,Z` | dimensions (component-first) |
+| `Q` | `enum` | `ggggx.operator` |  | Combine operator into the destination cell. |
+| `F` | `enum` | `ggggx.filter` | `comma-list:enum;continue-last` | Per-axis filter (list, continue-last): 0 linear / 1 nearest / 2 mean / 3 min / 4 max / 5 add. |
+| `E` | `enum` | `ggggx.edge` | `comma-list:enum;continue-last` | Per-axis edge (list, continue-last): 0 loop / 1 hold / 2 mirror / 3 zero. |
 
 Examples: [blit_box_default](cases.md#blit_box_default), [blit_box_full](cases.md#blit_box_full), [blit_box_subregion](cases.md#blit_box_subregion), [blit_box_flip_x](cases.md#blit_box_flip_x), [blit_box_flip_y](cases.md#blit_box_flip_y), [blit_box_flip_180](cases.md#blit_box_flip_180), [blit_map_axes](cases.md#blit_map_axes), [blit_map_default](cases.md#blit_map_default), +20 more
+
+## gggdx — protocol self-description
+
+### D-20
+
+Describes one stable core grammar rule.
+
+Arguments:
+
+| code | kind | domain | format | meaning |
+| --- | --- | --- | --- | --- |
+| `L` | `string` |  |  | Stable rule name. |
+| `T` | `enum` | `GrammarRuleKind` |  | Grammar rule kind. |
+| `V` | `string` |  |  | Literal token or canonical non-literal form. |
+| `A` | `string` |  |  | Rule meaning. |
+
+### D-21
+
+Provides one complete valid or invalid GGG source line.
+
+Arguments:
+
+| code | kind | domain | format | meaning |
+| --- | --- | --- | --- | --- |
+| `T` | `enum` | `GrammarExampleKind` |  | Valid or invalid example. |
+| `V` | `string` |  |  | Complete source line; copy valid examples exactly. |
+| `A` | `string` |  |  | Explanation. |
+
+### D-40
+
+Describes one command or result-record schema.
+
+Arguments:
+
+| code | kind | domain | format | meaning |
+| --- | --- | --- | --- | --- |
+| `B` | `string` |  |  | Command or record code. |
+| `T` | `enum` | `MessageKind` |  | Executable command or non-executable result record. |
+| `S` | `number` |  |  | Number of described arguments. |
+| `A` | `string` |  |  | Description. |
+
+### D-41
+
+Describes one argument in a command or result record.
+
+Arguments:
+
+| code | kind | domain | format | meaning |
+| --- | --- | --- | --- | --- |
+| `B` | `string` |  |  | Owning command or record code. |
+| `U` | `string` |  |  | Argument glyph. |
+| `T` | `enum` | `ArgumentKind` |  | Argument semantic kind. |
+| `R` | `reference` | `EnumGroup` |  | Named enum/reference domain. |
+| `M` | `string` |  |  | Canonical non-literal shape label; never copy it as wire punctuation. |
+| `G` | `boolean` |  |  | Required flag. |
+| `A` | `string` |  |  | Description. |
+
+### D-42
+
+Describes one command returned by another command.
+
+Arguments:
+
+| code | kind | domain | format | meaning |
+| --- | --- | --- | --- | --- |
+| `B` | `string` |  |  | Originating command code. |
+| `W` | `string` |  |  | Returned command code. |
+| `A` | `string` |  |  | Description. |
+
+### D-50
+
+Describes one enum/reference group.
+
+Arguments:
+
+| code | kind | domain | format | meaning |
+| --- | --- | --- | --- | --- |
+| `R` | `reference` | `EnumGroup` |  | Enum group. |
+| `L` | `string` |  |  | Stable group name. |
+| `S` | `number` |  |  | Number of populated entries. |
+| `T` | `enum` | `EnumDomainKind` |  | Fixed enum or live reference table. |
+| `A` | `string` |  |  | Description. |
+
+### D-51
+
+Describes one value in an enum/reference group.
+
+Arguments:
+
+| code | kind | domain | format | meaning |
+| --- | --- | --- | --- | --- |
+| `R` | `reference` | `EnumGroup` |  | Owning enum group. |
+| `V` | `number` |  |  | Actual wire value or reference index. |
+| `L` | `string` |  |  | Stable value name. |
+| `A` | `string` |  |  | Description. |
+
+### D1
+
+Describe the language.
+
+Responses:
+
+- `D-20` — Stable core grammar rule.
+- `D-21` — Valid or invalid complete source example.
+- `D-40` — Command or result-record schema.
+- `D-41` — Argument schema.
+- `D-42` — Command-to-command return relation.
+- `D-50` — Enum/reference group.
+- `D-51` — Enum/reference entry.
+- `OK` — Language described successfully.
+
+Examples: [d1_self_description](cases.md#d1_self_description)
+
+### D2
+
+Describe stable core syntax and wire examples.
+
+Responses:
+
+- `D-20` — Stable core grammar rule.
+- `D-21` — Valid or invalid complete source example.
+- `OK` — Language basics described successfully.
+
+Examples: [d2_language_basics](cases.md#d2_language_basics)
+
+### D4
+
+List command and result-record schemas.
+
+Responses:
+
+- `D-40` — Command or result-record schema.
+- `D-41` — Argument schema.
+- `D-42` — Command-to-command return relation.
+- `OK` — Command schemas listed successfully.
+
+Examples: [d4_command_catalog](cases.md#d4_command_catalog)
+
+### D5
+
+List named enum and reference domains.
+
+Responses:
+
+- `D-50` — Enum/reference group.
+- `D-51` — Enum/reference entry.
+- `OK` — Enum domains listed successfully.
+
+Examples: [d5_enum_catalog](cases.md#d5_enum_catalog)
 
 ## Responses & failures
 

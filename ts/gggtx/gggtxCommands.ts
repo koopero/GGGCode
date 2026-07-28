@@ -1,6 +1,8 @@
 
 import { isNumber, isString } from "../common/util"
 import { GGG, GGGFail, Hooks, Command, Commands, CommandDecision, ArgType, HookArgs } from "../ggg/Language"
+import { MatrixRegisterDomain } from "../ggggx/Domains"
+import { ProcedureRegisterDomain, TProcedure } from "./Domains"
 
 const gggtxFlowPrefix = "T"
 
@@ -22,9 +24,7 @@ export enum gggtxCodes {
 // source to frame.capture (see Machine.execLine); this hook decides run vs
 // capture vs skip and commits the body on close.
 
-// Marker object used as the register-class key for procedure bodies. Bodies are
-// addressable by both R index and L name through the shared NamedList.
-export const TProcedure = { name: "TProcedure" }
+export { ProcedureRegisterDomain, TProcedure } from "./Domains"
 
 type ProcedureRegister = {
   name?: string
@@ -78,7 +78,7 @@ const captureGate = ( args:HookArgs, onClose:( machine:any, frame:any ) => void 
 const ProcedureInitCommand : Command = {
   description: "Define a procedure; capture following lines until T0",
   args: {
-    [GGG.Register]: { description: "procedure to (re)define (index or name)", type: ArgType.Any },
+    [GGG.Register]: { description: "procedure to (re)define (index or name)", domain: ProcedureRegisterDomain },
     [GGG.Alias]: { description: "name to give the procedure", type: ArgType.String },
   },
   [Hooks.Command]: ( args ) => {
@@ -126,10 +126,10 @@ const ProcedureInitCommand : Command = {
 const ConditionalCommand : Command = {
   description: "Block combinator: V iterates, A/Y run once if a condition holds",
   args: {
-    "A": { description: "run if all values are truthy", type: ArgType.Number },
-    "Y": { description: "run if any value is truthy", type: ArgType.Number },
-    [GGG.Value]: { description: "iterate the body once per value", type: ArgType.Number },
-    [GGG.Register]: { description: "iteration register (name or index)", type: ArgType.Any },
+    "A": { description: "run if all values are truthy", type: ArgType.Number, format: "comma-list:number;one-or-more" },
+    "Y": { description: "run if any value is truthy", type: ArgType.Number, format: "comma-list:number;one-or-more" },
+    [GGG.Value]: { description: "iterate the body once per value", type: ArgType.Number, format: "comma-list:number;one-or-more" },
+    [GGG.Register]: { description: "iteration matrix register (name or index)", domain: MatrixRegisterDomain },
     [GGG.Offset]: { description: "scalar offset in the iteration register", type: ArgType.Number },
   },
   [Hooks.Command]: ( args ) => {
@@ -191,7 +191,7 @@ const ConditionalCommand : Command = {
 const ProcedureRunCommand : Command = {
   description: "Run a procedure",
   args: {
-    [GGG.Register]: { description: "procedure to run (index or name)", type: ArgType.Any },
+    [GGG.Register]: { description: "procedure to run (index or name)", domain: ProcedureRegisterDomain },
   },
   [Hooks.Command]: ( args ) => { args.state.procRef = null },
   [Hooks.Value]: procedureRefHookValue,
@@ -214,7 +214,7 @@ const ProcedureRunCommand : Command = {
 const AsyncExportCommand : Command = {
   description: "Export a procedure to run asynchronously on the host's schedule",
   args: {
-    [GGG.Register]: { description: "procedure to export (index or name)", type: ArgType.Any },
+    [GGG.Register]: { description: "procedure to export (index or name)", domain: ProcedureRegisterDomain },
     [GGG.Size]: { description: "interval in milliseconds", type: ArgType.Number },
     [GGG.Repeat]: { description: "run count; omit for unbounded, 0 cancels", type: ArgType.Number },
   },

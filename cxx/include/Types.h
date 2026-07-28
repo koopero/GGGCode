@@ -5,6 +5,7 @@
 #include <string>
 #include <cstdlib>
 #include <unordered_map>
+#include "./Config.h"
 #include "./ggg/Traits.h"
 
 namespace ggg {

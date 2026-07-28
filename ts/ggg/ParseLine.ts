@@ -15,6 +15,29 @@ function formatCommand( token:Token ) {
   return `${code}${valueStr}`
 }
 
+function commentIndexOutsideString( str:string ) {
+  let quoted = false
+  let escaped = false
+  for ( let i = 0; i < str.length; i++ ) {
+    const char = str[i]
+    if ( escaped ) {
+      escaped = false
+      continue
+    }
+    if ( quoted && char === GGG.Escape ) {
+      escaped = true
+      continue
+    }
+    if ( char === GGG.Quote ) {
+      quoted = !quoted
+      continue
+    }
+    if ( !quoted && char === GGG.StringToEOL ) return -1
+    if ( !quoted && char === GGG.Comment ) return i
+  }
+  return -1
+}
+
 export default function ParseLine( str:string, options:ParseOptions = {} ) : [ Token, string ] {
   const { keepComments = true } = options
   const args:Token[] = []
@@ -29,7 +52,7 @@ export default function ParseLine( str:string, options:ParseOptions = {} ) : [ T
     str = str.substring(0,endIndex)
   }
 
-  const commentIndex = str.indexOf( GGG.Comment )
+  const commentIndex = commentIndexOutsideString( str )
   if ( commentIndex != -1 ) {
     if ( keepComments ) {
       comment = str.substring(commentIndex)
@@ -70,4 +93,3 @@ export default function ParseLine( str:string, options:ParseOptions = {} ) : [ T
 
   return [ line, remain ]
 }
-

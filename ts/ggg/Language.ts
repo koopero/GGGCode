@@ -1,4 +1,5 @@
 import NamedList from "./NamedList"
+import type { ArgumentKind, EnumDomain } from "./EnumRepository"
 
 export enum GGG {
   Data = "A",
@@ -114,7 +115,11 @@ export type CommandArgDescribed = {
   description?: string,
   required?: boolean,
   type?: ArgType,
+  kind?: ArgumentKind,
+  domain?: EnumDomain,
   format?: string,
+  // Legacy inline options. New protocol-visible vocabularies should use a
+  // named `domain`, which D1/D4 reference and D1/D5 enumerate once.
   options?: NamedList<any>,
 }
 
@@ -127,6 +132,11 @@ export type CommandDescribed = Described & {
   description?: string,
   args?: { [key:string]: CommandArgDescribed },
   responds?: { [key:string]: ResponseDescribed },
+  // Result records are message schemas too. They are not executable commands,
+  // but D1/D4 list them through the same metadata model.
+  records?: { [key:string]: CommandDescribed },
+  // Domains used by records even when no executable argument references them.
+  domains?: EnumDomain[],
 }
 
 export type Command = CommandDescribed & {

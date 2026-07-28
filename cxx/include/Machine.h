@@ -7,7 +7,9 @@
 #include "./Command.h"
 #include "./Matrix.h"
 #include "./Solve.h"
+#if GGGTX_ENABLE
 #include "./Flow.h"
+#endif
 #include "./ggg/Limits.h"
 #include "./ggg/NumberOps.h"
 
@@ -23,10 +25,12 @@ namespace ggg {
     bool skipData = false;
     bool skipLine = false;
 
+    #if GGGTX_ENABLE
     // Flow control: record the raw line source (comments excluded) so a capture
     // frame can store a procedure body verbatim; captureLine commits it on EOL.
     bool recording = true;
     bool captureLine = false;
+    #endif
 
     // Reference parsing ($name / $name[subscript]). refInSub is true while the
     // bracketed subscript text is being captured into refSub; refHasSub records
@@ -44,7 +48,9 @@ namespace ggg {
     Char code;
     Number value;
     String string;
+    #if GGGTX_ENABLE
     String line;
+    #endif
     String comment;
     String argBuffer;
 
@@ -82,7 +88,14 @@ namespace ggg {
     // by addRegister() -- e.g. grizzlar appends one entry per published buffer.
     List<MatrixBaseT<T>> *registers = new List<MatrixBaseT<T>>();
     List<CommandTypeT<T>> *commands = new List<CommandTypeT<T>>();
+    #if GGGDX_ENABLE
+    // Sorted stable EnumGroupIndex values used by the loaded command metadata.
+    // D1/D5 walk this machine-scoped set, so extensions advertise only the
+    // domains they actually make available.
+    std::vector<Int> enumDomains;
+    #endif
 
+    #if GGGTX_ENABLE
     // Flow control: active control frames (the command gate consults the top
     // one), procedure bodies (T registers), and a pending-lines queue that T11
     // drains after the current line so re-running a body is not re-entrant.
@@ -94,6 +107,7 @@ namespace ggg {
     // Procedures exported as asynchronous (T12), fired by the host via poll().
     // Insertion-ordered: due procedures run in the order they were exported.
     std::vector<AsyncProcedure> schedule;
+    #endif
 
     MachineT() {
       resetLine();
@@ -113,9 +127,11 @@ namespace ggg {
       state.lineMode = GGG::Command;
       state.expressionMode = GGG::Code;
       state.argBuffer.clear();
+      #if GGGTX_ENABLE
       state.line.clear();
       state.recording = true;
       state.captureLine = false;
+      #endif
       state.refInSub = false;
       state.refHasSub = false;
       state.refOffset = false;
@@ -143,12 +159,14 @@ namespace ggg {
         return;
       }
 
+      #if GGGTX_ENABLE
       // Record raw line source for flow-control capture. Stops at a comment so
       // captured procedure bodies exclude comments (matches TS ParseLine).
       if ( state.recording ) {
         if ( _char == GGG::Comment ) state.recording = false;
         else state.line += _char;
       }
+      #endif
 
       if ( state.expressionMode == GGG::Data && state.dataMode == GGG::StringToEOL ) {
         // StringToEOL
@@ -842,12 +860,16 @@ namespace ggg {
       if ( command ) {
         command->hookFinish();
       }
+      #if GGGTX_ENABLE
       // Commit a captured body line to the top frame (gate decided Capture).
       if ( state.captureLine && !frames.empty() ) {
         frames.back()->captureLine( trimSource( state.line ) );
       }
+      #endif
       resetLine();
+      #if GGGTX_ENABLE
       drainPending();
+      #endif
     }
 
 
@@ -938,6 +960,7 @@ namespace ggg {
         String commandName( 1, state.code );
         commandName += std::to_string( commandNumber );
 
+        #if GGGTX_ENABLE
         // Command gate: before dispatching a now-formalized command, let the top
         // control frame decide run/capture/skip/error. On capture/skip the rest
         // of the line is consumed (Skip mode) without dispatching command hooks;
@@ -953,6 +976,7 @@ namespace ggg {
             return;
           }
         }
+        #endif
 
         CommandTypeT<T> *commandNext = commands->getByName( commandName );
 
@@ -985,7 +1009,25 @@ namespace ggg {
     void addCommand( CommandTypeT<T> * command ) {
       command->machine = this;
       commands->append( command );
+      #if GGGDX_ENABLE
+      registerCommandMetadata( command );
+      #endif
     }
+
+    #if GGGDX_ENABLE
+    void addEnumDomain( Int domain ) {
+      if ( domain < 0 ) return;
+      auto at = enumDomains.begin();
+      while ( at != enumDomains.end() && *at < domain ) ++at;
+      if ( at == enumDomains.end() || *at != domain ) enumDomains.insert( at, domain );
+    }
+
+    void registerCommandMetadata( CommandTypeT<T> * command ) {
+      for ( const auto &arg : command->args ) addEnumDomain( arg.domain );
+      for ( Int domain : command->domains ) addEnumDomain( domain );
+      for ( auto *record : command->records ) registerCommandMetadata( record );
+    }
+    #endif
 
     // Register table. append() assigns each matrix item->index in call order, so
     // addRegister() in buffer-index order makes getRegister(R) == that buffer.
@@ -997,6 +1039,7 @@ namespace ggg {
       return registers->getByIndex( index );
     }
 
+    #if GGGTX_ENABLE
     // --- Control frames + procedures --------------------------------------
 
     void pushFrame( ControlFrameT<T> * frame ) {
@@ -1192,6 +1235,10 @@ namespace ggg {
       }
       draining = false;
     }
+    #else
+    // Keep the host polling surface stable when flow control is compiled out.
+    Index poll( unsigned long ) { return 0; }
+    #endif
 
     // All command output funnels through write(). Override it to redirect
     // output -- e.g. to a buffer for conformance tests, or to Serial on an

@@ -292,18 +292,39 @@ struct ConformanceMachineT : public ggg::MachineT<T> {
   using Matrix = ggg::Matrix<Number, false, T>;
 
   std::string out;
+  unsigned subsystemMask =
+    ggg_conformance::GGGPX | ggg_conformance::GGGTX |
+    ggg_conformance::GGGGX | ggg_conformance::GGGDX;
   void write( const ggg::String &s ) override { out += s; }
+
+  void setupFor( unsigned needs ) {
+    subsystemMask = needs;
+    setup();
+  }
+
   void setup() override {
-    this->addCommand( new ggg::PrintNumbersT<T>() );
-    this->addCommand( new ggg::PrintStringT<T>() );
-    this->addCommand( new ggg::ProcedureInitT<T>() );
-    this->addCommand( new ggg::BlockEndT<T>() );
-    this->addCommand( new ggg::ProcedureRunT<T>() );
-    this->addCommand( new ggg::ConditionalT<T>() );
-    this->addCommand( new ggg::AsyncExportT<T>() );   // gggtx T12
-    this->addCommand( new ggg::MatrixWriteT<T>() );   // ggggx G20
-    this->addCommand( new ggg::MatrixReadT<T>() );    // ggggx G10
-    this->addCommand( new ggg::MatrixBlitT<T>() );    // ggggx G40
+    if ( subsystemMask & ggg_conformance::GGGPX ) {
+      this->addCommand( new ggg::PrintNumbersT<T>() );
+      this->addCommand( new ggg::PrintStringT<T>() );
+    }
+    if ( subsystemMask & ggg_conformance::GGGTX ) {
+      this->addCommand( new ggg::ProcedureInitT<T>() );
+      this->addCommand( new ggg::BlockEndT<T>() );
+      this->addCommand( new ggg::ProcedureRunT<T>() );
+      this->addCommand( new ggg::ConditionalT<T>() );
+      this->addCommand( new ggg::AsyncExportT<T>() );
+    }
+    if ( subsystemMask & ggg_conformance::GGGGX ) {
+      this->addCommand( new ggg::MatrixWriteT<T>() );
+      this->addCommand( new ggg::MatrixReadT<T>() );
+      this->addCommand( new ggg::MatrixBlitT<T>() );
+    }
+    if ( subsystemMask & ggg_conformance::GGGDX ) {
+      this->addCommand( new ggg::LanguageDescriptionT<T>() );
+      this->addCommand( new ggg::LanguageBasicsT<T>() );
+      this->addCommand( new ggg::CommandsListT<T>() );
+      this->addCommand( new ggg::EnumsListT<T>() );
+    }
     // A fixed register "r" = [10,20,30] so reference cases ($r) have data.
     auto *reg = new Matrix( {1,3} );
     reg->allocate();
@@ -341,11 +362,38 @@ static std::string conformanceStrip( std::string s ) {
   return s.substr( 0, e );
 }
 
-// Decode a rendered output back into its value stream + control responses, by
-// re-parsing the text. Mirrors decodeOutput() in ts/cxx/cases.ts: a line starting
-// with the okay code (O, e.g. OK/OZ) is a status; every other line splits on
-// spaces into args, each arg's leading code char dropped and the remainder split
-// on ',' and parsed as a float. (Assumes print-style decimal output.)
+// Tokenize one output line while honoring quoted strings and comments. This
+// prevents numeric-looking source inside a D2 V"..." example from being decoded
+// as conformance data.
+static std::vector<std::string> outputArgs( const std::string &line ) {
+  std::vector<std::string> args;
+  std::string arg;
+  bool quoted = false, escaped = false;
+  for ( char ch : line ) {
+    if ( escaped ) {
+      arg += ch;
+      escaped = false;
+    } else if ( quoted && ch == (char) ggg::GGG::Escape ) {
+      arg += ch;
+      escaped = true;
+    } else if ( ch == (char) ggg::GGG::Quote ) {
+      arg += ch;
+      quoted = !quoted;
+    } else if ( !quoted && ch == (char) ggg::GGG::Comment ) {
+      break;
+    } else if ( !quoted && ( ch == ' ' || ch == '\t' || ch == '\r' ) ) {
+      if ( !arg.empty() ) args.push_back( arg );
+      arg.clear();
+    } else {
+      arg += ch;
+    }
+  }
+  if ( !arg.empty() ) args.push_back( arg );
+  return args;
+}
+
+// Decode a rendered output back into its numeric value stream + control
+// responses. Mirrors decodeOutput() in ts/cxx/cases.ts.
 struct Decoded { std::vector<float> values; std::vector<std::string> statuses; };
 
 static Decoded decodeOutput( const std::string &text ) {
@@ -359,24 +407,18 @@ static Decoded decodeOutput( const std::string &text ) {
         // Canonicalize to OK / OZ (mirrors decodeOutput in ts/cxx/cases.ts):
         // failure is signalled by an F<code> arg before any comment, not by the
         // echoed id.
-        std::string head = line.substr( 0, line.find( (char) ggg::GGG::Comment ) );
         bool failed = false;
-        for ( size_t a = 0; a < head.size(); ) {
-          size_t sp = head.find( ' ', a );
-          std::string arg = head.substr( a, sp == std::string::npos ? std::string::npos : sp - a );
+        for ( const auto &arg : outputArgs( line ) ) {
           if ( !arg.empty() && arg[0] == (char) ggg::GGG::Failure ) { failed = true; break; }
-          if ( sp == std::string::npos ) break;
-          a = sp + 1;
         }
         d.statuses.push_back( failed ? "OZ" : "OK" );
       } else {
-        size_t a = 0;
-        while ( a < line.size() ) {
-          size_t sp = line.find( ' ', a );
-          std::string arg = ( sp == std::string::npos ) ? line.substr( a ) : line.substr( a, sp - a );
+        for ( const auto &arg : outputArgs( line ) ) {
           // value slot only (V Value); skip addresses/metadata + the echoed G
           // command, matching decodeOutput() in ts/cxx/cases.ts.
-          if ( arg.size() > 1 && arg[0] == ggg::GGG::Value ) {
+          if ( arg.size() > 1 && arg[0] == ggg::GGG::Value
+              && arg[1] != ggg::GGG::Quote
+              && arg[1] != ggg::GGG::StringToEOL ) {
             std::string data = arg.substr( 1 );          // drop the leading code char
             size_t b = 0;
             while ( true ) {
@@ -391,8 +433,6 @@ static Decoded decodeOutput( const std::string &text ) {
               b = comma + 1;
             }
           }
-          if ( sp == std::string::npos ) break;
-          a = sp + 1;
         }
       }
     }
@@ -415,7 +455,7 @@ static void runConformance(
       continue;
     }
     ConformanceMachineT<T> machine;
-    machine.setup();
+    machine.setupFor( c.needs );
     machine.run( c.program );
     // Async (T12) cases: the host drives the clock, so replay the same poll
     // times the TS reference used when the golden was generated.
@@ -602,16 +642,100 @@ void test_matrix_commands() {
   delete mat;
 }
 
-// Self-documentation: D1 streams the command catalog (name + per-arg docs).
+// Self-documentation: D2, D4, and D5 stream their individual sections; D1
+// streams all three, including result schemas and live reference domains.
 void test_doc_commands() {
   MatrixCmdMachine m;
-  m.addCommand( new ggg::MatrixWriteT<ggg::FloatTraits>() );
+  m.addCommand( new ggg::MatrixReadT<ggg::FloatTraits>() );
+  m.addCommand( new ggg::MatrixBlitT<ggg::FloatTraits>() );
+  m.addCommand( new ggg::LanguageDescriptionT<ggg::FloatTraits>() );
+  m.addCommand( new ggg::LanguageBasicsT<ggg::FloatTraits>() );
   m.addCommand( new ggg::CommandsListT<ggg::FloatTraits>() );
+  m.addCommand( new ggg::EnumsListT<ggg::FloatTraits>() );
+  auto *reg = new ggg::Matrix<float,false,ggg::FloatTraits>( {1} );
+  reg->allocate();
+  reg->name = "r";
+  m.addRegister( reg );
+
+  m.run( "D2\n" );
+  TEST_ASSERT_NULL( strstr( m.out.c_str(), "\n;" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-20 L\"argument.form\" T\"form\" V\"glyph+data\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-20 L\"list.grouping\" T\"constraint\" V\"no-parentheses\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-21 T\"valid\" V\"G20 R0 P0,0 Q1 V1,0.5 ; trailing comment\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-21 T\"invalid\" V\"G20 R0 P(0,0) V1\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-21 T\"invalid\" V\"# comment\"" ) );
+
+  m.out.clear();
+  m.run( "D4\n" );
+  TEST_ASSERT_NULL( strstr( m.out.c_str(), "\n;" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-41 B\"G40\" U\"R\" T\"reference\" R\"ggggx.register\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-41 B\"G40\" U\"T\" T\"enum\" R\"ggggx.transform\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-40 B\"G40\" T\"command\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-40 B\"D2\" T\"command\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-40 B\"D-20\" T\"result\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-40 B\"D-21\" T\"result\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-40 B\"D-40\" T\"result\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "D-40 B\"D-40\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "D-40 B\"D-41\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "D-40 B\"D-42\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "D-40 B\"D-50\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "D-40 B\"D-51\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-41 B\"D-42\" U\"W\" T\"string\" A\"Returned command code.\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-42 B\"G10\" W\"G20\" A\"Replayable buffer write.\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-42 B\"D1\" W\"D-42\" A\"Command-to-command return relation.\"" ) );
+  TEST_ASSERT_NULL( strstr( m.out.c_str(), "\nD-50 " ) );
+
+  m.out.clear();
+  m.run( "D5\n" );
+  TEST_ASSERT_NULL( strstr( m.out.c_str(), "\n;" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-51 R1 V-40 L\"command\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-51 R1 V-41 L\"argument\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-51 R1 V-42 L\"return\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-51 R2 V-50 L\"group\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-51 R2 V-51 L\"entry\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-51 R7 V-20 L\"rule\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-51 R7 V-21 L\"example\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-51 R8 V3 L\"control\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-51 R9 V1 L\"invalid\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-50 R14 L\"ggggx.transform\" S4 T\"enum\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-51 R14 V3 L\"offset\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-50 R10 L\"ggggx.register\" S1 T\"reference\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-51 R10 V0 L\"r\"" ) );
+
+  m.out.clear();
   m.run( "D1\n" );
-  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "D-1 ; List available commands" ) );
-  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "; G20 : Write values into a register." ) );
-  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), ";   V(n+) ; values to write" ) );
-  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "; D1 : List available commands." ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "D-20 L\"argument.form\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "D-40 B\"D4\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-50 R1 L\"CommandResultRecord\"" ) );
 }
 
 // Quoted-string arguments: an L"..." token (a quoted string under a code) must

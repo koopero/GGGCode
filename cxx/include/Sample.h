@@ -1,4 +1,6 @@
 #pragma once
+#include "./Config.h"
+#if GGGGX_ENABLE
 
 #include <cmath>
 #include <vector>
@@ -289,3 +291,4 @@ namespace ggg {
   }
 
 }; // namespace ggg
+#endif

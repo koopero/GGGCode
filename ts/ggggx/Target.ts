@@ -56,7 +56,7 @@ export function TargetHookValue( arg ) {
       break
 
     case GGG.Storage:
-      state.type = value
+      state.storage = value
       break
 
     case GGG.Register:

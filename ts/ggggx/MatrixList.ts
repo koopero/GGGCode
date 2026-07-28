@@ -22,8 +22,8 @@ export function MatrixListForNamespace( namespace?: GXNamespaceArg ) {
 
     machine.output( { code: commandName( MatrixListResponse ), comment: "List buffers", eol: true } )
 
-    // Enumerate the matrix registers G30 created; one comment line each (the
-    // D1 / R1 "list as comments" convention). eol marks each as a complete line.
+    // Enumerate the matrix registers G30 created; one legacy comment line each.
+    // eol marks each as a complete line.
     const registers = machine.getRegisterList( Matrix )
     registers.eachPair( ( buffer, key ) => {
       const matrix = buffer as Matrix

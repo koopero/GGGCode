@@ -148,7 +148,49 @@ The core language (`ts/ggg/`) is data + dispatch only; behaviour comes from comm
 - **ggggx** — graphics / matrix buffers (init, read, write, blit)
 - **gggpx** — print / processing
 - **gggtx** — flow control (procedures, conditionals, iteration, async export)
-- **gggdx** — documentation helpers
+- **gggdx** — structured protocol self-description (`D1` complete, `D2` basics, `D4` commands, `D5` enums)
+
+`D2` returns `D-20` stable core grammar rules and `D-21` complete valid or
+invalid wire examples. `D4` returns `D-40` command/record schemas, `D-41`
+argument schemas, and `D-42` command-to-command return relations. `D5` returns
+`D-50` groups and `D-51` entries. `D1` describes the complete language by
+returning the D2, D4, and D5 sections in that order with one final `OK`; `V` is
+the actual (possibly sparse or negative) wire value. These are ordinary GGG
+records rather than comments. Argument
+schemas distinguish fixed `enum` domains from live `reference` domains, so for
+example G40 reports `R` against `ggggx.register` and `T` against
+`ggggx.transform`. Each `D-40` carries `T"command"` for executable requests or
+`T"result"` for non-executable output records. A D-41 `M` value is a canonical
+non-literal shape label such as `comma-list:axes=C,X,Y,Z`; its punctuation is
+never copied into a command. The catalog includes all seven result records themselves,
+leaving only the `D1`/`D2`/`D4`/`D5` request codes as bootstrap
+knowledge. A return relation is written as `D-42 B"G10" W"G20"`, where `B` is
+the originating command and `W` is the command it returns.
+
+### C++ runtime configuration
+
+The C++ runtime can be assembled at compile time with numeric build definitions:
+
+```ini
+build_flags =
+  -DGGGPX_ENABLE=1
+  -DGGGGX_ENABLE=1
+  -DGGGTX_ENABLE=0
+  -DGGGDX_ENABLE=0
+  -DGGGGX_CORDIC_ENABLE=0
+```
+
+All features default to `1` for compatibility. `GGGPX_ENABLE`, `GGGGX_ENABLE`,
+`GGGTX_ENABLE`, and `GGGDX_ENABLE` control their command surfaces.
+`GGGGX_TRIG_ENABLE` controls circular trigonometry; `GGGGX_CORDIC_ENABLE`
+controls its fixed-point CORDIC implementation. CORDIC requires trigonometry,
+which requires ggggx.
+
+Use `ggg::RuntimeT<Traits>` for the command set selected by those definitions,
+or call `ggg::addConfiguredCommands(&machine)` from a custom machine. With
+gggdx disabled, command descriptions, argument/response metadata, enum
+descriptors, and D commands are omitted. With gggtx disabled, procedure,
+capture, queue, and scheduling state are also removed from `MachineT`.
 
 ## Implementing custom commands
 

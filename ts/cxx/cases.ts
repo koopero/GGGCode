@@ -5,6 +5,7 @@ import { Commands, GGG } from "../ggg/Language"
 import PrintCommands from "../gggpx/PrintCommands"
 import { gggtxFlowCommands } from "../gggtx/gggtxCommands"
 import { GXCommands } from "../ggggx/GXCommands"
+import DocCommands from "../gggdx/DocCommands"
 
 //
 // Human-authored conformance cases (cases/*.yaml). A case is one artifact wearing
@@ -19,7 +20,7 @@ import { GXCommands } from "../ggggx/GXCommands"
 
 export const EPSILON = 1e-4
 
-export type Subsystem = "gggpx" | "gggtx" | "ggggx"
+export type Subsystem = "gggpx" | "gggtx" | "ggggx" | "gggdx"
 
 export type Case = {
   name: string          // stable id
@@ -46,13 +47,14 @@ export const SUBSYSTEMS: Record<Subsystem, Commands> = {
   gggpx: PrintCommands,
   gggtx: gggtxFlowCommands,
   ggggx: GXCommands,
+  gggdx: DocCommands,
 }
 
 // Subsystems the C++ conformance machine provides (cxx test_ggg.cpp
 // ConformanceMachine). A case compiles into conformance_cases.h iff its `needs`
 // are all satisfied here — a genuine capability gap is the only reason a case is
 // C++-excluded (replacing hand-typed `cxxSkip`).
-export const CXX_SUBSYSTEMS: Subsystem[] = [ "gggpx", "gggtx", "ggggx" ]
+export const CXX_SUBSYSTEMS: Subsystem[] = [ "gggpx", "gggtx", "ggggx", "gggdx" ]
 
 export function cxxSupported( c: Case ): boolean {
   return c.needs.every( n => CXX_SUBSYSTEMS.includes( n ) )
@@ -99,13 +101,43 @@ function validateCase( raw: any, file: string ): Case {
 }
 
 //
-// Decode a rendered output back into its value stream + control responses, by
-// re-parsing the text (the same logic ports to C++). Output lines are GGG: an
-// okay response (O-prefixed, e.g. OK/OZ) on its own line, or a sequence of
-// space-separated `‹code›‹d,d,d›` args. Only the value slot (V Value) carries
-// data — other codes are addresses/metadata (R register, P offset, S size, the
-// echoed G command, …) and are skipped. This makes the decoder correct for both
-// print output (V args) and ggggx read output (G20 R0 P0 V…).
+function outputArgs( line:string ) {
+  const args:string[] = []
+  let arg = ""
+  let quoted = false
+  let escaped = false
+  for ( const char of line ) {
+    if ( escaped ) {
+      arg += char
+      escaped = false
+      continue
+    }
+    if ( quoted && char === GGG.Escape ) {
+      arg += char
+      escaped = true
+      continue
+    }
+    if ( char === GGG.Quote ) {
+      arg += char
+      quoted = !quoted
+      continue
+    }
+    if ( !quoted && char === GGG.Comment ) break
+    if ( !quoted && /\s/.test( char ) ) {
+      if ( arg ) args.push( arg )
+      arg = ""
+      continue
+    }
+    arg += char
+  }
+  if ( arg ) args.push( arg )
+  return args
+}
+
+// Decode a rendered output back into its value stream + control responses by
+// tokenizing the GGG line with quoted-string and comment awareness. Only a
+// numeric value slot (V Value) carries conformance data; quoted V strings such
+// as D2 examples are metadata and must not leak their contents into the stream.
 //
 export function decodeOutput( text: string ): { values: number[], statuses: string[] } {
   const values: number[] = []
@@ -116,14 +148,14 @@ export function decodeOutput( text: string ): { values: number[], statuses: stri
       // Canonicalize the return to OK / OZ so a case's abstract status compares
       // cleanly regardless of the echoed O<id> or any comment. Failure is
       // signalled by an F<code> arg (before the comment), not by the id.
-      const beforeComment = line.split( GGG.Comment )[0]
-      const failed = beforeComment.trim().split( " " ).some( a => a[0] === GGG.Failure )
+      const failed = outputArgs( line ).some( a => a[0] === GGG.Failure )
       statuses.push( failed ? "OZ" : "OK" )
       continue
     }
-    for ( const arg of line.split( " " ) ) {
+    for ( const arg of outputArgs( line ) ) {
       if ( arg.length < 2 ) continue
       if ( arg[0] !== GGG.Value ) continue          // value slot only
+      if ( arg[1] === GGG.Quote || arg[1] === GGG.StringToEOL ) continue
       for ( const piece of arg.slice( 1 ).split( "," ) ) {
         if ( piece === "" ) continue
         const n = parseFloat( piece )

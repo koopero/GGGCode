@@ -5,6 +5,8 @@ import { floor, ceil, mod, max, min, fract, toVector } from "../common/math"
 import Matrix from "../ggg/Matrix"
 import { VecArg } from "../ggg/Language"
 import { Filter, Edge } from "./GXLanguage"
+import NamedList from "../ggg/NamedList"
+import { EnumValue } from "../ggg/EnumRepository"
 
 
 interface ResolvedAxis {
@@ -23,11 +25,23 @@ interface ResolvedAxis {
 //   min/max/add -- pool the footprint (extrema / sum).
 // linear & nearest are point filters (no fold); mean/min/max/add fold the footprint
 // when minifying and degrade to a point sample when magnifying.
-export const FilterList: string[] = [ Filter.Linear, Filter.Nearest, "mean", "min", "max", "add" ]
+export const FilterList = new NamedList<EnumValue>( [
+  { index: 0, name: Filter.Linear, description: "Linear interpolation." },
+  { index: 1, name: Filter.Nearest, description: "Nearest-neighbour sampling." },
+  { index: 2, name: "mean", description: "Mean footprint reduction." },
+  { index: 3, name: "min", description: "Minimum footprint reduction." },
+  { index: 4, name: "max", description: "Maximum footprint reduction." },
+  { index: 5, name: "add", description: "Sum footprint reduction." },
+] )
 
 // Edge order for the `E` arg. Index 0 = loop (wrap) -- the default; internal
 // string is still Edge.Repeat.
-export const EdgeList: string[] = [ Edge.Repeat, Edge.Hold, Edge.Mirror, Edge.Zero ]
+export const EdgeList = new NamedList<EnumValue>( [
+  { index: 0, name: Edge.Repeat, description: "Wrap at the edge." },
+  { index: 1, name: Edge.Hold, description: "Clamp to the edge value." },
+  { index: 2, name: Edge.Mirror, description: "Mirror across the edge." },
+  { index: 3, name: Edge.Zero, description: "Read zero outside the buffer." },
+] )
 
 // Cap on taps per spatial axis, so a huge footprint stays deterministic + bounded.
 const MAX_TAPS = 8

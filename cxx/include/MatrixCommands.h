@@ -1,4 +1,6 @@
 #pragma once
+#include "./Config.h"
+#if GGGGX_ENABLE
 #include "./Command.h"
 #include "./Machine.h"
 #include "./Matrix.h"
@@ -20,7 +22,7 @@ namespace ggg {
     using Base = CommandTypeT<T>;
     using Base::machine; using Base::code; using Base::number;
     using Base::string;  using Base::okay;  using Base::name;
-    using Base::description; using Base::addArg;
+    using Base::describe; using Base::addArg;
     using Number = typename T::Number;
 
     MatrixBaseT<T> * reg = nullptr;
@@ -29,11 +31,13 @@ namespace ggg {
   public:
     MatrixWriteT() {
       name = "G20";
-      description = "Write values into a register.";
-      addArg( Register, "register index or name", "(n|s)" );
-      addArg( Offset, "start offset", "(n)" );
-      addArg( Operator, "write operator (set/add/mult/...)", "(s)" );
-      addArg( Value, "values to write", "(n+)" );
+      describe( "Write values into a register." );
+      addArg( Register, "register index or name", "", ArgumentKind::Reference,
+        (Int) EnumGroupIndex::MatrixRegister );
+      addArg( Offset, "start offset", "", ArgumentKind::Number );
+      addArg( Operator, "write operator (set/add/mult/...)", "",
+        ArgumentKind::Enum, (Int) EnumGroupIndex::Operator );
+      addArg( Value, "values to write", "comma-list:number;one-or-more", ArgumentKind::Number );
     }
 
     void hookCommand() override { reg = nullptr; offset = 0; op = "set"; okay = 1; }
@@ -84,7 +88,7 @@ namespace ggg {
     using Base = CommandTypeT<T>;
     using Base::machine; using Base::code; using Base::number;
     using Base::string;  using Base::okay;  using Base::name;
-    using Base::description; using Base::addArg;
+    using Base::describe; using Base::addArg;
     using Number = typename T::Number;
 
     MatrixBaseT<T> * reg = nullptr;
@@ -93,10 +97,13 @@ namespace ggg {
   public:
     MatrixReadT() {
       name = "G10";
-      description = "Read a region of a register (responds with a G20 write).";
-      addArg( Register, "register index or name", "(n|s)" );
-      addArg( Offset, "start offset", "(n)" );
-      addArg( Size, "scalar count", "(n)" );
+      describe( "Read a region of a register (responds with a G20 write)." );
+      addArg( Register, "register index or name", "", ArgumentKind::Reference,
+        (Int) EnumGroupIndex::MatrixRegister );
+      addArg( Offset, "start offset", "", ArgumentKind::Number );
+      addArg( Size, "scalar count", "", ArgumentKind::Number );
+      this->addResponse( "G20", "Replayable buffer write." );
+      this->addResponse( "OK", "Buffer read successfully." );
     }
 
     void hookCommand() override { reg = nullptr; offset = 0; count = -1; okay = 1; }
@@ -145,3 +152,4 @@ namespace ggg {
   using MatrixRead = MatrixReadT<>;
 
 }; // namespace ggg
+#endif

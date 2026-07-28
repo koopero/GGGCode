@@ -1,8 +1,9 @@
 import { GGG, GGGFail, Hooks, HookArgs } from "../ggg/Language"
-import { isString, isNumber, toInt } from "../common/util"
+import { isNumber, toInt } from "../common/util"
 import Matrix from "../ggg/Matrix"
 import { Blit, BlitOptions } from "./Blit"
 import { FilterList, EdgeList } from "./Sample"
+import NamedList from "../ggg/NamedList"
 
 //
 // MatrixBlit (G40): copy from a SOURCE register into a DESTINATION register
@@ -43,8 +44,10 @@ function reset( state: { [key: string]: any } ) {
 }
 
 // Map an arg value (index or name) to an option name via the index-order list.
-function optName( value: number | string, list: string[] ): string {
-  return isNumber( value ) ? ( list[ value ] ?? list[0] ) : ( value as string )
+function optName( value: number | string, list: NamedList<any> ): string {
+  return isNumber( value )
+    ? ( list.get( value )?.name ?? list.get( 0 )?.name ?? "" )
+    : ( value as string )
 }
 
 function MatrixBlitHookCommand( arg: HookArgs ) {

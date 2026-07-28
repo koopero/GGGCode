@@ -10,12 +10,10 @@ namespace ggg {
     String result;
     result += Quote;
     for ( auto c : string ) {
-      if ( c == Quote ) {
+      if ( c == Quote || c == Escape ) {
         result += "\\";
-        result += Quote;
-      } else {
-        result += c;
       }
+      result += c;
     }
     result += Quote;
     return result;

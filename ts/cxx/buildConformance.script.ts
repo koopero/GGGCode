@@ -22,6 +22,12 @@ import { writeFileSync, readFileSync, existsSync, mkdirSync } from "fs"
 const root = resolve( __dirname, "../.." )
 const goldenPath = resolve( root, "conformance/golden.json" )
 const headerPath = resolve( root, "cxx/test-pio/gen/conformance_cases.h" )
+const subsystemBits:Record<string,number> = {
+  gggpx: 1 << 0,
+  gggtx: 1 << 1,
+  ggggx: 1 << 2,
+  gggdx: 1 << 3,
+}
 
 function cEscape( s: string ): string {
   let r = ""
@@ -104,6 +110,9 @@ async function build() {
   header += "//\n"
   header += "namespace ggg_conformance {\n"
   header += `  constexpr double EPSILON = ${cNum( EPSILON )};\n`
+  header += "  enum Subsystem : unsigned {\n"
+  header += "    GGGPX = 1u << 0, GGGTX = 1u << 1, GGGGX = 1u << 2, GGGDX = 1u << 3\n"
+  header += "  };\n"
 
   // Per-case value arrays (a zero-length array is ill-formed in C++, so empty
   // value sets are represented as nullptr + count 0).
@@ -118,7 +127,7 @@ async function build() {
   }
 
   header += "  struct Case {\n"
-  header += "    const char* name; const char* program; const char* status;\n"
+  header += "    const char* name; const char* program; const char* status; unsigned needs;\n"
   header += "    const double* values; int valueCount; const char* expected;\n"
   header += "    bool requiresFloat;\n"
   header += "    const unsigned long* polls; int pollCount;\n"
@@ -128,10 +137,11 @@ async function build() {
     const r = byName.get( c.name )!
     const valuesPtr = c.values.length === 0 ? "nullptr" : `values_${c.name}`
     const expected = c.exact ? `"${cEscape( r.expected )}"` : "nullptr"
+    const needs = c.needs.reduce( ( mask, name ) => mask | subsystemBits[name], 0 )
     // program gets a trailing newline so the C++ parser finishes the line.
     const pollsPtr = c.polls.length === 0 ? "nullptr" : `polls_${c.name}`
     return `    { "${cEscape( c.name )}", "${cEscape( c.program + "\n" )}", ` +
-           `"${cEscape( c.status )}", ${valuesPtr}, ${c.values.length}, ${expected}, ` +
+           `"${cEscape( c.status )}", ${needs}u, ${valuesPtr}, ${c.values.length}, ${expected}, ` +
            `${c.requiresFloat}, ${pollsPtr}, ${c.polls.length} }`
   } ).join( ",\n" ) + "\n"
   header += "  };\n"

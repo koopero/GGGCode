@@ -4,6 +4,7 @@ import { EventEmitter } from "../common/events"
 import { isArray, isNumber, isString, isBoolean, isDefined } from "../common/util"
 import NamedList, { NamedListItem } from "./NamedList"
 import { SolveOptions, Solve } from "./Solve"
+import type { EnumDomain } from "./EnumRepository"
 
 type QueueItem = {
   callback?: () => void
@@ -88,6 +89,12 @@ export default class Machine extends EventEmitter  {
   limits:MachineLimits = {}
   
   commands:Commands = {}
+  // All protocol message schemas known to this machine: executable commands
+  // plus non-executable result records such as D-40 and D-51.
+  messages:Record<string,Command> = {}
+  // Machine-scoped because extensions and live reference domains vary by the
+  // commands/registers loaded into this particular runtime.
+  enumDomains:NamedList<EnumDomain> = new NamedList<EnumDomain>()
   commandState:{ [key:string]:any } = {}
   stack:StackItem[] = []
   queue:QueueItem[] = []
@@ -129,8 +136,33 @@ export default class Machine extends EventEmitter  {
 
   addCommands( data: { [key:string]: Command } ) {
     for ( const key in data ) {
-      this.commands[key] = data[key]
+      const command = data[key]
+      this.commands[key] = command
+      this.addMessage( key, command )
     }
+  }
+
+  addMessage( key:string, message:Command ) {
+    this.messages[key] = message
+    for ( const domain of message.domains || [] ) this.addEnumDomain( domain )
+    for ( const arg of Object.values( message.args || {} ) ) {
+      if ( arg.domain ) this.addEnumDomain( arg.domain )
+    }
+    for ( const recordKey in message.records || {} ) {
+      this.addMessage( recordKey, message.records![recordKey] as Command )
+    }
+  }
+
+  addEnumDomain( domain:EnumDomain ) {
+    const byIndex = this.enumDomains.get( domain.index )
+    const byName = this.enumDomains.get( domain.name )
+    if ( byIndex && byIndex !== domain ) {
+      throw new Error( `Enum group index ${domain.index} is already owned by ${byIndex.name}` )
+    }
+    if ( byName && byName !== domain ) {
+      throw new Error( `Enum group name ${domain.name} is already owned by index ${byName.index}` )
+    }
+    if ( !byIndex && !byName ) this.enumDomains.add( domain )
   }
 
   output( tokens: string | string[] | Token | Token[] ) {

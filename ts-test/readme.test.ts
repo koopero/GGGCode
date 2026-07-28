@@ -84,7 +84,7 @@ describe("README", () => {
               const strings = ["Hello","World!"]
               const string = strings[value]
               if ( string ) {
-                machine.output( { comment: string } )
+                machine.output( { comment: string, eol: true } )
               }
             break
           }
@@ -98,10 +98,7 @@ describe("README", () => {
     
     const machine = new Machine( { commands } )
     
-    machine.run( "P0 S0")
-    .then( result => {
-      result = Format( result )
-      expect( result ).toBe( "; Hello\nOK\n" )
-    })
+    const result = await machine.run( "P0 S0" )
+    expect( result.map( Format ).join( "" ) ).toBe( "; Hello\nOK\n" )
   })
 })

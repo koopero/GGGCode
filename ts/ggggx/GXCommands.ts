@@ -1,6 +1,6 @@
 
-import { Command, GGG, Hooks } from "../ggg/Language"
-import { ArgsBufferIndex, ArgsBufferRef, ArgsBufferStorage, 
+import { Command, GGG } from "../ggg/Language"
+import { ArgsBufferRef, ArgsBufferStorage,
   ArgsDimension, ArgsName, ArgsPosition, ArgsSize, ArgsEncoding } from "./common"
 import { ArgType } from "../ggg/Language"
 
@@ -12,6 +12,13 @@ import { MatrixDisplayHooks } from "./MatrixDisplay"
 import { GXCommandNumbers, GXNamespace, GXNamespaceArg } from "./GXLanguage"
 import { MatrixWriteHooks } from "./MatrixWrite"
 import { MatrixBlitHooks } from "./MatrixBlit"
+import {
+  EdgeDomain,
+  FilterDomain,
+  MatrixRegisterDomain,
+  OperatorDomain,
+  TransformDomain,
+} from "./Domains"
 
 
 function GXCommandsForNamespace( namespace?: GXNamespaceArg ) {
@@ -59,6 +66,10 @@ function GXCommandsForNamespace( namespace?: GXNamespaceArg ) {
   if ( MatrixRead ) {
     commands[ `${code}${MatrixRead}` ] = {
       description: "Read from buffer.",
+      responds: {
+        ...( MatrixWrite ? { [`${code}${MatrixWrite}`]: "Replayable buffer write." } : {} ),
+        "OK": "Buffer read successfully.",
+      },
       args: {
         [GGG.Register]: ArgsBufferRef,
         [GGG.Encoding]: ArgsEncoding,
@@ -71,12 +82,12 @@ function GXCommandsForNamespace( namespace?: GXNamespaceArg ) {
 
   if ( MatrixDisplay ) {
     commands[ `${code}${MatrixDisplay}` ] = {
-      description: "Display buffer.",
+      description: "Emit the whole buffer to the host display.",
+      responds: {
+        "OK": "Display event emitted.",
+      },
       args: {
         [GGG.Register]: ArgsBufferRef,
-        [GGG.Encoding]: ArgsEncoding,
-        [GGG.Offset]: ArgsPosition,
-        [GGG.Size]: ArgsSize,
       },
       ...MatrixDisplayHooks,
     }
@@ -91,11 +102,11 @@ function GXCommandsForNamespace( namespace?: GXNamespaceArg ) {
         [GGG.Value]: {
           description: "Values to write.",
           type: ArgType.Number,
-          format: "(n+)",
+          format: "comma-list:number;one-or-more",
         },
         [GGG.Operator]: {
           description: "Write operator.",
-          type: ArgType.String,
+          domain: OperatorDomain,
         },
         ["F"]: {
           description: "Fill size",
@@ -115,33 +126,33 @@ function GXCommandsForNamespace( namespace?: GXNamespaceArg ) {
         [GGG.Register]: ArgsBufferRef,
         [GGG.Target]: {
           description: "Destination buffer (index or name).",
-          type: ArgType.Any,
+          domain: MatrixRegisterDomain,
         },
         [GGG.Transform]: {
           description: "Transform coefficients (per mode): box = source min,max pairs; map = (srcAxis,min,max) triples per dest axis; affine = matrix; offset = source pixel offsets.",
           type: ArgType.Number,
-          format: "(n+)",
+          format: "comma-list:number;one-or-more",
         },
         [GGG.Storage]: {
           description: "Transform mode: box (default) / affine / map / offset (index or name).",
-          type: ArgType.Any,
+          domain: TransformDomain,
         },
         [GGG.Offset]: ArgsPosition,
         [GGG.Size]: ArgsSize,
         [GGG.Dimension]: ArgsDimension,
         [GGG.Operator]: {
           description: "Combine operator into the destination cell.",
-          type: ArgType.String,
+          domain: OperatorDomain,
         },
         [GGG.Failure]: {
           description: "Per-axis filter (list, continue-last): 0 linear / 1 nearest / 2 mean / 3 min / 4 max / 5 add.",
-          type: ArgType.Any,
-          format: "(*)",
+          domain: FilterDomain,
+          format: "comma-list:enum;continue-last",
         },
         [GGG.Encoding]: {
           description: "Per-axis edge (list, continue-last): 0 loop / 1 hold / 2 mirror / 3 zero.",
-          type: ArgType.Any,
-          format: "(*)",
+          domain: EdgeDomain,
+          format: "comma-list:enum;continue-last",
         },
       },
       ...MatrixBlitHooks,

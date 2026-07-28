@@ -1,12 +1,10 @@
 import { GGG, Hooks, HookArgs } from "../ggg/Language"
 import { MatrixEvents } from "./GXLanguage"
 import type { Matrix } from "../ggggx"
-import { TargetHookCode, TargetHookCommand, TargetHookValue, TargetResolveNumbers } from "./Target"
 import { GXContext } from "./GXContext"
 
 function DisplayHookValue( arg:HookArgs ) {
-  const { code, value, machine, state } = arg
-  TargetResolveNumbers( arg )
+  const { code, value, machine } = arg
 
   switch( code ) {
     case GGG.Register: {
@@ -32,4 +30,3 @@ export const MatrixDisplayHooks = {
   [Hooks.Value]: DisplayHookValue,
   [Hooks.End]: DisplayHookEnd,
 }
-

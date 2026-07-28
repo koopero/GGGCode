@@ -1,4 +1,6 @@
 #pragma once
+#include "./Config.h"
+#if GGGGX_ENABLE
 
 #include <vector>
 #include "./Types.h"
@@ -8,6 +10,7 @@
 #include "./Operators.h"
 #include "./Sample.h"
 #include "./gen/CommandConvention.h"
+#include "./gen/GXRuntimeEnums.h"
 
 //
 // MatrixBlit (G40): copy from a SOURCE register into a DESTINATION register
@@ -29,28 +32,12 @@
 
 namespace ggg {
 
-  // Option vocabularies (index order), mirroring ts/ggggx/Blit.ts + GXLanguage.
+  // Resolve numeric enum values through the generated protocol repository. The
+  // same descriptors drive D1/D5, so execution and self-description cannot drift.
   template <typename N>
-  inline String blitOptionByIndex( const std::vector<String> &list, N n ) {
-    int i = (int) n;
-    if ( i >= 0 && i < (int) list.size() ) return list[i];
-    return "";
-  }
-  inline const std::vector<String> & blitModes() {
-    static const std::vector<String> v = { "box", "affine", "map", "offset" };
-    return v;
-  }
-  // Per-axis filter (F arg) and edge (E arg) vocabularies; index order is the
-  // contract, mirrored in ts/ggggx/Sample.ts (FilterList / EdgeList). Filter:
-  // linear/nearest are point filters, mean/min/max/add fold the footprint. Edge
-  // index 0 is "loop" (user name; internal string is SampleOpt::Repeat).
-  inline const std::vector<String> & blitFilters() {
-    static const std::vector<String> v = { SampleOpt::Linear, SampleOpt::Nearest, SampleOpt::Mean, SampleOpt::Min, SampleOpt::Max, SampleOpt::Add };
-    return v;
-  }
-  inline const std::vector<String> & blitEdges() {
-    static const std::vector<String> v = { SampleOpt::Repeat, SampleOpt::Hold, SampleOpt::Mirror, SampleOpt::Zero };
-    return v;
+  inline String blitOptionByIndex( EnumGroupIndex group, N n ) {
+    const char *value = ggggxRuntimeEnumName( group, (Int) n );
+    return value ? value : "";
   }
 
   // Row-major flat (rank+1)x(rank+1) homogeneous transform from mode + M coeffs.
@@ -272,7 +259,7 @@ namespace ggg {
     using Base = CommandTypeT<T>;
     using Base::machine; using Base::code; using Base::number;
     using Base::string;  using Base::okay;  using Base::name;
-    using Base::description; using Base::addArg;
+    using Base::describe; using Base::addArg;
 
     MatrixBaseT<T> *source = nullptr;
     MatrixBaseT<T> *dest = nullptr;
@@ -280,17 +267,23 @@ namespace ggg {
   public:
     MatrixBlitT() {
       name = "G40";
-      description = "Blit (transform-copy) between registers.";
-      addArg( Register, "source register index or name", "(n|s)" );
-      addArg( Target, "destination register index or name", "(n|s)" );
-      addArg( Transform, "transform coeffs (per mode): box = source min,max pairs; map = (srcAxis,min,max) triples per dest axis; affine = matrix; offset = source pixel offsets", "(n+)" );
-      addArg( Storage, "transform mode: box (default) / affine / map / offset", "(n|s)" );
-      addArg( Offset, "dest region offset", "(n+)" );
-      addArg( Size, "dest region size", "(n+)" );
-      addArg( Dimension, "channel dimension count", "(n)" );
-      addArg( Operator, "combine operator into dest cell", "(s)" );
-      addArg( Failure, "per-axis filter (list): 0 linear / 1 nearest / 2 mean / 3 min / 4 max / 5 add", "(*)" );
-      addArg( Encoding, "per-axis edge (list): 0 loop / 1 hold / 2 mirror / 3 zero", "(*)" );
+      describe( "Blit (transform-copy) between registers." );
+      addArg( Register, "source register index or name", "", ArgumentKind::Reference,
+        (Int) EnumGroupIndex::MatrixRegister );
+      addArg( Target, "destination register index or name", "", ArgumentKind::Reference,
+        (Int) EnumGroupIndex::MatrixRegister );
+      addArg( Transform, "transform coeffs (per mode): box = source min,max pairs; map = (srcAxis,min,max) triples per dest axis; affine = matrix; offset = source pixel offsets", "comma-list:number;one-or-more", ArgumentKind::Number );
+      addArg( Storage, "transform mode: box (default) / affine / map / offset", "",
+        ArgumentKind::Enum, (Int) EnumGroupIndex::Transform );
+      addArg( Offset, "dest region offset", "comma-list:axes=C,X,Y,Z", ArgumentKind::Number );
+      addArg( Size, "dest region size", "comma-list:axes=C,X,Y,Z", ArgumentKind::Number );
+      addArg( Dimension, "channel dimension count", "", ArgumentKind::Number );
+      addArg( Operator, "combine operator into dest cell", "", ArgumentKind::Enum,
+        (Int) EnumGroupIndex::Operator );
+      addArg( Failure, "per-axis filter (list): 0 linear / 1 nearest / 2 mean / 3 min / 4 max / 5 add", "comma-list:enum;continue-last",
+        ArgumentKind::Enum, (Int) EnumGroupIndex::Filter );
+      addArg( Encoding, "per-axis edge (list): 0 loop / 1 hold / 2 mirror / 3 zero", "comma-list:enum;continue-last",
+        ArgumentKind::Enum, (Int) EnumGroupIndex::Edge );
     }
 
     void hookCommand() override {
@@ -302,14 +295,14 @@ namespace ggg {
         case Register:  source = machine->getRegister( (Index) number ); break;
         case Target:    dest = machine->getRegister( (Index) number ); break;
         case Transform: opt.matrix.push_back( number ); break;
-        case Storage:   opt.mode = blitOptionByIndex( blitModes(), number );
+        case Storage:   opt.mode = blitOptionByIndex( EnumGroupIndex::Transform, number );
                         if ( opt.mode.empty() ) opt.mode = "box";
                         break;
         case Offset:    opt.offset.push_back( (Index) number ); break;
         case Size:      opt.size.push_back( (Index) number ); break;
         case Dimension: opt.dimension = (Index) number; break;
-        case Failure:   opt.filter.push_back( blitOptionByIndex( blitFilters(), number ) ); break;
-        case Encoding:  opt.edges.push_back( blitOptionByIndex( blitEdges(), number ) ); break;
+        case Failure:   opt.filter.push_back( blitOptionByIndex( EnumGroupIndex::Filter, number ) ); break;
+        case Encoding:  opt.edges.push_back( blitOptionByIndex( EnumGroupIndex::Edge, number ) ); break;
         default: break;
       }
     }
@@ -336,3 +329,4 @@ namespace ggg {
   using MatrixBlit = MatrixBlitT<>;
 
 }; // namespace ggg
+#endif

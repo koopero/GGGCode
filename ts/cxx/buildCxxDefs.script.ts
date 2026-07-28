@@ -3,6 +3,36 @@ import { StorageTypes } from "../ggggx/Storage"
 import Operators from "../ggggx/Operators"
 import Strings from "./CxxStrings"
 import { CxxMachineLimits } from "./CxxLimits"
+import {
+  ArgumentKind,
+  EnumDomain,
+  EnumDomainKind,
+  GGGEnumDomains,
+  GGGEnumGroupIndex,
+} from "../ggg/EnumRepository"
+import {
+  BasicsResultRecord,
+  CommandResultRecord,
+  DocRequest,
+  EnumResultRecord,
+  GGGDXEnumDomains,
+  GGGDXEnumGroupIndex,
+  GrammarExampleKind,
+  GrammarRuleKind,
+  MessageKind,
+} from "../gggdx/Protocol"
+import { GrammarExamples, GrammarRules } from "../gggdx/LanguageBasics"
+import {
+  EdgeDomain,
+  EncodingDomain,
+  FilterDomain,
+  GGGGXEnumGroupIndex,
+  MatrixRegisterDomain,
+  OperatorDomain,
+  StorageDomain,
+  TransformDomain,
+} from "../ggggx/Domains"
+import { GGGTXEnumGroupIndex, ProcedureRegisterDomain } from "../gggtx/Domains"
 import { resolve, dirname } from "path"
 import { writeFileSync, readFileSync, existsSync, mkdirSync } from "fs"
 
@@ -12,6 +42,10 @@ import { writeFileSync, readFileSync, existsSync, mkdirSync } from "fs"
 //   - cxx/include/gen/CommandConvention.h : command-number enum
 //   - cxx/include/gen/Storage.h      : storage-type descriptor table
 //   - cxx/include/gen/Operators.h    : operator descriptor table (names + arity)
+//   - cxx/include/gen/EnumTypes.h      : zero-description enum identifiers
+//   - cxx/include/gen/EnumRepository.h : gggdx enum-domain descriptors
+//   - cxx/include/gen/GXRuntimeEnums.h : compact numeric runtime lookup
+//   - cxx/include/gen/DocProtocol.h  : gggdx request/result record constants
 //
 // Run `npm run build:cxx_defs` to (re)write the headers, or with `--check`
 // to verify the committed headers are up to date (non-zero exit if stale).
@@ -28,6 +62,15 @@ function cxxChar( code:string ) {
     case "'": code = "\\'"; break
   }
   return `'${code}'`
+}
+
+function cxxString( value:string|undefined ) {
+  return JSON.stringify( value || "" )
+}
+
+function numericEnumEntries( value:object ) {
+  return Object.entries( value )
+    .filter( ( [ key, item ] ) => isNaN( Number( key ) ) && typeof item === "number" ) as [string,number][]
 }
 
 function makeGGGEnum () {
@@ -187,11 +230,221 @@ function emitLimits() {
   return str
 }
 
+const ProtocolDomains:EnumDomain[] = [
+  ...GGGEnumDomains,
+  ...GGGDXEnumDomains,
+  MatrixRegisterDomain,
+  StorageDomain,
+  EncodingDomain,
+  OperatorDomain,
+  TransformDomain,
+  FilterDomain,
+  EdgeDomain,
+  ProcedureRegisterDomain,
+].sort( ( a, b ) => a.index - b.index )
+
+const EnumGroupIndexes = {
+  ...GGGEnumGroupIndex,
+  ...GGGDXEnumGroupIndex,
+  ...GGGGXEnumGroupIndex,
+  ...GGGTXEnumGroupIndex,
+}
+
+// Each subsystem owns a slice of the global numeric space. Fail generation if
+// two slices accidentally claim the same value.
+{
+  const used = new Map<number,string>()
+  for ( const [ name, index ] of numericEnumEntries( EnumGroupIndexes ) ) {
+    const previous = used.get( index )
+    if ( previous && previous !== name ) {
+      throw new Error( `Enum group index ${index} is owned by both ${previous} and ${name}` )
+    }
+    used.set( index, name )
+  }
+}
+
+function emitCxxEnum( name:string, value:object ) {
+  const rows = numericEnumEntries( value ).sort( ( a, b ) => a[1] - b[1] )
+  let str = `  enum class ${name} : int {\n`
+  str += rows.map( ( [ key, index ] ) => `    ${key} = ${index}` ).join( ",\n" ) + "\n"
+  str += "  };\n\n"
+  return str
+}
+
+function enumArrayName( domain:EnumDomain ) {
+  return "EnumValues_" + domain.name.replace( /[^a-zA-Z0-9_]/g, "_" )
+}
+
+function domainFeature( domain:EnumDomain ) {
+  if ( Object.values( GGGGXEnumGroupIndex ).includes( domain.index ) )
+    return "GGGGX_ENABLE"
+  if ( Object.values( GGGTXEnumGroupIndex ).includes( domain.index ) )
+    return "GGGTX_ENABLE"
+  return ""
+}
+
+function valueFeature( domain:EnumDomain, name:string ) {
+  if ( domain.index !== GGGEnumGroupIndex.Failure ) return ""
+  if ( [ "QueueOverflow", "LoopOverflow", "StackError", "ProcedureNotFound" ].includes( name ) )
+    return "GGGTX_ENABLE"
+  if ( [ "BufferNotFound", "BadOperator", "BlitFailed" ].includes( name ) )
+    return "GGGGX_ENABLE"
+  return ""
+}
+
+function withFeature( content:string, feature:string ) {
+  if ( !feature ) return content
+  return `  #if ${feature}\n${content}  #endif\n`
+}
+
+function emitDocProtocol() {
+  let str = BANNER
+  str += "#include \"../Types.h\"\n\n"
+  str += "namespace ggg {\n"
+  str += emitCxxEnum( "CommandResultRecord", CommandResultRecord )
+  str += emitCxxEnum( "EnumResultRecord", EnumResultRecord )
+  str += emitCxxEnum( "BasicsResultRecord", BasicsResultRecord )
+  str += emitCxxEnum( "MessageKind", MessageKind )
+  str += emitCxxEnum( "GrammarRuleKind", GrammarRuleKind )
+  str += emitCxxEnum( "GrammarExampleKind", GrammarExampleKind )
+  str += emitCxxEnum( "DocRequest", DocRequest )
+  str += "}\n"
+  return str
+}
+
+function emitLanguageBasics() {
+  let str = BANNER
+  str += "#include \"./DocProtocol.h\"\n\n"
+  str += "namespace ggg {\n"
+  str += "  struct GrammarRuleDescriptor {\n"
+  str += "    const char* name;\n"
+  str += "    GrammarRuleKind kind;\n"
+  str += "    const char* value;\n"
+  str += "    const char* description;\n"
+  str += "  };\n\n"
+  str += "  constexpr GrammarRuleDescriptor GrammarRuleDescriptors[] = {\n"
+  str += GrammarRules.map( rule =>
+    `    { ${cxxString( rule.name )}, GrammarRuleKind::${GrammarRuleKind[rule.kind]}, ${cxxString( rule.value )}, ${cxxString( rule.description )} }`
+  ).join( ",\n" ) + "\n"
+  str += "  };\n"
+  str += "  constexpr Index GrammarRuleDescriptorCount = sizeof( GrammarRuleDescriptors ) / sizeof( GrammarRuleDescriptors[0] );\n\n"
+  str += "  struct GrammarExampleDescriptor {\n"
+  str += "    GrammarExampleKind kind;\n"
+  str += "    const char* source;\n"
+  str += "    const char* description;\n"
+  str += "  };\n\n"
+  str += "  constexpr GrammarExampleDescriptor GrammarExampleDescriptors[] = {\n"
+  str += GrammarExamples.map( example =>
+    `    { GrammarExampleKind::${GrammarExampleKind[example.kind]}, ${cxxString( example.source )}, ${cxxString( example.description )} }`
+  ).join( ",\n" ) + "\n"
+  str += "  };\n"
+  str += "  constexpr Index GrammarExampleDescriptorCount = sizeof( GrammarExampleDescriptors ) / sizeof( GrammarExampleDescriptors[0] );\n"
+  str += "}\n"
+  return str
+}
+
+function emitEnumTypes() {
+  let str = BANNER
+  str += "#include \"../Types.h\"\n\n"
+  str += "namespace ggg {\n"
+  str += emitCxxEnum( "EnumGroupIndex", EnumGroupIndexes )
+  str += emitCxxEnum( "ArgumentKind", ArgumentKind )
+  str += emitCxxEnum( "EnumDomainKind", EnumDomainKind )
+  str += "}\n"
+  return str
+}
+
+function emitGXRuntimeEnums() {
+  const domains = [ TransformDomain, FilterDomain, EdgeDomain ]
+  let str = BANNER
+  str += "#include \"./EnumTypes.h\"\n\n"
+  str += "namespace ggg {\n"
+  str += "  inline const char* ggggxRuntimeEnumName( EnumGroupIndex group, Int value ) {\n"
+  str += "    switch ( group ) {\n"
+  for ( const domain of domains ) {
+    if ( typeof domain.values === "function" )
+      throw new Error( `${domain.name} must be a static runtime enum` )
+    str += `      case EnumGroupIndex::${EnumGroupIndexes[domain.index]}:\n`
+    str += "        switch ( value ) {\n"
+    for ( const item of domain.values.values() )
+      str += `          case ${item.index}: return ${cxxString( item.name )};\n`
+    str += "          default: return nullptr;\n"
+    str += "        }\n"
+  }
+  str += "      default: return nullptr;\n"
+  str += "    }\n"
+  str += "  }\n"
+  str += "}\n"
+  return str
+}
+
+function emitEnumRepository() {
+  let str = BANNER
+  str += "#include \"./EnumTypes.h\"\n\n"
+  str += "namespace ggg {\n"
+  str += "  struct EnumValueDescriptor {\n"
+  str += "    Int value;\n"
+  str += "    const char* name;\n"
+  str += "    const char* description;\n"
+  str += "  };\n\n"
+  str += "  struct EnumDomainDescriptor {\n"
+  str += "    EnumGroupIndex index;\n"
+  str += "    const char* name;\n"
+  str += "    const char* description;\n"
+  str += "    EnumDomainKind kind;\n"
+  str += "    const EnumValueDescriptor* values;\n"
+  str += "    Index count;\n"
+  str += "  };\n\n"
+
+  for ( const domain of ProtocolDomains ) {
+    if ( typeof domain.values === "function" ) continue
+    const values = domain.values.values()
+    let array = `  constexpr EnumValueDescriptor ${enumArrayName( domain )}[] = {\n`
+    for ( const value of values ) {
+      const row =
+        `    { ${value.index}, ${cxxString( value.name )}, ${cxxString( value.description )} },\n`
+      array += withFeature( row, valueFeature( domain, value.name || "" ) )
+    }
+    array += "  };\n\n"
+    str += withFeature( array, domainFeature( domain ) )
+  }
+
+  str += "  constexpr EnumDomainDescriptor EnumDomainDescriptors[] = {\n"
+  for ( const domain of ProtocolDomains ) {
+    const dynamic = typeof domain.values === "function"
+    const values = dynamic ? "nullptr" : enumArrayName( domain )
+    const count = dynamic ? "0" : `sizeof( ${values} ) / sizeof( ${values}[0] )`
+    const row = `    { EnumGroupIndex::${EnumGroupIndexes[domain.index]}, ${cxxString( domain.name )}, ${cxxString( domain.description )}, EnumDomainKind::${EnumDomainKind[domain.kind]}, ${values}, ${count} },\n`
+    str += withFeature( row, domainFeature( domain ) )
+  }
+  str += "  };\n"
+  str += "  constexpr Index EnumDomainDescriptorCount = sizeof( EnumDomainDescriptors ) / sizeof( EnumDomainDescriptors[0] );\n\n"
+  str += "  inline const EnumDomainDescriptor* findEnumDomain( Int index ) {\n"
+  str += "    for ( Index i = 0; i < EnumDomainDescriptorCount; i++ )\n"
+  str += "      if ( (Int) EnumDomainDescriptors[i].index == index ) return &EnumDomainDescriptors[i];\n"
+  str += "    return nullptr;\n"
+  str += "  }\n\n"
+  str += "  inline const EnumValueDescriptor* findEnumValue( Int group, Int value ) {\n"
+  str += "    const EnumDomainDescriptor* domain = findEnumDomain( group );\n"
+  str += "    if ( !domain ) return nullptr;\n"
+  str += "    for ( Index i = 0; i < domain->count; i++ )\n"
+  str += "      if ( domain->values[i].value == value ) return &domain->values[i];\n"
+  str += "    return nullptr;\n"
+  str += "  }\n"
+  str += "}\n"
+  return str
+}
+
 const outputs: { [path:string]:string } = {
   [resolve( includeDir, "autogen.h" )]: emitAutogen(),
   [resolve( includeDir, "gen/CommandConvention.h" )]: emitCommandConvention(),
   [resolve( includeDir, "gen/Storage.h" )]: emitStorage(),
   [resolve( includeDir, "gen/Operators.h" )]: emitOperators(),
+  [resolve( includeDir, "gen/EnumTypes.h" )]: emitEnumTypes(),
+  [resolve( includeDir, "gen/GXRuntimeEnums.h" )]: emitGXRuntimeEnums(),
+  [resolve( includeDir, "gen/EnumRepository.h" )]: emitEnumRepository(),
+  [resolve( includeDir, "gen/DocProtocol.h" )]: emitDocProtocol(),
+  [resolve( includeDir, "gen/LanguageBasics.h" )]: emitLanguageBasics(),
   [resolve( includeDir, "ggg/Limits.h" )]: emitLimits(),
 }
 

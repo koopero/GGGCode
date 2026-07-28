@@ -29,6 +29,7 @@ export type StorageProps = string | number | NamedListItem & {
 export type StorageType = {
   index: number,
   name: string,
+  description: string,
   dataClass: new ( length:number ) => any,
   norm1: number,
   range: null | [number,number],
@@ -39,6 +40,7 @@ export type StorageType = {
 export const StorageDefault : StorageType = { 
   index: 0, 
   name: StorageTypeNames.Default, 
+  description: "Unbounded numeric values; wire and stored values are unchanged.",
   dataClass: Array, 
   encoding: GGG.Value, 
   norm1: 1, 
@@ -56,15 +58,15 @@ const RangeI32:RangeType = [-2147483648,2147483647]
 
 export const StorageTypes = new NamedList<StorageType>( [
   StorageDefault,
-  { index: 8, name: StorageTypeNames.UNorm8, dataClass: Uint8Array, encoding: HexEncodings.HexNorm2, norm1: 255, range: RangeU8, cxxStorage: "uint8_t" },
-  { index: 255, name: StorageTypeNames.UInt8, dataClass: Uint8Array, encoding: HexEncodings.HexNorm2, norm1: 1, range: RangeU8, cxxStorage: "uint8_t" },
-  { index: 9, name: StorageTypeNames.Norm8, dataClass: Int8Array, encoding: HexEncodings.HexNorm2, norm1: 127, range: RangeI8, cxxStorage: "int8_t" },
-  { index: 10, name: StorageTypeNames.Int8, dataClass: Int8Array, encoding: HexEncodings.HexNorm2, norm1: 1, range: RangeI8, cxxStorage: "int8_t" },
-  { index: 11, name: StorageTypeNames.UNorm4, dataClass: Uint8Array, encoding: HexEncodings.HexNorm2, norm1: 16, range: RangeU8, cxxStorage: "uint8_t" },
-  { index: 12, name: StorageTypeNames.Norm4, dataClass: Int8Array, encoding: HexEncodings.HexNorm2, norm1: 8, range: RangeI8, cxxStorage: "int8_t" },
+  { index: 8, name: StorageTypeNames.UNorm8, description: "Normalized wire values 0..1; stored as unsigned 8-bit 0..255.", dataClass: Uint8Array, encoding: HexEncodings.HexNorm2, norm1: 255, range: RangeU8, cxxStorage: "uint8_t" },
+  { index: 255, name: StorageTypeNames.UInt8, description: "Integer wire values 0..255; stored as unsigned 8-bit.", dataClass: Uint8Array, encoding: HexEncodings.HexNorm2, norm1: 1, range: RangeU8, cxxStorage: "uint8_t" },
+  { index: 9, name: StorageTypeNames.Norm8, description: "Normalized wire values approximately -1..1; stored as signed 8-bit.", dataClass: Int8Array, encoding: HexEncodings.HexNorm2, norm1: 127, range: RangeI8, cxxStorage: "int8_t" },
+  { index: 10, name: StorageTypeNames.Int8, description: "Integer wire values -128..127; stored as signed 8-bit.", dataClass: Int8Array, encoding: HexEncodings.HexNorm2, norm1: 1, range: RangeI8, cxxStorage: "int8_t" },
+  { index: 11, name: StorageTypeNames.UNorm4, description: "Unsigned fixed-point wire values scaled by 16 into 8-bit storage.", dataClass: Uint8Array, encoding: HexEncodings.HexNorm2, norm1: 16, range: RangeU8, cxxStorage: "uint8_t" },
+  { index: 12, name: StorageTypeNames.Norm4, description: "Signed fixed-point wire values scaled by 8 into 8-bit storage.", dataClass: Int8Array, encoding: HexEncodings.HexNorm2, norm1: 8, range: RangeI8, cxxStorage: "int8_t" },
   // Signed 16-bit normalized (q15: OneValue 2^15-1). Float-text wire encoding for
   // now -- HexNorm* only cover 1 byte; 16-bit hex serialization is a follow-up.
-  { index: 16, name: StorageTypeNames.Norm16, dataClass: Int16Array, encoding: GGG.Value, norm1: 32767, range: RangeI16, cxxStorage: "int16_t" },
+  { index: 16, name: StorageTypeNames.Norm16, description: "Normalized wire values approximately -1..1; stored as signed 16-bit.", dataClass: Int16Array, encoding: GGG.Value, norm1: 32767, range: RangeI16, cxxStorage: "int16_t" },
 ] )
 
 

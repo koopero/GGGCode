@@ -1,4 +1,6 @@
 #pragma once
+#include "./Config.h"
+#if GGGPX_ENABLE
 #include "./Command.h"
 #include "./Format.h"
 
@@ -13,7 +15,6 @@ namespace ggg {
     using Base = CommandTypeT<T>;
     using Base::machine; using Base::code; using Base::number;
     using Base::string;  using Base::okay;  using Base::name;
-    using Base::description; using Base::args; using Base::addArg;
     using Number = typename T::Number;
 
     bool needSeperator = false;
@@ -64,7 +65,6 @@ namespace ggg {
     using Base = CommandTypeT<T>;
     using Base::machine; using Base::code; using Base::number;
     using Base::string;  using Base::okay;  using Base::name;
-    using Base::description; using Base::args; using Base::addArg;
     using Number = typename T::Number;
 
     bool didStartLine = false;
@@ -129,3 +129,4 @@ namespace ggg {
   };
   using PrintString = PrintStringT<>;
 }; // namespace ggg
+#endif

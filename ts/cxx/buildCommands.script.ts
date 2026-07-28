@@ -1,5 +1,6 @@
 import { loadCases, Case, SUBSYSTEMS, Subsystem } from "./cases"
 import { Command, CommandArgDescribed, ResponseDescribed, GGGFail } from "../ggg/Language"
+import { argumentKind, enumValueNames } from "../ggg/EnumRepository"
 import { resolve, dirname } from "path"
 import { writeFileSync, readFileSync, existsSync, mkdirSync } from "fs"
 
@@ -24,6 +25,7 @@ const SUBSYSTEM_TITLES: Record<Subsystem, string> = {
   gggpx: "gggpx — print / processing",
   ggggx: "ggggx — graphics / matrix buffers",
   gggtx: "gggtx — flow control",
+  gggdx: "gggdx — protocol self-description",
 }
 
 // The first whitespace-delimited token of every program line is its command code
@@ -48,10 +50,12 @@ function cell( s: string ): string {
 }
 
 function renderArgs( args: Record<string, CommandArgDescribed> ): string {
-  let s = "| code | format | meaning |\n| --- | --- | --- |\n"
+  let s = "| code | kind | domain | format | meaning |\n| --- | --- | --- | --- | --- |\n"
   for ( const [ codeLetter, def ] of Object.entries( args ) ) {
     const fmt = def.format ? `\`${cell( def.format )}\`` : ""
-    s += `| \`${codeLetter}\` | ${fmt} | ${cell( def.description ?? "" )} |\n`
+    const kind = enumValueNames[argumentKind( def )]
+    const domain = def.domain ? `\`${def.domain.name}\`` : ""
+    s += `| \`${codeLetter}\` | \`${kind}\` | ${domain} | ${fmt} | ${cell( def.description ?? "" )} |\n`
   }
   return s + "\n"
 }
@@ -99,11 +103,17 @@ function build(): string {
   for ( const sub of Object.keys( SUBSYSTEMS ) as Subsystem[] ) {
     md += `## ${SUBSYSTEM_TITLES[ sub ] ?? sub}\n\n`
     const commands = SUBSYSTEMS[ sub ]
-    for ( const code of Object.keys( commands ).sort() ) {
+    const messages:Record<string,Command> = { ...commands }
+    for ( const command of Object.values( commands ) ) {
+      for ( const [ code, record ] of Object.entries( command.records || {} ) ) {
+        messages[code] = record as Command
+      }
+    }
+    for ( const code of Object.keys( messages ).sort() ) {
       const examples = cases.filter(
         c => c.needs.includes( sub ) && commandsUsedBy( c.program ).has( code ),
       )
-      md += renderCommand( code, commands[ code ], examples )
+      md += renderCommand( code, messages[ code ], examples )
     }
   }
 

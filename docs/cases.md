@@ -6,7 +6,7 @@ Each case is one artifact wearing four hats: a behavioural **spec**, a piece of 
 
 See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) · [runtime](runtime.md).
 
-141 cases across 27 tags.
+145 cases across 29 tags.
 
 ## Tags
 
@@ -27,11 +27,13 @@ See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) 
 - [offset](#offset) (9)
 - [operator](#operator) (10)
 - [procedures](#procedures) (8)
+- [protocol](#protocol) (4)
 - [ranges](#ranges) (15)
 - [references](#references) (17)
 - [region](#region) (1)
 - [registers](#registers) (1)
 - [rotate](#rotate) (3)
+- [self-description](#self-description) (4)
 - [signs](#signs) (1)
 - [subscript](#subscript) (9)
 - [trig](#trig) (4)
@@ -2205,6 +2207,52 @@ T11 L"p"
 - status: `OZ`
 - needs: `gggpx`, `gggtx`
 
+## protocol
+
+### d1_self_description
+
+D1 describes the complete language by returning basics, command, and enum sections as GGG records.
+
+```
+D1
+```
+
+- values: `[0,1,2,3,4,5,6,7,8,9,-40,-41,-42,-50,-51,0,1,2,3,4,5,0,1,1,2,3,4,5,6,7,8,0,1,-20,-21,0,1,2,3,0,1]`
+- needs: `gggdx`
+
+### d2_language_basics
+
+D2 describes stable core grammar rules and complete valid or invalid GGG source examples.
+
+```
+D2
+```
+
+- values: `[]`
+- needs: `gggdx`
+
+### d4_command_catalog
+
+D4 lists command, argument, and return-relation schemas as GGG records.
+
+```
+D4
+```
+
+- values: `[]`
+- needs: `gggdx`
+
+### d5_enum_catalog
+
+D5 lists enum groups and entries as GGG records.
+
+```
+D5
+```
+
+- values: `[0,1,2,3,4,5,6,7,8,9,-40,-41,-42,-50,-51,0,1,2,3,4,5,0,1,1,2,3,4,5,6,7,8,0,1,-20,-21,0,1,2,3,0,1]`
+- needs: `gggdx`
+
 ## ranges
 
 ### range_incl
@@ -2666,6 +2714,52 @@ G10 R"bd"
 
 - values: `[3,6,9,2,5,8,1,4,7]`
 - needs: `ggggx`
+
+## self-description
+
+### d1_self_description
+
+D1 describes the complete language by returning basics, command, and enum sections as GGG records.
+
+```
+D1
+```
+
+- values: `[0,1,2,3,4,5,6,7,8,9,-40,-41,-42,-50,-51,0,1,2,3,4,5,0,1,1,2,3,4,5,6,7,8,0,1,-20,-21,0,1,2,3,0,1]`
+- needs: `gggdx`
+
+### d2_language_basics
+
+D2 describes stable core grammar rules and complete valid or invalid GGG source examples.
+
+```
+D2
+```
+
+- values: `[]`
+- needs: `gggdx`
+
+### d4_command_catalog
+
+D4 lists command, argument, and return-relation schemas as GGG records.
+
+```
+D4
+```
+
+- values: `[]`
+- needs: `gggdx`
+
+### d5_enum_catalog
+
+D5 lists enum groups and entries as GGG records.
+
+```
+D5
+```
+
+- values: `[0,1,2,3,4,5,6,7,8,9,-40,-41,-42,-50,-51,0,1,2,3,4,5,0,1,1,2,3,4,5,6,7,8,0,1,-20,-21,0,1,2,3,0,1]`
+- needs: `gggdx`
 
 ## signs
 

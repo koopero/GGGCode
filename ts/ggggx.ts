@@ -9,3 +9,6 @@ export { GXContext }
 
 import SavePNG from "./ggggx/SavePNG"
 export { SavePNG }
+export * from "./ggggx/Domains"
+export { BlitModes } from "./ggggx/Blit"
+export { FilterList, EdgeList } from "./ggggx/Sample"

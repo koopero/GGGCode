@@ -3,7 +3,7 @@ import { Runner } from "../ts/stream/Runner"
 import BuiltinCommands from "../ts/builtin"
 
 describe("Runner", () => {
-  test("resolves on OK and collects the response lines (D1 catalog)", async () => {
+  test("resolves on OK and collects the response lines (D1 language description)", async () => {
     const machine = new Machine( { commands: BuiltinCommands } )
     const runner = new Runner( { machine } )
 

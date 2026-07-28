@@ -86,8 +86,9 @@
     "build:ts:node": "tsc -p tsconfig.node.json",
     "test": "npm run test:ts",
     "test:ts": "jest",
+    "test:cxx-config": "bun run ts/cxx/testConfigurations.script.ts",
     "test:ts:watch": "jest --watchAll --bail",
-    "test:pio": "npm run build:pio && cd dist/pio/ && pio test",
+    "test:pio": "npm run test:cxx-config && npm run build:pio && cd dist/pio/ && pio test",
     "lint:ts": "eslint ts/**/*.ts",
     "lint:ts:fix": "eslint --fix ts/**/*.ts"
   },

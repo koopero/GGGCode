@@ -3,6 +3,8 @@ import Sample from "./Sample"
 import { OperatorApply } from "./Operators"
 import { DimIterate } from "../ggg/Dim"
 import { isString } from "../common/util"
+import NamedList from "../ggg/NamedList"
+import { EnumValue } from "../ggg/EnumRepository"
 
 //
 // MatrixBlit: copy from a source matrix into a destination through a spatial
@@ -38,11 +40,16 @@ import { isString } from "../common/util"
 // homogeneous form here leaves room for a projective mode later.
 //
 
-export const BlitModes = [ "box", "affine", "map", "offset" ] as const
-export type BlitMode = typeof BlitModes[number]
+export type BlitMode = "box" | "affine" | "map" | "offset"
+export const BlitModes = new NamedList<EnumValue>( [
+  { index: 0, name: "box", description: "Map a source pixel rectangle across the destination." },
+  { index: 1, name: "affine", description: "Apply a homogeneous affine transform." },
+  { index: 2, name: "map", description: "Map destination axes to source ranges." },
+  { index: 3, name: "offset", description: "Add exact source pixel offsets." },
+] )
 
 export function resolveMode( mode: string | number | undefined ): BlitMode {
-  if ( typeof mode === "number" ) return BlitModes[ mode ] ?? "box"
+  if ( typeof mode === "number" ) return ( BlitModes.get( mode )?.name as BlitMode ) ?? "box"
   if ( isString( mode ) ) return mode as BlitMode
   return "box"
 }

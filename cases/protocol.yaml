@@ -1,0 +1,51 @@
+# gggdx: structured, machine-readable protocol self-description.
+
+- name: d1_self_description
+  description: "D1 describes the complete language by returning basics, command, and enum sections as GGG records."
+  needs: [ gggdx ]
+  tags: [ protocol, self-description ]
+  program: D1
+  values: [
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+    -40, -41, -42,
+    -50, -51,
+    0, 1, 2, 3, 4, 5,
+    0, 1,
+    1, 2, 3, 4, 5, 6, 7, 8,
+    0, 1,
+    -20, -21,
+    0, 1, 2, 3,
+    0, 1,
+  ]
+
+- name: d2_language_basics
+  description: "D2 describes stable core grammar rules and complete valid or invalid GGG source examples."
+  needs: [ gggdx ]
+  tags: [ protocol, self-description ]
+  program: D2
+  values: []
+
+- name: d4_command_catalog
+  description: "D4 lists command, argument, and return-relation schemas as GGG records."
+  needs: [ gggdx ]
+  tags: [ protocol, self-description ]
+  program: D4
+  values: []
+
+- name: d5_enum_catalog
+  description: "D5 lists enum groups and entries as GGG records."
+  needs: [ gggdx ]
+  tags: [ protocol, self-description ]
+  program: D5
+  values: [
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+    -40, -41, -42,
+    -50, -51,
+    0, 1, 2, 3, 4, 5,
+    0, 1,
+    1, 2, 3, 4, 5, 6, 7, 8,
+    0, 1,
+    -20, -21,
+    0, 1, 2, 3,
+    0, 1,
+  ]

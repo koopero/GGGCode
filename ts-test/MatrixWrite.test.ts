@@ -4,6 +4,8 @@ import { MatrixWrite } from "../ts/ggggx/MatrixWrite"
 import { TestGXProgramResult } from "./test-utils"
 import { GXCommandNames as GXCN } from "../ts/ggggx/GXLanguage"
 import { GGG } from "../ts/ggg/Language"
+import Machine from "../ts/ggg/Machine"
+import { GXCommands } from "../ts/ggggx/GXCommands"
 
 describe("MatrixWrite", () => {
   describe("Typescript", () => {
@@ -76,6 +78,17 @@ describe("MatrixWrite", () => {
   })
 
   describe("GGGCode", () => {
+    test( "G30 honors the documented storage domain", async () => {
+      const machine = new Machine( { commands: GXCommands } )
+
+      await machine.run( "G30 R0 T8 S4\nG20 R0 Q1 V1,0.5,0,1" )
+
+      const matrix = machine.getRegisterList( Matrix ).get( 0 ) as Matrix
+      expect( matrix?.storage.name ).toBe( "UNorm8" )
+      expect( matrix?.data ).toBeInstanceOf( Uint8Array )
+      expect( [ ...matrix!.data ] ).toEqual( [ 255, 127, 0, 255 ] )
+    } )
+
     TestGXProgramResult( "minimal init, write and display matrix", `
       ${GXCN.MatrixInit} ${GGG.Register}0 ${GGG.Size}2,3
       ${GXCN.MatrixWrite} ${GGG.Register}0 ${GGG.Value}1,2,3,4,5,6

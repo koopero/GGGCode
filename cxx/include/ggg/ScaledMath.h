@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Config.h"
 #include "./ScaledNumber.h"
 #include "./NumberOps.h"
 
@@ -69,6 +70,7 @@ namespace ggg {
   }
   GGG_SN GGG_N inversesqrt( GGG_N v ) { return GGG_N( 1 ) / sqrt( v ); }
 
+  #if GGGGX_CORDIC_ENABLE
   // --- circular trig (CORDIC) --------------------------------------------
   //
   // Constants are 30-fractional-bit integer literals generated offline.
@@ -256,6 +258,7 @@ namespace ggg {
   GGG_SN GGG_N atan( GGG_N y, GGG_N x ) {
     return atan2( y, x );
   }
+  #endif
 
   GGG_SN GGG_N radians( GGG_N d ) { return d * NumberOps<GGG_N>::pi() / GGG_N( 180 ); }
   GGG_SN GGG_N degrees( GGG_N r ) { return r * GGG_N( 180 ) / NumberOps<GGG_N>::pi(); }

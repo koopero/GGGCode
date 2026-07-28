@@ -15,6 +15,9 @@ export { Machine }
 
 import { GGG, Hooks } from "./ggg/Language"
 export { GGG, Hooks }
+export * from "./ggg/EnumRepository"
+export * from "./gggdx/Protocol"
+export { default as NamedList } from "./ggg/NamedList"
 
 import { Runner } from "./stream/Runner"
 export { Runner }
@@ -23,3 +26,4 @@ export type { RunResult, RunOptions, RunnerOptions, RunStatus } from "./stream/R
 import { Storage, StorageTypes, StorageTypeNames, StorageValueNorm, StorageNormValue } from "./ggggx/Storage"
 export { Storage, StorageTypes, StorageTypeNames, StorageValueNorm, StorageNormValue }
 export type { StorageType, StorageProps } from "./ggggx/Storage"
+export * from "./ggggx/Domains"

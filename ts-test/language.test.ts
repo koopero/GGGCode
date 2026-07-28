@@ -26,6 +26,16 @@ describe("ggg", () => {
       data: [300,4000],
     })
   })
+
+  test( "comments begin only outside strings", () => {
+    const [ quoted ] = ParseLine( 'P13 A"semicolon ; inside string" ; outside' )
+    expect( quoted.args[0].data ).toEqual( [ "semicolon ; inside string" ] )
+    expect( quoted.comment ).toBe( "; outside" )
+
+    const [ toEol ] = ParseLine( "P13 A`semicolon ; inside string" )
+    expect( toEol.args[0].data ).toEqual( [ "semicolon ; inside string" ] )
+    expect( toEol.comment ).toBe( "" )
+  } )
 })
 
 describe("data", () => {

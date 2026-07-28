@@ -1,4 +1,6 @@
 #pragma once
+#include "./Config.h"
+#if GGGGX_ENABLE
 
 #include <cmath>
 #include <cstdlib>
@@ -50,12 +52,14 @@ namespace ggg {
     if ( op == "log" )   { out = guard( std::log( a ) );   return true; }
     if ( op == "log10" ) { out = guard( std::log10( a ) ); return true; }
     if ( op == "log2" )  { out = guard( std::log2( a ) );  return true; }
+    #if GGGGX_TRIG_ENABLE
     if ( op == "sin" )   { out = guard( std::sin( a ) );   return true; }
     if ( op == "cos" )   { out = guard( std::cos( a ) );   return true; }
     if ( op == "tan" )   { out = guard( std::tan( a ) );   return true; }
     if ( op == "asin" )  { out = guard( std::asin( a ) );  return true; }
     if ( op == "acos" )  { out = guard( std::acos( a ) );  return true; }
     if ( op == "atan" )  { out = guard( std::atan( a ) );  return true; }
+    #endif
     if ( op == "hypot" ) { out = guard( std::fabs( a ) );  return true; }   // hypot(a) == |a|
     if ( op == "sinh" )  { out = guard( std::sinh( a ) );  return true; }
     if ( op == "cosh" )  { out = guard( std::cosh( a ) );  return true; }
@@ -67,7 +71,9 @@ namespace ggg {
     // --- binary ---
     if ( op == "add" )   { out = a + b;            return true; }
     if ( op == "mult" )  { out = a * b;            return true; }
+    #if GGGGX_TRIG_ENABLE
     if ( op == "atan2" ) { out = std::atan2( a, b ); return true; }
+    #endif
     if ( op == "mid" )   { out = ( a + b ) / 2;    return true; }
     if ( op == "min" )   { out = a < b ? a : b;    return true; }
     if ( op == "max" )   { out = a > b ? a : b;    return true; }
@@ -176,13 +182,17 @@ namespace ggg {
       return true;
     }
     if ( op == "sign" )  { out = guard( N( ( a > 0 ) - ( a < 0 ) ) ); return true; }
+    #if GGGGX_CORDIC_ENABLE
     if ( op == "sin" )   { out = guard( ggg::sin( a ) ); return true; }
     if ( op == "cos" )   { out = guard( ggg::cos( a ) ); return true; }
     if ( op == "atan" )  { out = guard( ggg::atan( a ) ); return true; }
+    #endif
 
     if ( op == "add" )   { out = a + b; return true; }
     if ( op == "mult" )  { out = a * b; return true; }
+    #if GGGGX_CORDIC_ENABLE
     if ( op == "atan2" ) { out = ggg::atan2( a, b ); return true; }
+    #endif
     if ( op == "mid" )   { out = ( a + b ) / 2; return true; }
     if ( op == "min" )   { out = a < b ? a : b; return true; }
     if ( op == "max" )   { out = a > b ? a : b; return true; }
@@ -219,3 +229,4 @@ namespace ggg {
     return false;
   }
 }
+#endif
