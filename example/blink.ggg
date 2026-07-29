@@ -1,4 +1,4 @@
 T10 L"blink"        ; define a procedure named "blink"
 P10 V7              ;   its body: print the value 7
 T0                  ; end of block
-T12 L"blink" S200 G5  ; export it: every 200ms, 5 times
+T12 R"blink" S200 G5  ; export it: every 200ms, 5 times

@@ -9,7 +9,7 @@
 //   T10 L"name"   define a procedure: open a capture frame
 //   ...           following lines are stored as raw source until the matching T0
 //   T0            end block: commit the body, pop the frame (T0 itself not saved)
-//   T11 L"name"   run a procedure: re-enqueue its source lines
+//   T11 R"name"   run a procedure: re-enqueue its source lines
 //
 // The capture frame carries a depth counter so a nested T10/T0 pair is captured
 // as text rather than terminating the outer definition.

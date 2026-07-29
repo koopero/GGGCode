@@ -1080,8 +1080,9 @@ namespace ggg {
     }
 
     // --- Async procedures ------------------------------------------------
-    // The language has no loop construct. Repetition comes from exporting a
-    // procedure (T12) and letting the HOST call poll() -- on embedded that is
+    // The language has bounded T9 V iteration but no unbounded loop construct.
+    // Open-ended repetition comes from exporting a procedure (T12) and letting
+    // the HOST call poll() -- on embedded that is
     // the difference between a runaway program costing ticks the host can stop
     // granting, and one that spins inside the parser until reset.
 

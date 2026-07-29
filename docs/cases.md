@@ -4,9 +4,11 @@
 
 Each case is one artifact wearing four hats: a behavioural **spec**, a piece of **documentation**, a runnable **example**, and a cross-engine conformance **test**. The contract is the decoded `values` stream within a global epsilon; `status` is the control response. Cases are grouped below by `tag` (a case appears under each tag it carries).
 
-See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) · [runtime](runtime.md).
+Programs run in the conformance harness. It preloads these fixtures: `r` dim `[3]` = `[10,20,30]`; `m` dim `[2,3]` = `[10,11,12,13,14,15]`; `bs` dim `[3,3]` = `[1,2,3,4,5,6,7,8,9]`; `bd` dim `[3,3]` = `[0,0,0,0,0,0,0,0,0]`. The tour expands fixture-dependent cases into standalone CLI programs.
 
-145 cases across 29 tags.
+See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) · [runtime](runtime.md) · [protocol](protocol.md).
+
+148 cases across 31 tags.
 
 ## Tags
 
@@ -14,6 +16,7 @@ See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) 
 - [blit](#blit) (28)
 - [conditionals](#conditionals) (6)
 - [decimals](#decimals) (15)
+- [failure](#failure) (3)
 - [flip](#flip) (3)
 - [flow](#flow) (23)
 - [hex](#hex) (8)
@@ -21,7 +24,7 @@ See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) 
 - [iteration](#iteration) (3)
 - [lists](#lists) (11)
 - [map](#map) (6)
-- [matrix](#matrix) (15)
+- [matrix](#matrix) (18)
 - [multiaxis](#multiaxis) (4)
 - [normalized](#normalized) (2)
 - [offset](#offset) (9)
@@ -29,6 +32,7 @@ See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) 
 - [procedures](#procedures) (8)
 - [protocol](#protocol) (4)
 - [ranges](#ranges) (15)
+- [reference](#reference) (2)
 - [references](#references) (17)
 - [region](#region) (1)
 - [registers](#registers) (1)
@@ -784,6 +788,46 @@ P10 V1.2.3
 
 - values: `[1.2,0.3]`
 - needs: `gggpx`
+
+## failure
+
+### matrix_write_missing
+
+G20 reports BufferNotFound (F5) when R does not resolve.
+
+```
+G20 R"missing" V1
+```
+
+- values: `[]`
+- status: `OZ`
+- needs: `ggggx`
+- byte-exact (formatting is part of the contract)
+
+### matrix_read_alias_does_not_select
+
+L never selects a buffer; G10 requires an R reference.
+
+```
+G10 L"r"
+```
+
+- values: `[]`
+- status: `OZ`
+- needs: `ggggx`
+
+### matrix_write_alias_does_not_select
+
+L never selects a buffer; G20 requires an R reference.
+
+```
+G20 L"r" V1
+```
+
+- values: `[]`
+- status: `OZ`
+- needs: `ggggx`
+- byte-exact (formatting is part of the contract)
 
 ## flip
 
@@ -1604,7 +1648,7 @@ G10 R0 P1 S2
 
 ### matrix_read_by_name
 
-A register is addressable by name via L; the read replays by index.
+A register is addressable by name via R; the read replays by index.
 
 ```
 G10 R"r" P0 S3
@@ -1636,6 +1680,44 @@ G10 R0 P0 S3
 ```
 
 - values: `[7,8,9]`
+- needs: `ggggx`
+- byte-exact (formatting is part of the contract)
+
+### matrix_write_missing
+
+G20 reports BufferNotFound (F5) when R does not resolve.
+
+```
+G20 R"missing" V1
+```
+
+- values: `[]`
+- status: `OZ`
+- needs: `ggggx`
+- byte-exact (formatting is part of the contract)
+
+### matrix_read_alias_does_not_select
+
+L never selects a buffer; G10 requires an R reference.
+
+```
+G10 L"r"
+```
+
+- values: `[]`
+- status: `OZ`
+- needs: `ggggx`
+
+### matrix_write_alias_does_not_select
+
+L never selects a buffer; G20 requires an R reference.
+
+```
+G20 L"r" V1
+```
+
+- values: `[]`
+- status: `OZ`
 - needs: `ggggx`
 - byte-exact (formatting is part of the contract)
 
@@ -2217,7 +2299,7 @@ D1 describes the complete language by returning basics, command, and enum sectio
 D1
 ```
 
-- values: `[0,1,2,3,4,5,6,7,8,9,-40,-41,-42,-50,-51,0,1,2,3,4,5,0,1,1,2,3,4,5,6,7,8,0,1,-20,-21,0,1,2,3,0,1]`
+- output: structured GGG records ending in `OK`; see the [self-description protocol](protocol.md)
 - needs: `gggdx`
 
 ### d2_language_basics
@@ -2228,7 +2310,7 @@ D2 describes stable core grammar rules and complete valid or invalid GGG source 
 D2
 ```
 
-- values: `[]`
+- output: structured GGG records ending in `OK`; see the [self-description protocol](protocol.md)
 - needs: `gggdx`
 
 ### d4_command_catalog
@@ -2239,7 +2321,7 @@ D4 lists command, argument, and return-relation schemas as GGG records.
 D4
 ```
 
-- values: `[]`
+- output: structured GGG records ending in `OK`; see the [self-description protocol](protocol.md)
 - needs: `gggdx`
 
 ### d5_enum_catalog
@@ -2250,7 +2332,7 @@ D5 lists enum groups and entries as GGG records.
 D5
 ```
 
-- values: `[0,1,2,3,4,5,6,7,8,9,-40,-41,-42,-50,-51,0,1,2,3,4,5,0,1,1,2,3,4,5,6,7,8,0,1,-20,-21,0,1,2,3,0,1]`
+- output: structured GGG records ending in `OK`; see the [self-description protocol](protocol.md)
 - needs: `gggdx`
 
 ## ranges
@@ -2449,6 +2531,33 @@ P10 V5e4
 
 - values: `[50000]`
 - needs: `gggpx`
+
+## reference
+
+### matrix_read_alias_does_not_select
+
+L never selects a buffer; G10 requires an R reference.
+
+```
+G10 L"r"
+```
+
+- values: `[]`
+- status: `OZ`
+- needs: `ggggx`
+
+### matrix_write_alias_does_not_select
+
+L never selects a buffer; G20 requires an R reference.
+
+```
+G20 L"r" V1
+```
+
+- values: `[]`
+- status: `OZ`
+- needs: `ggggx`
+- byte-exact (formatting is part of the contract)
 
 ## references
 
@@ -2725,7 +2834,7 @@ D1 describes the complete language by returning basics, command, and enum sectio
 D1
 ```
 
-- values: `[0,1,2,3,4,5,6,7,8,9,-40,-41,-42,-50,-51,0,1,2,3,4,5,0,1,1,2,3,4,5,6,7,8,0,1,-20,-21,0,1,2,3,0,1]`
+- output: structured GGG records ending in `OK`; see the [self-description protocol](protocol.md)
 - needs: `gggdx`
 
 ### d2_language_basics
@@ -2736,7 +2845,7 @@ D2 describes stable core grammar rules and complete valid or invalid GGG source 
 D2
 ```
 
-- values: `[]`
+- output: structured GGG records ending in `OK`; see the [self-description protocol](protocol.md)
 - needs: `gggdx`
 
 ### d4_command_catalog
@@ -2747,7 +2856,7 @@ D4 lists command, argument, and return-relation schemas as GGG records.
 D4
 ```
 
-- values: `[]`
+- output: structured GGG records ending in `OK`; see the [self-description protocol](protocol.md)
 - needs: `gggdx`
 
 ### d5_enum_catalog
@@ -2758,7 +2867,7 @@ D5 lists enum groups and entries as GGG records.
 D5
 ```
 
-- values: `[0,1,2,3,4,5,6,7,8,9,-40,-41,-42,-50,-51,0,1,2,3,4,5,0,1,1,2,3,4,5,6,7,8,0,1,-20,-21,0,1,2,3,0,1]`
+- output: structured GGG records ending in `OK`; see the [self-description protocol](protocol.md)
 - needs: `gggdx`
 
 ## signs

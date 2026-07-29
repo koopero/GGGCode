@@ -82,7 +82,12 @@ export function TargetResolveNumbers( arg ) {
   const { dim, offset, name, index, length, storage, create } = state
 
   const lookup = index >= 0 ? index : name
-  const buffer:Matrix|null = machine.getMatrix( lookup ) as Matrix
+  // NamedList.get(undefined) intentionally means "the default/first item" for
+  // API callers. Command syntax has no implicit target, however: only R selects
+  // a matrix, while L is reserved for assigning a name on G30.
+  const buffer:Matrix|null = lookup === undefined
+    ? null
+    : machine.getMatrix( lookup ) as Matrix
 
   if ( !buffer && create ) {
     // buffer = MatrixInit( lookup, { index, name, dim, storage } )

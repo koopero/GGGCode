@@ -95,10 +95,10 @@ describe("MatrixWrite", () => {
       ${GXCN.MatrixDisplay} ${GGG.Register}0
     `, [ 1,2,3,4,5,6 ] )
 
-    // Reference a buffer by name (L) for the write, with the V slot.
+    // Reference a buffer by name (R) for the write, with the V slot.
     TestGXProgramResult( "write by name via V slot", `
       ${GXCN.MatrixInit} ${GGG.Register}0 ${GGG.Alias}"foo" ${GGG.Size}5
-      ${GXCN.MatrixWrite} ${GGG.Alias}"foo" ${GGG.Value}10:40/4
+      ${GXCN.MatrixWrite} ${GGG.Register}"foo" ${GGG.Value}10:40/4
       ${GXCN.MatrixDisplay} ${GGG.Register}0
     `, [ 10,20,30,40,0 ] )
 

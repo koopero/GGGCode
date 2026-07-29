@@ -1,8 +1,8 @@
-G11 N"RGB" B0 D3,3,3
-G1 B0 V1,0,0,0,1,0,0,0,1
-G13 B0
-G1 B0 V1,0,0,0,1,0,0,0,1
-G13 B0
-G1 B0 V1,0,0,0,1,0,0,0,1
-G13 B0
+; Three RGB pixels: red, green, and blue.
+;
+; Run:
+;   ggg -a --output example/rgb.png example/rgb.gggx
 
+G30 L"rgb" S3,3,1
+G20 R"rgb" V1,0,0,0,1,0,0,0,1
+G13 R"rgb"

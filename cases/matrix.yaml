@@ -20,7 +20,7 @@
   exact: true
 
 - name: matrix_read_by_name
-  description: "A register is addressable by name via L; the read replays by index."
+  description: "A register is addressable by name via R; the read replays by index."
   needs: [ ggggx ]
   tags: [ matrix ]
   program: 'G10 R"r" P0 S3'
@@ -43,6 +43,32 @@
     G20 R0 P0 V7,8,9
     G10 R0 P0 S3
   values: [ 7, 8, 9 ]
+  exact: true
+
+- name: matrix_write_missing
+  description: "G20 reports BufferNotFound (F5) when R does not resolve."
+  needs: [ ggggx ]
+  tags: [ matrix, failure ]
+  program: 'G20 R"missing" V1'
+  status: "OZ"
+  values: []
+  exact: true
+
+- name: matrix_read_alias_does_not_select
+  description: "L never selects a buffer; G10 requires an R reference."
+  needs: [ ggggx ]
+  tags: [ matrix, failure, reference ]
+  program: 'G10 L"r"'
+  status: "OZ"
+  values: []
+
+- name: matrix_write_alias_does_not_select
+  description: "L never selects a buffer; G20 requires an R reference."
+  needs: [ ggggx ]
+  tags: [ matrix, failure, reference ]
+  program: 'G20 L"r" V1'
+  status: "OZ"
+  values: []
   exact: true
 
 # Q write operators (combine the incoming value with the current cell). Run

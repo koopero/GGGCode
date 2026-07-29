@@ -4,11 +4,13 @@ How a GGGCode program actually executes — the machine, the parse pipeline, the
 lifecycle, value expansion, and matrix registers. For the language itself see the
 [tour](tour.md); for individual commands see the [command reference](commands.md); for
 vocabulary see the [glossary](glossary.md). File references point at the TypeScript
-reference implementation under `ts/ggg/`.
+reference implementation in the
+[repository](https://github.com/koopero/GGGCode/tree/main/ts).
 
 ## The machine
 
-`Machine` ([Machine.ts](../ts/ggg/Machine.ts)) is the execution engine. It holds:
+`Machine` ([Machine.ts](https://github.com/koopero/GGGCode/blob/main/ts/ggg/Machine.ts))
+is the execution engine. It holds:
 
 - a **queue** of work items (`queue`, `queuePointer`) — parsed lines plus callback items;
 - a **stack** of control frames (`stack`) — used by flow control to capture/skip blocks;
@@ -43,13 +45,16 @@ unitary constants, strings, ranges (`:`, `>`, `/`, `*`), multi-axis (`|`), lists
 references (`$name`, subscripts, `@` offsets) into a flat `Primitive[]`.
 
 There are two front ends over the same grammar: batch `ParseLines`, and a character-by-
-character `StreamParser` ([StreamParser.ts](../ts/ggg/StreamParser.ts)) for incremental /
-REPL input. Both produce the same `Token` shape.
+character `StreamParser`
+([StreamParser.ts](https://github.com/koopero/GGGCode/blob/main/ts/ggg/StreamParser.ts))
+for incremental or REPL input. Both produce the same `Token` shape.
 
 ## Value expansion: `Solve`
 
 Parsing produces `Primitive`s — including unexpanded ranges and references — not final
-numbers. `Solve` ([Solve.ts](../ts/ggg/Solve.ts)) is a **generator** that lazily expands a
+numbers. `Solve`
+([Solve.ts](https://github.com/koopero/GGGCode/blob/main/ts/ggg/Solve.ts))
+is a **generator** that lazily expands a
 primitive into the concrete stream a command consumes. Nothing is materialized until a hook
 pulls it:
 
@@ -62,7 +67,9 @@ array — values flow one at a time into the command's `Value` hook.
 
 ## Command-hook lifecycle
 
-A command is an object of hooks ([Language.ts](../ts/ggg/Language.ts), `Command`). As
+A command is an object of hooks
+([Language.ts](https://github.com/koopero/GGGCode/blob/main/ts/ggg/Language.ts),
+`Command`). As
 `execLine` walks a formalized line it calls them in order:
 
 ```
@@ -76,20 +83,28 @@ hookEnd       once, after all arguments
 
 `hookStack` is what flow control uses: a `T10`/`T9` frame returns `Capture` to swallow
 following lines into a block body, `Skip` to drop them, or `Run` to let them dispatch
-normally (see [gggtxCommands.ts](../ts/gggtx/gggtxCommands.ts)). The other hooks let a
+normally (see
+[gggtxCommands.ts](https://github.com/koopero/GGGCode/blob/main/ts/gggtx/gggtxCommands.ts)).
+The other hooks let a
 command stream-process values without buffering — e.g. `P10` formats each value as it
 arrives, and the matrix write commits values into a buffer one at a time. A hook receives
 `{ machine, command, state, code, value, frame }`.
 
 ## Matrix registers
 
-Buffers are `Matrix` instances ([Matrix.ts](../ts/ggg/Matrix.ts)): a typed,
+Buffers are `Matrix` instances
+([Matrix.ts](https://github.com/koopero/GGGCode/blob/main/ts/ggg/Matrix.ts)): a typed,
 multi-dimensional array with `dim` (dimensions, component-first — `dim[0]` is the
 innermost/stride-1 axis) and flat `data`. Coordinates map to flat offsets via the `Dim*`
-helpers ([Dim.ts](../ts/ggg/Dim.ts)); out-of-bounds reads degrade rather than throw.
+helpers ([Dim.ts](https://github.com/koopero/GGGCode/blob/main/ts/ggg/Dim.ts));
+out-of-bounds reads degrade rather than throw.
 
-Registers are addressable by both index (`R0`) and name (`L"img"` / `$name`) through a
-shared `NamedList` ([NamedList.ts](../ts/ggg/NamedList.ts)). `getRegisterList(class)`
+Commands select registers by index (`R0`) or name (`R"img"`). `L"img"` only
+assigns or changes a name on commands that create or edit a register; `$img`
+reads its values inside an argument. All three forms resolve through a shared
+`NamedList`
+([NamedList.ts](https://github.com/koopero/GGGCode/blob/main/ts/ggg/NamedList.ts)).
+`getRegisterList(class)`
 returns the list for a register class — buffers are keyed by `Matrix`, procedure bodies by
 their own marker, so different subsystems share the addressing without colliding. `G10`
 reads a buffer back as a replayable `G20` write, which makes matrices round-trippable as
@@ -97,23 +112,24 @@ source text.
 
 ## Async procedures: repetition lives in the host
 
-GGG has no loop construct, deliberately: an in-language infinite loop on embedded
-hardware bricks the device until reset. Repetition instead comes from exporting a
+`T9 V` provides bounded, materialized iteration. GGG deliberately has no
+unbounded in-language loop: one on embedded hardware could monopolize the
+device until reset. Open-ended repetition instead comes from exporting a
 procedure and letting the **host** run it.
 
-```
+```ggg
 T10 L"blink"          ; define
-G20 R0 P0 V1
+  P10 V1
 T0
-T12 L"blink" S500 G10 ; every 500ms, 10 times
-T12 L"blink" S500     ; every 500ms, forever
-T12 L"blink" G0       ; cancel
+T12 R"blink" S500 G10 ; every 500ms, 10 times
+T12 R"blink" S500     ; every 500ms, forever
+T12 R"blink" G0       ; cancel
 ```
 
 `T12` does not run anything. It adds the procedure to the machine's schedule; the host
 then calls:
 
-```
+```typescript
 machine.poll( now )   // -> how many procedures fired
 ```
 
@@ -164,7 +180,7 @@ The `ggg` CLI is one such host and polls for you (`--tick <ms>`, default 10), so
 procedures just run:
 
 ```bash
-ggg -a blink.ggg      # T12 L"blink" S200 G5  ->  five runs over ~1s, then exits
+ggg -a blink.ggg      # T12 R"blink" S200 G5 -> five runs over ~1s, then exits
 ```
 
 Its ticker also decides when the process ends: polling continues while anything is
@@ -176,8 +192,9 @@ it, which is the host-owns-halting property made concrete.
 
 The core (`ts/ggg/`) is data + dispatch only; behaviour is supplied as command sets loaded
 by subsystem: `ggggx` (graphics/matrix), `gggpx` (print), `gggtx` (flow). A case declares
-which it `needs`; the conformance harness loads exactly that union
-([conformance.ts](../ts/cxx/conformance.ts)).
+which it `needs`; `gggdx` adds machine-readable protocol self-description.
+The conformance harness loads exactly that union
+([conformance.ts](https://github.com/koopero/GGGCode/blob/main/ts/cxx/conformance.ts)).
 
 The C++ port (`cxx/`) mirrors the TypeScript reference. Shared enums, operator tables, and
 storage descriptors are **generated** from the TS source of truth (`buildCxxDefs`), and the
@@ -185,6 +202,10 @@ conformance corpus (`cases/*.yaml`) is compiled into a C++ test table (`buildCon
 The two engines agree on each case's decoded `values` within a global epsilon; byte-exact
 output is asserted only where a case opts in. This is why behaviour documented in
 [cases.md](cases.md) holds for both engines.
+
+See the [protocol guide](protocol.md) for the interface between command metadata
+and gggdx, and the [C++ guide](cxx.md) for a compiling runtime example and all
+feature gates.
 
 ### C++ numeric backends
 

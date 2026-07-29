@@ -1,349 +1,343 @@
-# GGGCode Glossary
+# GGGCode Glossary and TypeScript API
 
-Definitions for GGGCode language concepts, runtime types, and TypeScript interfaces.
+Definitions for the wire language and the public TypeScript package.
 
-See also: [tour](tour.md) · [cases](cases.md) (worked, tested examples) · [commands](commands.md) · [runtime](runtime.md).
+See also: [tour](tour.md) · [cases](cases.md) · [commands](commands.md) ·
+[runtime](runtime.md) · [protocol](protocol.md) · [C++](cxx.md).
 
----
-
-## Language Concepts
-
-### Argument
-
-An argument is a single code-letter followed by data values, appearing after the command on a line. Arguments are separated by spaces.
-
-```
-G0 X10 Y20 Z5
-   ^^^           ; argument: code=X, data=10
-       ^^^       ; argument: code=Y, data=20
-```
-
-The first argument's code letter combined with the initial letter forms the **Command** name (e.g., `G` + `0` → `G0`). Subsequent arguments carry named parameters.
-
----
-
-### Code
-
-A single uppercase letter that names an argument within a command. For example, `X`, `Y`, `Z`, `S`, `V`. The code gives meaning to the data that follows it — whether it represents a position, speed, string, value, etc. — as defined by the command's implementation.
-
----
+## Language concepts
 
 ### Command
 
-A command is a complete executable instruction: a letter followed by a numeric suffix, e.g. `G0`, `M104`, `P0`. Commands are case-insensitive. The specific commands available depend on the language extension or machine configuration. Each line of GGGCode is typically one command.
+A command is a letter followed by a signed integer, such as `P10`, `G40`, or
+the emitted result record `D-41`. Command and argument glyphs are
+case-insensitive and normalized to uppercase. A source line contains one
+executable command followed by its arguments.
 
-```
-G0 X10 Y20     ; command G0 with X and Y arguments
+### Argument
+
+An argument is one glyph immediately followed by its data. Whitespace
+separates arguments; lists inside one argument use commas without wrapper
+punctuation.
+
+```text
+G20 R0 P0,0 Q1 V1,0.5
+    ^^ ^^^^ ^^ ^^^^^^
 ```
 
----
+Here `R`, `P`, `Q`, and `V` identify four arguments. `P(0,0)` is not GGG list
+syntax.
 
 ### Comment
 
-Comments begin with `;` and extend to the end of the line. They are ignored during execution but can be preserved in parsed tokens when `keepComments` is set.
+Outside a quoted string, `;` starts a comment through the newline. `#` and
+`//` are not comment delimiters.
 
+```text
+P10 V1,2,3 ; this is a comment
+P13 A"semicolon ; inside a string"
 ```
-G0 X10 ; move to x=10
-```
-
----
-
-### Line
-
-A single line of GGGCode text, containing one command with its arguments and optional comment. Lines are parsed independently and executed sequentially.
-
----
-
-### Range
-
-A compact notation for generating sequences of numbers.
-
-| Syntax    | Meaning                                  |
-|-----------|------------------------------------------|
-| `1:10`    | Inclusive range: 1, 2, 3, ..., 10       |
-| `1>10`    | Uninclusive (exclusive end): 1, 2, ..., 9 |
-| `1:10/4`  | Range divided into 4 steps              |
-| `0:/4`    | Open range from 0, divided into 4 steps |
-| `5*3`     | Multiplied value: 15                     |
-
-Ranges are parsed into `RangeAxis` objects and expanded by `Solve`. Examples: [ranges](cases.md#ranges).
-
----
-
-### Multi-Axis
-
-The `|` operator separates values across dimensions within a single argument:
-
-```
-V1|2|3    ; three separate axis values
-```
-
-Parsed as a `RangeAxes` object containing one `RangeAxis` per axis. Examples: [multiaxis](cases.md#multiaxis).
-
----
 
 ### List
 
-Comma-separated values within a single argument:
+Commas concatenate values within one argument:
 
-```
-V1,2,3    ; list of three values
+```text
+V1,2,3
 ```
 
----
+Inside a reference subscript, a comma selects multiple flat indices:
+`$buffer[1,2]` reads index 1 and then index 2. Use `|` for coordinates across
+matrix axes.
+
+### Range
+
+A range lazily expands into values:
+
+| syntax | meaning |
+| --- | --- |
+| `1:5` | Inclusive: `1,2,3,4,5`. |
+| `1>5` | End-exclusive: `1,2,3,4`. |
+| `0:10/5` | Five points: `0,2.5,5,7.5,10`. |
+| `0:10:2` | Step by two: `0,2,4,6,8,10`. |
+| `5*3` | Multiply the resolved value: `15`. |
+| `1:` | Open end; extends to the active matrix dimension when one exists. |
+
+An open range outside a matrix context has no extent and remains one point.
+
+### Multi-axis value
+
+`|` separates coordinate axes. Lone axes combine coordinate-wise, while ranges
+produce a Cartesian sweep:
+
+```text
+V1|2|3
+V0:2|0:3
+$image[0|10|20]
+```
+
+The first matrix axis is component/stride-1, so image dimensions and positions
+are conventionally ordered `C,X,Y,Z`.
 
 ### Reference
 
-A variable-length reference to a named register, optionally subscripted to access specific elements of a Matrix.
+`$name` reads values from a named matrix register:
 
-```
-$myMatrix         ; reference to register named "myMatrix"
-$myMatrix[1,2]    ; subscripted reference: element at [1,2]
-```
+| form | meaning |
+| --- | --- |
+| `$image` | Entire register. |
+| `$image[1]` | Flat index 1. |
+| `$image[1,2]` | Flat indices 1 and 2. |
+| `$image[0|10|20]` | Component/x/y coordinate. |
+| `$image[0:3]` | Flat inclusive range. |
+| `$image@[0|10|20]` | Resolve the coordinate to a flat offset instead of reading its value. |
 
-Parsed as a `Reference` object. The subscript is an array of `Numeric` values. Examples: [references](cases.md#references), [subscript](cases.md#subscript), [offset](cases.md#offset).
+### Register addressing
 
----
+`R` selects a register, either by numeric index or quoted name:
 
-### Addressing a register: `R` selects, `L` names
-
-There is one way to address a register, in every subsystem: **`R`**, taking either an index
-or a name.
-
-```
-G10 R0        G10 R"img"        ; matrix buffers
-T11 R0        T11 R"blink"      ; procedure bodies
-```
-
-**`L` never selects.** It only assigns a name, and only where a register is being created
-or edited — `G30` and `T10`:
-
-```
-G30 R0 L"img" S64,64    ; create buffer 0, name it "img"
-G30 R"img" L"icon"      ; rename it
-T10 L"blink"            ; define procedure "blink"
-T10 R"blink" L"pulse"   ; redefine it and rename
+```text
+G10 R0
+G10 R"image"
+T11 R0
+T11 R"blink"
 ```
 
-Procedures and matrix buffers share the same `NamedList` addressing, which is why both
-answer to an index as well as a name.
+`L` never selects. It assigns a name where a command creates or edits a
+register:
 
----
+```text
+G30 R0 L"image" S4,64,64
+T10 L"blink"
+```
 
-### Unitary Constant
+Matrix and procedure registers are separate `NamedList` instances but share
+the same index/name addressing rule.
 
-Named numeric literals that can appear as data values. Case-insensitive for ASCII names.
+### Number and encoded-list formats
 
-| Token | Value                      |
-|-------|----------------------------|
-| `K`   | 1                          |
-| `Z`   | 0                          |
-| `N`   | -1                         |
-| `π`   | π ≈ 3.14159                |
-| `τ`   | 2π ≈ 6.28318               |
-| `φ`   | Golden ratio ≈ 1.61803     |
-| `γ`   | Euler-Mascheroni ≈ 0.57722 |
-| `∞`   | Infinity                   |
+| prefix | grouping | result |
+| --- | --- | --- |
+| decimal | — | `-12.5`, `.5`, `1.2e-3` |
+| `0X` | whole token | Hex integer: `0X100` → `256`. |
+| `0I` | one hex digit | Raw list: `0I5A` → `5,10`. |
+| `0G` | two hex digits | Raw list: `0G5A3B` → `90,59`. |
+| `0J` | one hex digit | Normalized list: `0J8` → `8/15`. |
+| `0H` | two hex digits | Normalized list: `0H80` → `128/255`. |
 
-A leading sign negates a constant (`-π` is −3.14159, `-N` is 1) or a code point (`-☃` is −9731).
+### Unitary constant and Unicode literal
 
-Examples: [unitary](cases.md#unitary).
+Named single-token constants are:
 
----
+| token | value |
+| --- | --- |
+| `K` | 1 |
+| `Z` | 0 |
+| `N` | -1 |
+| `π` | pi |
+| `τ` | two pi |
+| `φ` | golden ratio |
+| `γ` | Euler–Mascheroni constant |
+| `∞` | infinity |
 
-### Number Formats
+ASCII constants are case-insensitive. A leading sign negates a constant.
+The letter `e` is reserved for decimal exponents and is not Euler's number.
 
-GGGCode supports multiple numeric representations:
-
-| Format         | Example   | Description                                         |
-|----------------|-----------|-----------------------------------------------------|
-| Decimal        | `123`     | Integer or floating point, scientific notation ok   |
-| Hex            | `0X1F`    | Standard hexadecimal integer                        |
-| Hex list (1)   | `0I5A`    | Pairs of 1-digit hex values                         |
-| Hex list (2)   | `0G5A3B`  | Pairs of 2-digit hex values                         |
-| Hex norm (1)   | `0J80`    | 1-digit hex normalized to 0–1 (÷ 0xF)              |
-| Hex norm (2)   | `0H8040`  | 2-digit hex normalized to 0–1 (÷ 0xFF)             |
-
-Examples: [hex](cases.md#hex), [normalized](cases.md#normalized).
-
----
+Every other non-ASCII character is its Unicode code point, so `V☃` is `9731`
+and `V😀` is `128512`.
 
 ### String
 
-String values appear in two forms:
+A double-quoted string preserves spaces, commas, and semicolons. `\"` embeds a
+quote. A backtick begins an unquoted string extending through newline.
 
-- **Quoted**: `"Hello, world!"` — delimited by double quotes, supports escape sequences.
-- **To-EOL**: `` `Rest of line `` — backtick introduces a string that runs to the end of the line.
+### Control response
 
----
+Every ordinary command ends with an O-prefixed terminator. The default request
+id is 1, formatted as `OK`; a command argument `O7` asks the runtime to echo
+`O7`. A terminator carrying `F<code>` is failure:
 
-## TypeScript Types and Interfaces
-
-### `Dimensions`
-
-```typescript
-type Dimensions = number[]
+```text
+OK
+O7
+O7 F5 ; buffer not found
 ```
 
-An array of integers specifying the size of each axis of a multi-dimensional array. For example, `[3, 640, 480]` represents a 3-channel 640×480 grid. Trailing `1`s are typically stripped.
+See [commands.md](commands.md#responses--failures) for published failure values.
 
----
+### Result record
 
-### `DimArg`
+A negative D code such as `D-40` is emitted data, not an executable command.
+The [self-description protocol](protocol.md) describes every result record
+through the same command metadata model used for executable requests.
+
+## Wire enums
+
+### `GGG`
+
+`GGG` provides the core parser and conventional argument glyphs:
+
+| name | glyph | role |
+| --- | --- | --- |
+| `Data` | `A` | General data/string argument. |
+| `Command` | `B` | Command-code field in protocol records. |
+| `Code` | `C` | Argument-code marker. |
+| `Argument` | `U` | Argument-glyph field in protocol records. |
+| `End` | newline | Line terminator. |
+| `Skip` | `?` | Internal skip state. |
+| `EndArgument` | space | Argument separator. |
+| `Comment` | `;` | Comment delimiter. |
+| `Failure` | `F` | Failure code or filter argument, depending on context. |
+| `Value` | `V` | Value argument/field. |
+| `Size` | `S` | Size argument. |
+| `Offset` | `P` | Position/offset argument. |
+| `Repeat` | `G` | Repeat/count argument. |
+| `Zero` | `0` | Zero marker. |
+| `Number` | `+` | Internal decimal-number mode. |
+| `EncodedOne` | `K` | Unitary-one marker. |
+| `Operator` | `Q` | Combine operator. |
+| `Alias` | `L` | Name assignment. |
+| `StringToEOL` | backtick | String through newline. |
+| `Dimension` | `D` | Dimension argument. |
+| `Encoding` | `E` | Encoding or edge argument. |
+| `Storage` | `T` | Storage or mode argument. |
+| `Quote` | `"` | String delimiter. |
+| `Comma` | `,` | List separator. |
+| `Period` | `.` | Decimal point. |
+| `Register` | `R` | Register selector/domain reference. |
+| `Reference` | `$` | Value-reference prefix. |
+| `Range` | `:` | Inclusive range/end/step delimiter. |
+| `Uninclusive` | `>` | End-exclusive range delimiter. |
+| `Multiplier` | `*` | Range multiplier. |
+| `Count` | `/` | Range point count. |
+| `Okay` | `O` | Response/request-id glyph. |
+| `Escape` | `\` | String escape. |
+| `Subscript` | `[` | Reference subscript open. |
+| `SubscriptEnd` | `]` | Reference subscript close. |
+| `NextAxis` | `|` | Axis separator. |
+| `At` | `@` | Offset-reference modifier. |
+| `Target` | `W` | Destination register. |
+| `Transform` | `M` | Transform coefficients. |
+
+Hex prefixes live in the separate `HexEncodings` enum: `X`, `I`, `G`, `J`,
+and `H`.
+
+### Argument and domain kinds
+
+The self-description repository distinguishes:
+
+- `ArgumentKind`: `data`, `number`, `string`, `boolean`, `enum`, `reference`.
+- `EnumDomainKind.Enum`: fixed value/name vocabulary.
+- `EnumDomainKind.Reference`: live index/name table.
+- `MessageKind.Command`: executable request.
+- `MessageKind.Result`: emitted non-executable record.
+
+## TypeScript package
+
+GGGCode is CommonJS-compatible and provides conditional browser exports.
+
+### Package entry points
+
+| import | public surface |
+| --- | --- |
+| `gggcode` | Parsers, formatter, `Machine`, `Runner`, `NamedList`, protocol/enum domains, and storage helpers. |
+| `gggcode/ggg` | Core `Machine`, `NamedList`, and enum repository. |
+| `gggcode/ggggx` | `Matrix`, `Sample`, `GXContext`, `SavePNG`, blit/filter/edge domains. |
+| `gggcode/math` | Common scalar/vector math helpers. |
+| `gggcode/SavePNG` | PNG encoder. |
+| `gggcode/LoadPNG` | Node PNG decoder. |
+
+The generated `.d.ts` files shipped with the package are the type-level source
+of truth.
+
+### Parsing and formatting
 
 ```typescript
-type DimArg = number | number[]
+import { ParseArg, ParseLine, ParseLines, Format } from "gggcode"
+
+const [line, rest] = ParseLine('P10 V1:3')
+const lines = ParseLines('P10 V1\nP10 V2')
+const source = Format(line)
 ```
 
-A flexible argument type for specifying dimensions — either a single number (1D) or an array (N-D). Normalized to `Dimensions` by `DimFrom`.
+- `ParseArg(text, options?, col?)` returns `[Token | null, remainingText]`.
+- `ParseLine(text, options?)` returns `[Token, remainingText]`.
+- `ParseLines(input, options?)` returns `Token[]`.
+- `Format(input)` serializes source strings or tokens back to GGG.
 
----
-
-### `EncodingName`
-
-```typescript
-type EncodingName = string
-```
-
-A string identifier for a numeric encoding scheme. Valid values correspond to the `GGG` enum codes: `"A"` (decimal), `"X"` (hex), `"H"` (2-digit normalized hex), etc.
-
----
-
-### `Numeric`
+Relevant token fields are:
 
 ```typescript
-type Numeric = number | RangeAxes | RangeAxis
-```
-
-Any type that can produce one or more numbers. Either a plain number, a single-axis range, or a multi-axis range.
-
----
-
-### `Primitive`
-
-```typescript
-type Primitive = boolean | string | Numeric | ValueWithEncoding | Reference
-```
-
-The set of value types that can appear as data in a parsed argument. The union covers all possible data tokens: booleans (`true` → 1), strings, numbers, ranges, encoded values, and register references.
-
----
-
-### `ParseOptions`
-
-```typescript
-type ParseOptions = {
-  lineSizeMax?: number
-  keepEncoding?: boolean
-  keepComments?: boolean
+type Token = {
+  code?: string
+  command?: string
+  args?: Token[]
+  data?: Primitive | Primitive[]
+  encoding?: string
+  comment?: string
+  source?: string
+  eol?: boolean
+  index?: number
+  row?: number
+  col?: number
+  len?: number
 }
 ```
 
-Options for the parse pipeline:
+`source` preserves a parsed line for procedure capture. `eol` marks an emitted
+token as a complete output line.
 
-- `lineSizeMax` — maximum characters per line before truncation.
-- `keepEncoding` — if true, attach the encoding name to parsed tokens.
-- `keepComments` — if true, preserve comment text in the `Token.comment` field.
-
----
-
-### `RangeAxis`
-
-```typescript
-type RangeAxis = {
-  start: number
-  end: number
-  step: number
-  count: number
-  multiplier: number
-  inclusive: boolean
-}
-```
-
-Describes a single sequence axis. `Solve` expands a `RangeAxis` into a stream of numbers by stepping from `start` toward `end`. Either `step` or `count` controls the stride; if both are zero, step defaults to 1. `inclusive` controls whether `end` itself is yielded.
-
----
-
-### `RangeAxes`
-
-```typescript
-type RangeAxes = {
-  axes: RangeAxis[]
-}
-```
-
-A multi-axis range, produced by the `|` operator. Each element of `axes` is a separate `RangeAxis`. `Solve` generates coordinate tuples across all axes.
-
----
-
-### `Reference`
+References parsed into `Primitive` have this shape:
 
 ```typescript
 type Reference = {
   register: string
   subscript: Numeric[]
+  offset?: boolean
 }
 ```
 
-A reference to a named register (e.g., a Matrix) with an optional subscript for element access. `register` is the name after `$`. `subscript` is the coordinate list inside `[…]`.
-
----
-
-### `Token`
+### `Machine`
 
 ```typescript
-type Token = {
-  code?: string
-  index?: number
-  row?: number
-  col?: number
-  len?: number
-  encoding?: EncodingName
-  comment?: string
-  command?: string
-  args?: Token[]
-  data?: Primitive | Primitive[]
-}
+import { Machine, Hooks } from "gggcode"
+
+const machine = new Machine({
+  commands: {
+    P0: {
+      [Hooks.End]: ({ machine }) => machine.outputOk(),
+    },
+  },
+})
+const output = await machine.run("P0")
 ```
 
-The universal parse tree node. Used at every level:
+Important operations:
 
-- A **line token** has `command` and `args`.
-- An **argument token** has `code` and `data`.
-- A **data token** has `data` (a primitive or array of primitives).
+- `addCommands(commands)` adds executable handlers and their metadata/domains.
+- `run(source)` resolves after queued source and procedure work drain, returning
+  the output `Token[]`.
+- `poll(now)` lets the host fire due `T12` exports and returns the number fired.
+- `getRegisterList(class)` returns the `NamedList` for a register class.
+- `getRegister(class, id, default?)` and `getMatrix(id)` resolve registers.
+- `solve(primitive, options?)` lazily expands ranges and references.
+- `"output"` events carry strings or tokens as they are emitted.
 
-`row`/`col`/`len` carry source position. `encoding` carries the active encoding when `keepEncoding` is on.
+Default limits include `maxQueue: 1024` and `maxAsync: 16`. Limits of zero or
+`undefined` disable their corresponding guard.
 
----
+### Commands and hooks
 
-### `TokenArg`
-
-```typescript
-type TokenArg = string | Token
-```
-
-A hook argument can be a raw string (unparsed) or a parsed `Token`.
-
----
-
-### `ValueWithEncoding`
+A command definition combines documentation metadata with optional lifecycle
+hooks:
 
 ```typescript
-type ValueWithEncoding = {
-  value: number | string
-  encoding: EncodingName
-}
-```
-
-A value annotated with how it should be represented when serialized back to GGGCode. Used when a specific numeric format (hex, normalized, etc.) must be preserved round-trip.
-
----
-
-### `Command`
-
-```typescript
-type Command = Described & {
-  name?: string
+type Command = {
+  description?: string
+  args?: Record<string, CommandArgDescribed>
+  responds?: Record<string, string | { description?: string }>
+  records?: Record<string, Command>
+  domains?: EnumDomain[]
   hookStack?: HookCallback
   hookCommand?: HookCallback
   hookCode?: HookCallback
@@ -353,321 +347,67 @@ type Command = Described & {
 }
 ```
 
-A command definition object registered with the `Machine`. Each hook property is an optional async callback fired at the corresponding point during execution (see `Hooks`).
-
----
-
-### `Commands`
-
-```typescript
-type Commands = { [key: string]: Command }
-```
-
-A map of command names to their definitions, passed to `Machine.addCommands`.
-
----
-
-### `HookArgs`
-
-```typescript
-type HookArgs = {
-  machine?: Machine
-  command: string
-  state: { [key: string]: any }
-  code?: string
-  value?: number | string
-  arg?: TokenArg
-}
-```
-
-The argument passed to every hook callback. `state` is the per-command state bag for the current execution. `code` is the current argument's code letter. `value` is the current solved scalar value.
-
----
-
-### `MatrixProps`
-
-```typescript
-type MatrixProps = string | number | {
-  storage?: StorageProps
-  index?: number
-  name?: string
-  dim?: DimArg
-  data?: number[]
-}
-```
-
-Constructor argument for `Matrix`. A plain number or string is shorthand for `{ storage: value }`.
-
----
-
-### `VecArg`
-
-```typescript
-type VecArg = number | number[]
-```
-
-A scalar or vector value used in graphics extension operations.
-
----
-
-## Enums
-
-### `GGG`
-
-Single-character codes used as internal identifiers in the parse pipeline. These appear as the `code` field of tokens or as markers in the stream parser state machine.
-
-| Name         | Char  | Role                                         |
-|--------------|-------|----------------------------------------------|
-| `Data`       | `A`   | Raw decimal data                             |
-| `Command`    | `B`   | Command token marker                         |
-| `Code`       | `C`   | Argument code letter                         |
-| `Argument`   | `U`   | Argument boundary marker                     |
-| `End`        | `\n`  | End of line                                  |
-| `Comment`    | `;`   | Start of comment                             |
-| `Value`      | `V`   | Generic value code                           |
-| `Size`       | `S`   | Size parameter code                          |
-| `Offset`     | `P`   | Offset parameter code                        |
-| `Number`     | `+`   | Decimal number token                         |
-| `HexNumber`  | `X`   | Hex number prefix                            |
-| `HexList1`   | `I`   | 1-digit hex list prefix                      |
-| `HexList2`   | `G`   | 2-digit hex list prefix                      |
-| `HexNorm1`   | `J`   | 1-digit normalized hex prefix                |
-| `HexNorm2`   | `H`   | 2-digit normalized hex prefix                |
-| `EncodedOne` | `K`   | Unitary value (also the symbol for 1)        |
-| `Dimension`  | `D`   | Dimension specifier                          |
-| `Encoding`   | `E`   | Encoding specifier                           |
-| `Storage`    | `T`   | Storage type specifier                       |
-| `Register`   | `R`   | Register reference                           |
-| `Reference`  | `$`   | Reference prefix in source                   |
-| `Range`      | `:`   | Inclusive range operator                     |
-| `Uninclusive`| `>`   | Exclusive range operator                     |
-| `Multiplier` | `*`   | Multiplication operator                      |
-| `Count`      | `/`   | Count/step operator                          |
-| `NextAxis`   | `\|`  | Multi-axis separator                         |
-| `Okay`       | `O`   | Success response code                        |
-| `Failure`    | `F`   | Failure response code                        |
-| `Quote`      | `"`   | String delimiter                             |
-| `StringToEOL`| `` ` ``| To-end-of-line string prefix               |
-| `Comma`      | `,`   | List separator                               |
-| `Subscript`  | `[`   | Subscript open                               |
-| `SubscriptEnd`| `]`  | Subscript close                              |
-| `Escape`     | `\`   | Escape character inside strings              |
-
----
-
-### `UnitaryNames`
-
-Enum of single-character tokens representing named mathematical constants. See **Unitary Constant** above.
-
----
-
-### `Hooks`
-
-Lifecycle hooks fired during command execution. Each value is the property name on a `Command` object.
-
-| Hook          | When it fires                                              |
-|---------------|------------------------------------------------------------|
-| `Stack`       | Before the next queued command executes (stack context)   |
-| `Command`     | When the command begins execution                          |
-| `Code`        | For each argument code letter encountered                  |
-| `Value`       | For each solved scalar value within an argument            |
-| `EndArg`      | After all values of an argument have been processed        |
-| `End`         | After all arguments of the command have been processed     |
-
----
-
-### `CommandConvention`
-
-Numeric priority values used to categorize and order commands by semantic role.
-
-| Name              | Value | Purpose                              |
-|-------------------|-------|--------------------------------------|
-| `Init`            | 30    | Initialization commands              |
-| `Write`           | 20    | Write data to a register/matrix      |
-| `Watch`           | 25    | Observe or monitor state             |
-| `Output`          | 15    | Emit output data                     |
-| `Display`         | 13    | Render or display data               |
-| `Read`            | 10    | Read from a register/matrix          |
-| `List`            | 1     | List available items                 |
-| `ReadResponse`    | -10   | Response to a read command           |
-| `DisplayResponse` | -13   | Response to a display command        |
-| `ListResponse`    | -1    | Response to a list command           |
-
----
-
-## Core Classes
-
-### `Matrix`
-
-A multi-dimensional typed array, the primary data container in GGGCode. Matrices are identified by name and numeric index and stored in the machine's register map.
-
-**Key fields:**
-
-| Field     | Type           | Description                                   |
-|-----------|----------------|-----------------------------------------------|
-| `name`    | `string`       | Human-readable register name                  |
-| `index`   | `number`       | Numeric register ID                           |
-| `size`    | `number`       | Total element count (product of dimensions)   |
-| `dim`     | `Dimensions`   | Array of axis sizes, e.g. `[3, 640, 480]`    |
-| `data`    | `TypedArray`   | Raw storage (type determined by `storage`)    |
-| `storage` | `StorageType`  | Encoding format (8-bit int, float, normalized, etc.) |
-
-**Access patterns:**
-
-- `read(coord)` / `write(value, coord)` — coordinate-based element access.
-- `readNumber(coord)` — returns a single number, validates bounds.
-- `readIndex(index)` — linear index access.
-- `clearData(value)` — fill entire matrix with a constant.
-
-**Image interop:**
-
-- `writeImageData(imageData)` — load pixel data from an `ImageData` object.
-- `saveImageData()` — export current data as `ImageData`.
-
-**Serialization:**
-
-- `saveCode(options)` — emit a series of GGGCode `Token` objects that reconstruct the matrix's current state.
-
-Matrices fire events (via `EventEmitter`) when data changes, allowing dependent views or computations to update.
-
----
-
-### `Machine`
-
-The runtime execution engine. Parses GGGCode text, dispatches commands to registered handlers, manages state, and produces output tokens.
-
-**Responsibilities:**
-
-- **Command registry**: `addCommands(commands)` registers `Command` objects by name.
-- **Register map**: holds named `Matrix` instances and other typed registers via `getRegister` / `getMatrix`.
-- **Execution**: `run(code)` parses lines, queues them, and returns `Promise<Token[]>` containing all output.
-- **State**: `state` is a global dictionary; `commandState` holds per-command scratch space.
-- **Value expansion**: `solve(arg, options)` is a generator that calls `Solve` and resolves `Reference` objects against the register map.
-- **Output**: `output(tokens)` emits response tokens; `outputOk(comment)` emits the `O<id>` return (the request id, default 1 → `OK`), and `outputFail(code, comment)` adds an `F<code>` arg to mark failure.
-
-**Hook dispatch order for each command:**
-
-1. `hookStack` — if a stack context is active
-2. `hookCommand` — command start
-3. For each argument:
-   - `hookCode` — argument code
-   - `hookValue` — for each solved value
-   - `hookEndArg` — argument end
-4. `hookEnd` — command end
-
----
+Hook order is `Stack`, `Command`, then `Code` → `Value` → `EndArg` for each
+argument, followed by `End`. Hook arguments include `machine`, `command`,
+per-command `state`, and, where applicable, `code`, `value`, `arg`, and
+`frame`.
 
 ### `Runner`
 
-A bidirectional request/response coordinator that sits above a `Machine`. Serializes commands into a queue, correlates responses, and resolves promises when a matching end condition is met.
-
-**API:**
-
-- `run(cmd, options)` — enqueue a command string, return `Promise<RunResult>`.
-- `attachMachine(machine)` — wire the runner to a machine for integrated operation.
-
-**Options:**
-
-| Field          | Default | Description                                        |
-|----------------|---------|----------------------------------------------------|
-| `timeout`      | 1000 ms | Maximum wait before resolving with `status: 'timeout'` |
-| `resultFilter` | all     | Pattern to match response tokens to capture        |
-| `endFilter`    | `"O"`   | Pattern that signals the command is complete       |
-
-**Result:**
+`Runner` is a FIFO request/response driver for an in-process machine or external
+transport:
 
 ```typescript
-{
-  status: 'ok' | 'timeout' | 'error'
-  result: Token[]
-  timeout: number
-  timeoutActual: number
+import { Runner } from "gggcode"
+
+const runner = new Runner({
+  write: () => runner.feed(
+    'D-50 R0 L"EnumGroup" S0 T"reference"\nOK\n'
+  ),
+})
+const [result] = await runner.run("D5")
+```
+
+`run()` returns `Promise<RunResult[]>`, one entry for every executable input
+line:
+
+```typescript
+type RunStatus = "ok" | "fail" | "timeout"
+
+type RunResult = {
+  cmd: string
+  status: RunStatus
+  lines: string[]
+  tokens: Token[]
 }
 ```
 
----
-
-## Parsing Pipeline
-
-Parsing proceeds through four layers, each building on the previous.
-
-### `ParseData`
-
-Parses a raw string of data tokens into an array of `Primitive` values. Handles all number formats, strings, unitary constants, references, ranges, multi-axis values, and lists.
-
----
-
-### `ParseArg`
-
-Parses a single argument string (code letter + data) into a `Token` with `code` and `data` fields.
-
----
-
-### `ParseLine`
-
-Parses a complete command line into a `Token` with `command`, `args`, and optional `comment`.
-
----
-
-### `ParseLines`
-
-Batch-parses multiple lines. Accepts a string, string array, or existing `Token`/`Token[]`, and returns an array of line `Token`s with `row` numbers.
-
----
-
-### `StreamParser`
-
-A character-by-character incremental parser implemented as a state machine. Suitable for streaming input where the full text may not be available at once.
-
-Exposes callbacks: `hookCommand`, `hookCode`, `hookValue`, `hookArg`, `hookEnd`.
-
-`TokenParser` wraps `StreamParser` to produce structured `Token` trees. The top-level async function `parseLines(text, options)` uses this path to return `Token[]`.
-
----
-
-## Supporting Systems
-
-### `Solve`
-
-A generator function that expands a `Primitive` (or array of primitives) into a sequence of concrete `number | string` values.
-
-- Plain numbers pass through unchanged.
-- `true` → `1`.
-- `RangeAxis` → sequence of numbers from `start` to `end`.
-- `RangeAxes` → coordinate tuples across all axes.
-- `Reference` → element(s) read from the named Matrix register.
-- Arrays are recursively expanded element by element.
-
-`Solve` is the bridge between the abstract parse tree and the concrete values that command hooks receive.
-
----
-
-### Encoding (`Encoding.ts`)
-
-Defines and selects numeric encoding schemes. `EncodingShortest(values, allowQuantize)` inspects a set of values and picks the most compact representation (e.g., normalized hex if values are all in 0–1, unitary if only −1/0/1).
-
----
-
-### Format (`Format.ts`)
-
-Serializes `Token` trees back to GGGCode text. The inverse of the parse pipeline. `Format(token)` is the main entry point; helpers handle individual data types (`FormatNumber`, `FormatRangeAxis`, `FormatReference`, etc.).
-
----
-
-### Dimension Utilities (`Dim.ts`)
-
-Helpers for N-dimensional coordinate arithmetic.
-
-| Function                | Description                                              |
-|-------------------------|----------------------------------------------------------|
-| `DimFrom(dim)`          | Normalize a `DimArg` to a `Dimensions` array            |
-| `DimSize(dim)`          | Total element count (product of all axes)               |
-| `DimOffset(dim, coord)` | Convert N-D coordinate to linear index; −1 if out of bounds |
-| `DimPad(dim, length)`   | Pad with trailing 1s to reach required rank             |
-| `DimIterate(dim, step)` | Generator yielding all coordinate arrays in row-major order |
-
----
+Options are `timeout` (default 1000 ms; zero disables it), `resultFilter`, and
+`endFilter`. The default end filter accepts any O-prefixed terminator and marks
+the result `fail` when that terminator carries an `F` argument.
 
 ### `NamedList`
 
-A generic dual-keyed collection where items are accessible by either a numeric index or a string name. Used internally for register maps and command collections.
+`NamedList<T>` addresses items by numeric `index` or string `name`. `add()`
+assigns either or both keys, `get()` resolves them, `setItemName()` renames an
+item, and `values()` returns populated entries including sparse negative
+indexes used by protocol result-record enums.
+
+### `Matrix`
+
+Import `Matrix` from `gggcode/ggggx`. Its primary fields are `name`, `index`,
+`dim`, `size`, `storage`, and typed `data`.
+
+Key operations:
+
+- `resize({ dim, storage })`
+- `write(values, coordinate?)`
+- `read(coordinate?, defaultValue?)`
+- `readNumber(coordinate?, defaultValue?)`
+- `readIndex(index, defaultValue?)`
+- `clearData(value?)`
+- `writeImageData(imageData, options?)`
+- `saveImageData(imageData?, options?)`
+
+Coordinate conversion uses `DimOffset`; out-of-range reads return the supplied
+default rather than throwing.

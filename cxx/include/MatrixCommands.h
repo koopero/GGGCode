@@ -75,7 +75,8 @@ namespace ggg {
     }
 
     void hookFinish() override {
-      if ( okay ) machine->outputOK();
+      if ( !reg ) machine->outputFail( (Int) GGGFail::BufferNotFound );
+      else if ( okay ) machine->outputOK();
       else machine->outputFail( (Int) GGGFail::BadOperator );
     }
   };
@@ -125,28 +126,30 @@ namespace ggg {
     }
 
     void hookFinish() override {
-      if ( reg ) {
-        Index total = reg->sizeScalar();
-        Index start = ( offset < 0 || offset >= total ) ? 0 : offset;
-        Index n = ( count < 0 ) ? ( total - start ) : count;
-        if ( n > total - start ) n = total - start;
-
-        machine->output( String( "G20 " ) );
-        machine->output( (Char) Register );
-        machine->outputInteger( reg->index );
-        machine->output( (Char) EndArgument );
-        machine->output( (Char) Offset );
-        machine->outputInteger( start );
-        machine->output( (Char) EndArgument );
-        machine->output( (Char) Value );
-        for ( Index i = 0; i < n; i++ ) {
-          if ( i ) machine->output( (Char) Comma );
-          machine->output( FormatNumber( reg->readScalarFloat( start + i, 0 ) ) );
-        }
-        machine->output( (Char) End );
+      if ( !reg ) {
+        machine->outputFail( (Int) GGGFail::BufferNotFound );
+        return;
       }
-      if ( okay ) machine->outputOK();
-      else machine->outputFail( (Int) GGGFail::BufferNotFound );
+
+      Index total = reg->sizeScalar();
+      Index start = ( offset < 0 || offset >= total ) ? 0 : offset;
+      Index n = ( count < 0 ) ? ( total - start ) : count;
+      if ( n > total - start ) n = total - start;
+
+      machine->output( String( "G20 " ) );
+      machine->output( (Char) Register );
+      machine->outputInteger( reg->index );
+      machine->output( (Char) EndArgument );
+      machine->output( (Char) Offset );
+      machine->outputInteger( start );
+      machine->output( (Char) EndArgument );
+      machine->output( (Char) Value );
+      for ( Index i = 0; i < n; i++ ) {
+        if ( i ) machine->output( (Char) Comma );
+        machine->output( FormatNumber( reg->readScalarFloat( start + i, 0 ) ) );
+      }
+      machine->output( (Char) End );
+      machine->outputOK();
     }
   };
   using MatrixRead = MatrixReadT<>;

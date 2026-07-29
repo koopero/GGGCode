@@ -317,8 +317,9 @@ export default class Machine extends EventEmitter  {
   }
 
   // --- Async procedures -------------------------------------------------
-  // The language has no loop construct. Repetition comes from exporting a
-  // procedure (T12) and letting the HOST call poll() -- so a runaway program
+  // The language has bounded T9 V iteration but no unbounded loop construct.
+  // Open-ended repetition comes from exporting a procedure (T12) and letting
+  // the HOST call poll() -- so a runaway program
   // consumes host ticks the host can stop granting, instead of spinning inside
   // the parser. This is what makes the language Turing complete without making
   // it possible to hang the machine.

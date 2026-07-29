@@ -1,5 +1,5 @@
 # Flow control (gggtx): procedures (T10 define / T0 end / T11 run), T9 one-shot
-# conditionals (A=all, O=any), and T9 V per-value iteration. Bodies print via
+# conditionals (A=all, Y=any), and T9 V per-value iteration. Bodies print via
 # gggpx, so most cases need both subsystems. Cases that run nothing emit no
 # control response (status: "").
 
@@ -48,7 +48,7 @@
     T11 R"inner"
   values: [ 7 ]
 
-# --- T9 one-shot conditionals (A = all truthy, O = any truthy) ---
+# --- T9 one-shot conditionals (A = all truthy, Y = any truthy) ---
 - name: cond_all_true
   description: "T9 A runs the block when all values are truthy."
   needs: [ gggpx, gggtx ]
@@ -147,9 +147,10 @@
     T0
   values: [ 10, 7, 30, 10, 8, 30 ]
 
-# Async procedures (T12). The language has no loop: a procedure is exported and
-# the HOST fires it by calling poll(). `polls` below are the host clock times the
-# harness polls at, which is also what keeps these deterministic.
+# Async procedures (T12). The language has bounded T9 V iteration but no
+# unbounded in-language loop: a procedure is exported and the HOST fires it by
+# calling poll(). `polls` below are the host clock times the harness polls at,
+# which is also what keeps these deterministic.
 
 - name: async_count
   description: "T12 G<n> runs an exported procedure n times, then unschedules it."

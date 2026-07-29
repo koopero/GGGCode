@@ -27,8 +27,11 @@
   },
   "files": [
     "bin/",
+    "cxx/include/",
     "dist/node/",
     "dist/browser/",
+    "docs/",
+    "example/",
     "README.md",
     "LICENSE"
   ],
@@ -73,7 +76,7 @@
   },
   "scripts": {
     "clean": "rm -rf dist",
-    "prepublishOnly": "npm run clean && npm run build:ts",
+    "prepublishOnly": "npm run clean && npm run build:ts && npm run check:codegen",
     "build": "npm run build:ts && npm run build:pio",
     "build:pio": "npm run build:cxx_defs && npm run build:conformance && bun run ts/cxx/buildPlatformio.script.ts",
     "build:cxx_defs": "bun run ts/cxx/buildCxxDefs.script.ts",

@@ -13,10 +13,35 @@ There is a TypeScript reference implementation (`ts/`) and a C++ port (`cxx/`); 
 | [docs/commands.md](docs/commands.md) | Per-command reference: arguments, responses, and example links (generated from the command definitions). |
 | [docs/glossary.md](docs/glossary.md) | Definitions for language concepts, argument codes, and the TypeScript API. |
 | [docs/runtime.md](docs/runtime.md) | How the runtime executes: machine, parse pipeline, hooks, `Solve`, matrix registers. |
+| [docs/protocol.md](docs/protocol.md) | How `D1`, `D2`, `D4`, and `D5` describe the language as GGG records. |
+| [docs/cxx.md](docs/cxx.md) | C++17 setup, numeric traits, compile-time feature gates, and embedded size notes. |
+
+## Install and run
+
+GGGCode requires Node.js 18.3 or newer. Install the CLI globally:
+
+```bash
+npm install --global gggcode
+```
+
+Or add the library to an application:
+
+```bash
+npm install gggcode
+```
+
+The CLI loads no command extensions implicitly. `-a` loads all built-ins; `-x`
+loads one by its full name or short name (`p`, `g`, `t`, or `d`):
+
+```bash
+ggg -a program.ggg
+ggg -x p numbers.ggg
+ggg -x g image.gggx
+```
 
 ## Basic syntax
 
-```
+```text
 Command Arguments ; Comment
 ```
 
@@ -24,9 +49,11 @@ A command is a letter followed by a number (`P10`, `G40`). The remaining argumen
 
 ## First programs
 
-Print some numbers, then a range, then a divided range (every snippet here is a [tested case](docs/cases.md)):
+Print some numbers, then a range, then a divided range. The documentation
+examples execute in the test suite; their focused behavioral cases live in the
+[case reference](docs/cases.md).
 
-```
+```ggg
 P10 V1,2,3        ; -> 1,2,3      (print_list)
 P10 V1:5          ; -> 1,2,3,4,5  (range_incl, inclusive range)
 P10 V0:10/5       ; -> 0,2.5,5,7.5,10  (range_count, range divided into 5 points)
@@ -34,16 +61,20 @@ P10 V0:10/5       ; -> 0,2.5,5,7.5,10  (range_count, range divided into 5 points
 
 Write into a matrix buffer and read it back:
 
-```
+```ggg
+G30 R0 L"numbers" S3
 G20 R0 P0 V7,8,9  ; write 7,8,9 at offset 0 of register 0
 G10 R0 P0 S3      ; -> 7,8,9      (matrix_write_read)
 ```
 
 Blit (transform-copy) one buffer into another — here a horizontal flip:
 
-```
-G40 R"bs" W"bd" T"box" M2.5,-0.5,0,3 F1   ; flip source bs into bd
-G10 R"bd"                                  ; -> 3,2,1,6,5,4,9,8,7  (blit_box_flip_x)
+```ggg
+G30 L"source" S3,3
+G30 L"dest" S3,3
+G20 R"source" V1:9
+G40 R"source" W"dest" T"box" M2.5,-0.5,0,3 F1
+G10 R"dest" ; -> 3,2,1,6,5,4,9,8,7  (blit_box_flip_x)
 ```
 
 See the [tour](docs/tour.md) for the full progression, with diagrams.
@@ -91,7 +122,7 @@ on each `G13` and therefore contains the most recent frame.
 - **Unicode characters** — every *other* non-ASCII character is a numeric literal
   for its Unicode code point, and lists like any other value:
 
-  ```
+  ```ggg
   P10 V☃            ; -> 9731
   P10 V你            ; -> 20320
   P10 V€            ; -> 8364
@@ -116,7 +147,9 @@ on each `G13` and therefore contains the most recent frame.
   The two spellings differ only in whether the endpoint itself is included, which
   lands on the same values:
 
-  ```
+  ```ggg
+  G30 L"q" S5
+  G20 R"q" V10,20,30,40,50
   P10 V$q[1:]       ; -> 20,30,40,50   (index 1 through the last element)
   P10 V$q[1>]       ; -> 20,30,40,50
   P10 V$q[0:]       ; -> 10,20,30,40,50
@@ -125,7 +158,7 @@ on each `G13` and therefore contains the most recent frame.
   An open range needs a dimension to run to. In a plain value context there is no
   matrix, so it has no extent and stays a single point:
 
-  ```
+  ```ggg
   P10 V1:           ; -> 1
   ```
 
@@ -167,38 +200,16 @@ leaving only the `D1`/`D2`/`D4`/`D5` request codes as bootstrap
 knowledge. A return relation is written as `D-42 B"G10" W"G20"`, where `B` is
 the originating command and `W` is the command it returns.
 
-### C++ runtime configuration
-
-The C++ runtime can be assembled at compile time with numeric build definitions:
-
-```ini
-build_flags =
-  -DGGGPX_ENABLE=1
-  -DGGGGX_ENABLE=1
-  -DGGGTX_ENABLE=0
-  -DGGGDX_ENABLE=0
-  -DGGGGX_CORDIC_ENABLE=0
-```
-
-All features default to `1` for compatibility. `GGGPX_ENABLE`, `GGGGX_ENABLE`,
-`GGGTX_ENABLE`, and `GGGDX_ENABLE` control their command surfaces.
-`GGGGX_TRIG_ENABLE` controls circular trigonometry; `GGGGX_CORDIC_ENABLE`
-controls its fixed-point CORDIC implementation. CORDIC requires trigonometry,
-which requires ggggx.
-
-Use `ggg::RuntimeT<Traits>` for the command set selected by those definitions,
-or call `ggg::addConfiguredCommands(&machine)` from a custom machine. With
-gggdx disabled, command descriptions, argument/response metadata, enum
-descriptors, and D commands are omitted. With gggtx disabled, procedure,
-capture, queue, and scheduling state are also removed from `MachineT`.
+The C++17 runtime can be assembled from the same subsystem boundaries with
+compile-time feature gates. See the [C++ guide](docs/cxx.md) for a compiling
+example, numeric traits, all flags, and measured ESP32 size effects.
 
 ## Implementing custom commands
 
 Define a command set, create a `Machine`, and run code. A command supplies hooks at the points the parser reaches (`Command` → `Code` → `Value` → `End`):
 
 ```typescript
-// import Machine from "./ts/ggg/Machine"
-// import { Hooks } from "./ts/ggg/Language"
+import { Machine, Hooks } from "gggcode"
 
 const commands = {
   "P0": {

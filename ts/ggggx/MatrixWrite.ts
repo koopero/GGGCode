@@ -30,9 +30,15 @@ function MatrixWriteHookCode( arg:HookArgs ) {
       const { state } = arg
       state.coord = null
       state.writingData = true
-      state.size = SizeDefault( state.size, state.buffer.dim, state.offset )
-
       state.data = []
+
+      // Resolution is deliberately deferred until V so R may be either an
+      // index or a name. A missing target is reported by HookEnd as F5; do not
+      // dereference it while preparing the value iterator.
+      if ( !state.buffer )
+        break
+
+      state.size = SizeDefault( state.size, state.buffer.dim, state.offset )
       break
     }
   }
@@ -84,7 +90,7 @@ function MatrixWriteHookEndArg( arg:HookArgs ) {
   const { repeat } = state
   switch ( code ) {
     case GGG.Value:
-      if ( repeat ) {
+      if ( repeat && state.buffer ) {
         const { data, operator, buffer, offset, dim } = state
         MatrixWrite( buffer, { data, operator, offset, size: dim, fill: true } )
       }
@@ -200,5 +206,4 @@ export function MatrixWrite( matrix?:Matrix, options:MatrixWriteArg = {} ) : Mat
 
   return { matrix: matrix as Matrix, offset: coord }
 }
-
 

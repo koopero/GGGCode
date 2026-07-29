@@ -9,6 +9,7 @@ import { spawnSync } from "child_process"
 
 const root = resolve( __dirname, "../.." )
 const source = resolve( root, "cxx/test-config/config_probe.cpp" )
+const docsSource = resolve( root, "example/cxx_minimal.cpp" )
 const include = resolve( root, "cxx/include" )
 const temp = mkdtempSync( join( tmpdir(), "ggg-config-" ) )
 
@@ -126,7 +127,29 @@ try {
         throw new Error( `${scenario.name} retained disabled string: ${forbidden}` )
     }
   }
-  console.log( `C++ configuration probes passed (${scenarios.length} builds).` )
+
+  // Keep the public C++ quickstart honest by compiling and executing the exact
+  // source linked from docs/cxx.md.
+  const docsBinary = join( temp, "docs-example" )
+  const docsCompile = spawnSync( "c++", [
+    "-std=c++17",
+    "-Os",
+    "-I", include,
+    docsSource,
+    "-o", docsBinary,
+  ], { encoding: "utf8" } )
+  if ( docsCompile.status !== 0 )
+    throw new Error( `C++ docs example compile failed:\n${docsCompile.stderr}` )
+
+  const docsRun = spawnSync( docsBinary, [], { encoding: "utf8" } )
+  if ( docsRun.status !== 0 )
+    throw new Error( `C++ docs example failed with status ${docsRun.status}` )
+  if ( docsRun.stdout !== "V1,2,3\nOK\n" )
+    throw new Error( `C++ docs example output changed: ${JSON.stringify( docsRun.stdout )}` )
+
+  console.log(
+    `C++ configuration probes passed (${scenarios.length} feature builds + docs example).`
+  )
 } finally {
   rmSync( temp, { recursive: true, force: true } )
 }

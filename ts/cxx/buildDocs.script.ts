@@ -1,4 +1,5 @@
 import { loadCases, Case } from "./cases"
+import { FIXTURES } from "./conformance"
 import { visualFor } from "./renderVisual"
 import { resolve, dirname } from "path"
 import { writeFileSync, readFileSync, existsSync, mkdirSync, readdirSync, rmSync } from "fs"
@@ -40,7 +41,15 @@ function renderCase( c: Case, assets: Assets ): string {
     assets.set( visual.filename, visual.svg )
     s += `![${visual.alt}](img/${visual.filename})\n\n`
   }
-  s += `- values: \`${JSON.stringify( c.values )}\`\n`
+  if ( c.needs.includes( "gggdx" ) ) {
+    // D responses are structured records whose strings and relationships are
+    // the documentation. A flattened numeric V stream is actively misleading
+    // (D2/D4 appear empty; D1/D5 lose the group each value belongs to).
+    s += "- output: structured GGG records ending in `OK`; see the "
+    s += "[self-description protocol](protocol.md)\n"
+  } else {
+    s += `- values: \`${JSON.stringify( c.values )}\`\n`
+  }
   // Only surface non-default metadata, to keep entries scannable.
   if ( c.status !== "OK" ) s += `- status: ${statusLabel( c.status )}\n`
   if ( c.needs.length ) s += `- needs: ${c.needs.map( n => `\`${n}\`` ).join( ", " )}\n`
@@ -74,8 +83,14 @@ function build(): { md: string, assets: Assets } {
   md += "**documentation**, a runnable **example**, and a cross-engine conformance **test**. "
   md += "The contract is the decoded `values` stream within a global epsilon; `status` is the "
   md += "control response. Cases are grouped below by `tag` (a case appears under each tag it carries).\n\n"
+  md += "Programs run in the conformance harness. It preloads these fixtures: "
+  md += FIXTURES.map( fixture =>
+    `\`${fixture.name}\` dim \`${JSON.stringify( fixture.dim )}\` = ` +
+    `\`${JSON.stringify( fixture.data )}\``
+  ).join( "; " )
+  md += ". The tour expands fixture-dependent cases into standalone CLI programs.\n\n"
   md += "See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) · "
-  md += "[runtime](runtime.md).\n\n"
+  md += "[runtime](runtime.md) · [protocol](protocol.md).\n\n"
 
   md += `${cases.length} cases across ${tags.length} tags.\n\n`
   md += "## Tags\n\n"
