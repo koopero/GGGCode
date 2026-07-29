@@ -1,6 +1,6 @@
 {
   "name": "gggcode",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "G Code like general purpose meta-language.",
   "keywords": [
     "gcode",
@@ -23,7 +23,7 @@
   "main": "dist/node/index.js",
   "types": "dist/node/index.d.ts",
   "bin": {
-    "ggg": "./bin/ggg.js"
+    "ggg": "bin/ggg.js"
   },
   "files": [
     "bin/",
@@ -33,6 +33,7 @@
     "docs/",
     "example/",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "exports": {
