@@ -641,6 +641,34 @@
     "expected": "OK\nOK\nG20 R3 P0 V11,12,13,14,15,16,17,18,19\nOK"
   },
   {
+    "name": "blit_operator_add_by_index",
+    "description": "G40 resolves the frozen compact operator value Q2 to add.",
+    "needs": [
+      "ggggx"
+    ],
+    "tags": [
+      "blit",
+      "operator",
+      "enum"
+    ],
+    "program": "G20 R\"bd\" V10,10,10,10,10,10,10,10,10\nG40 R\"bs\" W\"bd\" Q2\nG10 R\"bd\"",
+    "status": "OK",
+    "values": [
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19
+    ],
+    "exact": false,
+    "requiresFloat": false,
+    "expected": "OK\nOK\nG20 R3 P0 V11,12,13,14,15,16,17,18,19\nOK"
+  },
+  {
     "name": "blit_minify_lerp",
     "description": "Lerp WITH minify: a 1.5x oversized box [0,4.5] with the default linear filter (a point filter, no fold) ignores the footprint and just lerps the centre -- interpolated but aliased. linear coexists with minify; a fold (mean/min/max/add) is opt-in. Hold edge (E1).",
     "needs": [
@@ -1497,6 +1525,89 @@
     "exact": false,
     "requiresFloat": false,
     "expected": "OK\nG20 R0 P0 V15,25,35\nOK"
+  },
+  {
+    "name": "op_compact_indexes",
+    "description": "Frozen compact Q indexes execute the hot path: 2 add, 3 multiply, and 8 masked negate.",
+    "needs": [
+      "ggggx"
+    ],
+    "tags": [
+      "matrix",
+      "operator",
+      "enum"
+    ],
+    "program": "G20 R0 P0 Q2 V5,5,5\nG20 R0 P0 Q3 V2,2,2\nG20 R0 P0 Q8 V0,1,0\nG10 R0 P0 S3",
+    "status": "OK",
+    "values": [
+      -30,
+      50,
+      -70
+    ],
+    "exact": false,
+    "requiresFloat": false,
+    "expected": "OK\nOK\nOK\nG20 R0 P0 V-30,50,-70\nOK"
+  },
+  {
+    "name": "op_clamp_index",
+    "description": "Q9 clamps current values to 0..1 where the incoming mask is zero.",
+    "needs": [
+      "ggggx"
+    ],
+    "tags": [
+      "matrix",
+      "operator",
+      "enum"
+    ],
+    "program": "G20 R0 P0 V-1,0.5,2\nG20 R0 P0 Q9 V0,1,0\nG10 R0 P0 S3",
+    "status": "OK",
+    "values": [
+      0,
+      0.5,
+      1
+    ],
+    "exact": false,
+    "requiresFloat": false,
+    "expected": "OK\nOK\nG20 R0 P0 V0,0.5,1\nOK"
+  },
+  {
+    "name": "op_hypot_index",
+    "description": "Q44 is genuinely binary: hypot(current, incoming).",
+    "needs": [
+      "ggggx"
+    ],
+    "tags": [
+      "matrix",
+      "operator",
+      "enum"
+    ],
+    "program": "G20 R0 P0 V3,5\nG20 R0 P0 Q44 V4,12\nG10 R0 P0 S2",
+    "status": "OK",
+    "values": [
+      5,
+      13
+    ],
+    "exact": false,
+    "requiresFloat": false,
+    "expected": "OK\nOK\nG20 R0 P0 V5,13\nOK"
+  },
+  {
+    "name": "op_unknown",
+    "description": "An unpublished numeric Q value reports BadOperator instead of silently falling back to set.",
+    "needs": [
+      "ggggx"
+    ],
+    "tags": [
+      "matrix",
+      "operator",
+      "failure"
+    ],
+    "program": "G20 R0 P0 Q999 V5",
+    "status": "OZ",
+    "values": [],
+    "exact": false,
+    "requiresFloat": false,
+    "expected": "OK F7"
   },
   {
     "name": "op_sub",

@@ -76,7 +76,7 @@ int main() {
   #if GGGDX_ENABLE
   fixed.run( "D5\n" );
   const bool fixedAdvertisesSin =
-    fixed.output.find( "D-51 R13 V22 L\"sin\"" ) != std::string::npos;
+    fixed.output.find( "D-51 R13 V45 L\"sin\"" ) != std::string::npos;
   #if GGGGX_ENABLE && GGGGX_TRIG_ENABLE && GGGGX_CORDIC_ENABLE
   if ( !fixedAdvertisesSin ) return 4;
   #else
@@ -86,7 +86,7 @@ int main() {
   ProbeRuntime<ggg::FloatTraits> floating;
   floating.run( "D5\n" );
   const bool floatAdvertisesSin =
-    floating.output.find( "D-51 R13 V22 L\"sin\"" ) != std::string::npos;
+    floating.output.find( "D-51 R13 V45 L\"sin\"" ) != std::string::npos;
   #if GGGGX_ENABLE && GGGGX_TRIG_ENABLE
   if ( !floatAdvertisesSin ) return 6;
   #else

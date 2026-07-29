@@ -722,6 +722,14 @@ void test_doc_commands() {
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
     "D-51 R9 V1 L\"invalid\"" ) );
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-50 R13 L\"ggggx.operator\" S58 T\"enum\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-51 R13 V2 L\"add\" A\"Add: current + incoming.\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-51 R13 V44 L\"hypot\" A\"Euclidean norm of current and incoming.\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-51 R13 V57 L\"atanh\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
     "D-50 R14 L\"ggggx.transform\" S4 T\"enum\"" ) );
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
     "D-51 R14 V3 L\"offset\"" ) );

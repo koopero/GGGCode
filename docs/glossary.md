@@ -88,9 +88,9 @@ are conventionally ordered `C,X,Y,Z`.
 | `$image` | Entire register. |
 | `$image[1]` | Flat index 1. |
 | `$image[1,2]` | Flat indices 1 and 2. |
-| `$image[0|10|20]` | Component/x/y coordinate. |
+| `$image[0\|10\|20]` | Component/x/y coordinate. |
 | `$image[0:3]` | Flat inclusive range. |
-| `$image@[0|10|20]` | Resolve the coordinate to a flat offset instead of reading its value. |
+| `$image@[0\|10\|20]` | Resolve the coordinate to a flat offset instead of reading its value. |
 
 ### Register addressing
 
@@ -214,7 +214,7 @@ through the same command metadata model used for executable requests.
 | `Escape` | `\` | String escape. |
 | `Subscript` | `[` | Reference subscript open. |
 | `SubscriptEnd` | `]` | Reference subscript close. |
-| `NextAxis` | `|` | Axis separator. |
+| `NextAxis` | `\|` | Axis separator. |
 | `At` | `@` | Offset-reference modifier. |
 | `Target` | `W` | Destination register. |
 | `Transform` | `M` | Transform coefficients. |

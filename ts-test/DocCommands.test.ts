@@ -174,6 +174,18 @@ describe( "gggdx structured self-description", () => {
       'D-51 R11 V8 L"UNorm8" A"Normalized wire values 0..1; stored as unsigned 8-bit 0..255."',
     )
     expect( output ).toContain(
+      `D-50 R${GGGGXEnumGroupIndex.Operator} L"ggggx.operator" S58 T"enum"`,
+    )
+    expect( output ).toContain(
+      `D-51 R${GGGGXEnumGroupIndex.Operator} V2 L"add" A"Add: current + incoming."`,
+    )
+    expect( output ).toContain(
+      `D-51 R${GGGGXEnumGroupIndex.Operator} V44 L"hypot" A"Euclidean norm of current and incoming."`,
+    )
+    expect( output ).toContain(
+      `D-51 R${GGGGXEnumGroupIndex.Operator} V57 L"atanh"`,
+    )
+    expect( output ).toContain(
       `D-50 R${GGGGXEnumGroupIndex.Transform} L"ggggx.transform" S4 T"enum"`,
     )
     expect( output ).toContain(

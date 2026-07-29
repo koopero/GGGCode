@@ -8,15 +8,16 @@ Programs run in the conformance harness. It preloads these fixtures: `r` dim `[3
 
 See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) · [runtime](runtime.md) · [protocol](protocol.md).
 
-148 cases across 31 tags.
+153 cases across 32 tags.
 
 ## Tags
 
 - [async](#async) (6)
-- [blit](#blit) (28)
+- [blit](#blit) (29)
 - [conditionals](#conditionals) (6)
 - [decimals](#decimals) (15)
-- [failure](#failure) (3)
+- [enum](#enum) (4)
+- [failure](#failure) (4)
 - [flip](#flip) (3)
 - [flow](#flow) (23)
 - [hex](#hex) (8)
@@ -24,11 +25,11 @@ See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) 
 - [iteration](#iteration) (3)
 - [lists](#lists) (11)
 - [map](#map) (6)
-- [matrix](#matrix) (18)
+- [matrix](#matrix) (22)
 - [multiaxis](#multiaxis) (4)
 - [normalized](#normalized) (2)
 - [offset](#offset) (9)
-- [operator](#operator) (10)
+- [operator](#operator) (15)
 - [procedures](#procedures) (8)
 - [protocol](#protocol) (4)
 - [ranges](#ranges) (15)
@@ -469,6 +470,21 @@ G10 R"bd"
 - values: `[11,12,13,14,15,16,17,18,19]`
 - needs: `ggggx`
 
+### blit_operator_add_by_index
+
+G40 resolves the frozen compact operator value Q2 to add.
+
+```
+G20 R"bd" V10,10,10,10,10,10,10,10,10
+G40 R"bs" W"bd" Q2
+G10 R"bd"
+```
+
+![blit_operator_add_by_index: blit source to result](img/blit_operator_add_by_index.svg)
+
+- values: `[11,12,13,14,15,16,17,18,19]`
+- needs: `ggggx`
+
 ### blit_minify_lerp
 
 Lerp WITH minify: a 1.5x oversized box [0,4.5] with the default linear filter (a point filter, no fold) ignores the footprint and just lerps the centre -- interpolated but aliased. linear coexists with minify; a fold (mean/min/max/add) is opt-in. Hold edge (E1).
@@ -789,6 +805,63 @@ P10 V1.2.3
 - values: `[1.2,0.3]`
 - needs: `gggpx`
 
+## enum
+
+### blit_operator_add_by_index
+
+G40 resolves the frozen compact operator value Q2 to add.
+
+```
+G20 R"bd" V10,10,10,10,10,10,10,10,10
+G40 R"bs" W"bd" Q2
+G10 R"bd"
+```
+
+![blit_operator_add_by_index: blit source to result](img/blit_operator_add_by_index.svg)
+
+- values: `[11,12,13,14,15,16,17,18,19]`
+- needs: `ggggx`
+
+### op_compact_indexes
+
+Frozen compact Q indexes execute the hot path: 2 add, 3 multiply, and 8 masked negate.
+
+```
+G20 R0 P0 Q2 V5,5,5
+G20 R0 P0 Q3 V2,2,2
+G20 R0 P0 Q8 V0,1,0
+G10 R0 P0 S3
+```
+
+- values: `[-30,50,-70]`
+- needs: `ggggx`
+
+### op_clamp_index
+
+Q9 clamps current values to 0..1 where the incoming mask is zero.
+
+```
+G20 R0 P0 V-1,0.5,2
+G20 R0 P0 Q9 V0,1,0
+G10 R0 P0 S3
+```
+
+- values: `[0,0.5,1]`
+- needs: `ggggx`
+
+### op_hypot_index
+
+Q44 is genuinely binary: hypot(current, incoming).
+
+```
+G20 R0 P0 V3,5
+G20 R0 P0 Q44 V4,12
+G10 R0 P0 S2
+```
+
+- values: `[5,13]`
+- needs: `ggggx`
+
 ## failure
 
 ### matrix_write_missing
@@ -828,6 +901,18 @@ G20 L"r" V1
 - status: `OZ`
 - needs: `ggggx`
 - byte-exact (formatting is part of the contract)
+
+### op_unknown
+
+An unpublished numeric Q value reports BadOperator instead of silently falling back to set.
+
+```
+G20 R0 P0 Q999 V5
+```
+
+- values: `[]`
+- status: `OZ`
+- needs: `ggggx`
 
 ## flip
 
@@ -1733,6 +1818,58 @@ G10 R0 P0 S3
 - values: `[15,25,35]`
 - needs: `ggggx`
 
+### op_compact_indexes
+
+Frozen compact Q indexes execute the hot path: 2 add, 3 multiply, and 8 masked negate.
+
+```
+G20 R0 P0 Q2 V5,5,5
+G20 R0 P0 Q3 V2,2,2
+G20 R0 P0 Q8 V0,1,0
+G10 R0 P0 S3
+```
+
+- values: `[-30,50,-70]`
+- needs: `ggggx`
+
+### op_clamp_index
+
+Q9 clamps current values to 0..1 where the incoming mask is zero.
+
+```
+G20 R0 P0 V-1,0.5,2
+G20 R0 P0 Q9 V0,1,0
+G10 R0 P0 S3
+```
+
+- values: `[0,0.5,1]`
+- needs: `ggggx`
+
+### op_hypot_index
+
+Q44 is genuinely binary: hypot(current, incoming).
+
+```
+G20 R0 P0 V3,5
+G20 R0 P0 Q44 V4,12
+G10 R0 P0 S2
+```
+
+- values: `[5,13]`
+- needs: `ggggx`
+
+### op_unknown
+
+An unpublished numeric Q value reports BadOperator instead of silently falling back to set.
+
+```
+G20 R0 P0 Q999 V5
+```
+
+- values: `[]`
+- status: `OZ`
+- needs: `ggggx`
+
 ### op_sub
 
 Q"sub" subtracts the value from each cell.
@@ -2042,6 +2179,21 @@ P10 V$m@[4]
 
 ## operator
 
+### blit_operator_add_by_index
+
+G40 resolves the frozen compact operator value Q2 to add.
+
+```
+G20 R"bd" V10,10,10,10,10,10,10,10,10
+G40 R"bs" W"bd" Q2
+G10 R"bd"
+```
+
+![blit_operator_add_by_index: blit source to result](img/blit_operator_add_by_index.svg)
+
+- values: `[11,12,13,14,15,16,17,18,19]`
+- needs: `ggggx`
+
 ### op_add
 
 Q"add" adds the value into each cell.
@@ -2052,6 +2204,58 @@ G10 R0 P0 S3
 ```
 
 - values: `[15,25,35]`
+- needs: `ggggx`
+
+### op_compact_indexes
+
+Frozen compact Q indexes execute the hot path: 2 add, 3 multiply, and 8 masked negate.
+
+```
+G20 R0 P0 Q2 V5,5,5
+G20 R0 P0 Q3 V2,2,2
+G20 R0 P0 Q8 V0,1,0
+G10 R0 P0 S3
+```
+
+- values: `[-30,50,-70]`
+- needs: `ggggx`
+
+### op_clamp_index
+
+Q9 clamps current values to 0..1 where the incoming mask is zero.
+
+```
+G20 R0 P0 V-1,0.5,2
+G20 R0 P0 Q9 V0,1,0
+G10 R0 P0 S3
+```
+
+- values: `[0,0.5,1]`
+- needs: `ggggx`
+
+### op_hypot_index
+
+Q44 is genuinely binary: hypot(current, incoming).
+
+```
+G20 R0 P0 V3,5
+G20 R0 P0 Q44 V4,12
+G10 R0 P0 S2
+```
+
+- values: `[5,13]`
+- needs: `ggggx`
+
+### op_unknown
+
+An unpublished numeric Q value reports BadOperator instead of silently falling back to set.
+
+```
+G20 R0 P0 Q999 V5
+```
+
+- values: `[]`
+- status: `OZ`
 - needs: `ggggx`
 
 ### op_sub

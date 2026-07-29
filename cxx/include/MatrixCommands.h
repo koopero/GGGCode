@@ -27,7 +27,7 @@ namespace ggg {
 
     MatrixBaseT<T> * reg = nullptr;
     Index offset = 0;
-    String op;                       // Q operator (default "set")
+    OperatorId op = OperatorId::Set; // Q operator (default set)
   public:
     MatrixWriteT() {
       name = "G20";
@@ -40,12 +40,18 @@ namespace ggg {
       addArg( Value, "values to write", "comma-list:number;one-or-more", ArgumentKind::Number );
     }
 
-    void hookCommand() override { reg = nullptr; offset = 0; op = "set"; okay = 1; }
+    void hookCommand() override {
+      reg = nullptr; offset = 0; op = OperatorId::Set; okay = 1;
+    }
 
     void hookNumber() override {
       switch ( code ) {
         case Register: reg = machine->getRegister( (Index) number ); break;
         case Offset:   offset = (Index) number; break;
+        case Operator:
+          op = operatorIdByIndex( (Int) number );
+          if ( op == OperatorId::Unknown ) okay = 0;
+          break;
         case Value: {                // 'V' -- the values slot
           if ( !reg ) break;
           // Apply the operator: read the current cell, combine with the incoming
@@ -70,8 +76,10 @@ namespace ggg {
     void hookString() override {
       if ( code == Register )
         reg = machine->resolveRegisterByName( string );
-      else if ( code == Operator )
-        op = string;
+      else if ( code == Operator ) {
+        op = operatorIdByName( string );
+        if ( op == OperatorId::Unknown ) okay = 0;
+      }
     }
 
     void hookFinish() override {

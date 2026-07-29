@@ -192,26 +192,49 @@ function emitStorage() {
   return str
 }
 
-// Operator descriptors (Operators.ts). Names are emitted as strings (not an
-// enum) because several operator names (and, or, xor, not, bool) are C++
-// keywords. The operator math itself is hand-written in C++; this table only
-// locks the name/index/arity set so the two implementations agree.
+function cxxOperatorId( name:string ) {
+  return name[0].toUpperCase() + name.slice( 1 )
+}
+
+// Operator IDs and runtime names (Operators.ts). Rich documentation remains in
+// gggdx's generated EnumRepository; this always-on execution header deliberately
+// carries only the ID/name pair needed to resolve Q. The C++ identifiers use
+// PascalCase, so wire names such as "and" and "not" cannot collide with language
+// keywords. Execution resolves Q once to OperatorId, then switches on that ID.
 function emitOperators() {
   let str = BANNER
   str += "#include \"../Types.h\"\n\n"
   str += "namespace ggg {\n"
+  str += "  enum class OperatorId : int {\n"
+  str += "    Unknown = -1,\n"
+  str += Operators.list.filter( Boolean ).map( o =>
+    `    ${cxxOperatorId( o.name )} = ${o.index}`
+  ).join( ",\n" ) + "\n"
+  str += "  };\n\n"
   str += "  struct OperatorDescriptor {\n"
-  str += "    Index index;\n"
+  str += "    OperatorId id;\n"
   str += "    const char* name;\n"
-  str += "    Index args;\n"
   str += "  };\n\n"
   str += "  constexpr OperatorDescriptor OperatorDescriptors[] = {\n"
   const rows = Operators.list.filter( Boolean ).map( o =>
-    `    { ${o.index}, "${o.name}", ${o.args} }`
+    `    { OperatorId::${cxxOperatorId( o.name )}, "${o.name}" }`
   )
   str += rows.join( ",\n" ) + "\n"
   str += "  };\n"
   str += "  constexpr Index OperatorDescriptorCount = sizeof( OperatorDescriptors ) / sizeof( OperatorDescriptors[0] );\n"
+  str += "\n"
+  str += "  inline OperatorId operatorIdByIndex( Int index ) {\n"
+  str += "    if ( index >= 0 && static_cast<Index>( index ) < OperatorDescriptorCount ) {\n"
+  str += "      const OperatorId id = OperatorDescriptors[index].id;\n"
+  str += "      if ( static_cast<Int>( id ) == index ) return id;\n"
+  str += "    }\n"
+  str += "    return OperatorId::Unknown;\n"
+  str += "  }\n\n"
+  str += "  inline OperatorId operatorIdByName( const String &name ) {\n"
+  str += "    for ( Index i = 0; i < OperatorDescriptorCount; i++ )\n"
+  str += "      if ( name == OperatorDescriptors[i].name ) return OperatorDescriptors[i].id;\n"
+  str += "    return OperatorId::Unknown;\n"
+  str += "  }\n"
   str += "}\n"
   return str
 }

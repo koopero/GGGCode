@@ -34,6 +34,7 @@ namespace ggg_conformance {
   static const double values_blit_filter_by_name[] = { 1.0, 1.5000000000000000, 2.0, 1.0, 1.5000000000000000, 2.0, 4.0, 4.5000000000000000, 5.0 };
   static const double values_blit_translate_hold[] = { 2.0, 3.0, 3.0, 5.0, 6.0, 6.0, 8.0, 9.0, 9.0 };
   static const double values_blit_operator_add[] = { 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0 };
+  static const double values_blit_operator_add_by_index[] = { 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0 };
   static const double values_blit_minify_lerp[] = { 1.0, 2.5000000000000000, 3.0, 5.5000000000000000, 7.2500000000000000, 7.5000000000000000, 7.0, 8.5000000000000000, 9.0 };
   static const double values_blit_minify_mean[] = { 1.0, 2.7500000000000000, 3.0, 5.5000000000000000, 7.2500000000000000, 7.5000000000000000, 7.0, 8.7500000000000000, 9.0 };
   static const double values_blit_minify_max[] = { 1.0, 3.0, 3.0, 7.0, 9.0, 9.0, 7.0, 9.0, 9.0 };
@@ -64,6 +65,9 @@ namespace ggg_conformance {
   static const double values_matrix_read_by_ref[] = { 10.0, 20.0, 30.0 };
   static const double values_matrix_write_read[] = { 7.0, 8.0, 9.0 };
   static const double values_op_add[] = { 15.0, 25.0, 35.0 };
+  static const double values_op_compact_indexes[] = { -30.0, 50.0, -70.0 };
+  static const double values_op_clamp_index[] = { 0.0, 0.50000000000000000, 1.0 };
+  static const double values_op_hypot_index[] = { 5.0, 13.0 };
   static const double values_op_sub[] = { 9.0, 18.0, 27.0 };
   static const double values_op_mult[] = { 20.0, 40.0, 60.0 };
   static const double values_op_min[] = { 10.0, 15.0, 15.0 };
@@ -179,6 +183,7 @@ namespace ggg_conformance {
     { "blit_filter_by_name", "G40 R\"bs\" W\"bd\" T\"box\" M0,1.5,0,1.5 F\"linear\",\"nearest\"\nG10 R\"bd\"\n", "OK", 4u, values_blit_filter_by_name, 9, nullptr, false, nullptr, 0 },
     { "blit_translate_hold", "G40 R\"bs\" W\"bd\" T\"box\" M1.2,4.2,0,3 F1 E1\nG10 R\"bd\"\n", "OK", 4u, values_blit_translate_hold, 9, nullptr, false, nullptr, 0 },
     { "blit_operator_add", "G20 R\"bd\" V10,10,10,10,10,10,10,10,10\nG40 R\"bs\" W\"bd\" Q\"add\"\nG10 R\"bd\"\n", "OK", 4u, values_blit_operator_add, 9, nullptr, false, nullptr, 0 },
+    { "blit_operator_add_by_index", "G20 R\"bd\" V10,10,10,10,10,10,10,10,10\nG40 R\"bs\" W\"bd\" Q2\nG10 R\"bd\"\n", "OK", 4u, values_blit_operator_add_by_index, 9, nullptr, false, nullptr, 0 },
     { "blit_minify_lerp", "G40 R\"bs\" W\"bd\" T\"box\" M0,4.5,0,4.5 E1\nG10 R\"bd\"\n", "OK", 4u, values_blit_minify_lerp, 9, nullptr, false, nullptr, 0 },
     { "blit_minify_mean", "G40 R\"bs\" W\"bd\" T\"box\" M0,6,0,6 F2 E1\nG10 R\"bd\"\n", "OK", 4u, values_blit_minify_mean, 9, nullptr, false, nullptr, 0 },
     { "blit_minify_max", "G40 R\"bs\" W\"bd\" T\"box\" M0,6,0,6 F4 E1\nG10 R\"bd\"\n", "OK", 4u, values_blit_minify_max, 9, nullptr, false, nullptr, 0 },
@@ -222,6 +227,10 @@ namespace ggg_conformance {
     { "matrix_read_alias_does_not_select", "G10 L\"r\"\n", "OZ", 4u, nullptr, 0, nullptr, false, nullptr, 0 },
     { "matrix_write_alias_does_not_select", "G20 L\"r\" V1\n", "OZ", 4u, nullptr, 0, "OK F5", false, nullptr, 0 },
     { "op_add", "G20 R0 P0 Q\"add\" V5,5,5\nG10 R0 P0 S3\n", "OK", 4u, values_op_add, 3, nullptr, false, nullptr, 0 },
+    { "op_compact_indexes", "G20 R0 P0 Q2 V5,5,5\nG20 R0 P0 Q3 V2,2,2\nG20 R0 P0 Q8 V0,1,0\nG10 R0 P0 S3\n", "OK", 4u, values_op_compact_indexes, 3, nullptr, false, nullptr, 0 },
+    { "op_clamp_index", "G20 R0 P0 V-1,0.5,2\nG20 R0 P0 Q9 V0,1,0\nG10 R0 P0 S3\n", "OK", 4u, values_op_clamp_index, 3, nullptr, false, nullptr, 0 },
+    { "op_hypot_index", "G20 R0 P0 V3,5\nG20 R0 P0 Q44 V4,12\nG10 R0 P0 S2\n", "OK", 4u, values_op_hypot_index, 2, nullptr, false, nullptr, 0 },
+    { "op_unknown", "G20 R0 P0 Q999 V5\n", "OZ", 4u, nullptr, 0, nullptr, false, nullptr, 0 },
     { "op_sub", "G20 R0 P0 Q\"sub\" V1,2,3\nG10 R0 P0 S3\n", "OK", 4u, values_op_sub, 3, nullptr, false, nullptr, 0 },
     { "op_mult", "G20 R0 P0 Q\"mult\" V2,2,2\nG10 R0 P0 S3\n", "OK", 4u, values_op_mult, 3, nullptr, false, nullptr, 0 },
     { "op_min", "G20 R0 P0 Q\"min\" V15,15,15\nG10 R0 P0 S3\n", "OK", 4u, values_op_min, 3, nullptr, false, nullptr, 0 },

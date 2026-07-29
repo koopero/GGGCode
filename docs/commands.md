@@ -108,7 +108,7 @@ Responses:
 - `G20` — Replayable buffer write.
 - `OK` — Buffer read successfully.
 
-Examples: [blit_box_default](cases.md#blit_box_default), [blit_box_full](cases.md#blit_box_full), [blit_box_subregion](cases.md#blit_box_subregion), [blit_box_flip_x](cases.md#blit_box_flip_x), [blit_box_flip_y](cases.md#blit_box_flip_y), [blit_box_flip_180](cases.md#blit_box_flip_180), [blit_map_axes](cases.md#blit_map_axes), [blit_map_default](cases.md#blit_map_default), +36 more
+Examples: [blit_box_default](cases.md#blit_box_default), [blit_box_full](cases.md#blit_box_full), [blit_box_subregion](cases.md#blit_box_subregion), [blit_box_flip_x](cases.md#blit_box_flip_x), [blit_box_flip_y](cases.md#blit_box_flip_y), [blit_box_flip_180](cases.md#blit_box_flip_180), [blit_map_axes](cases.md#blit_map_axes), [blit_map_default](cases.md#blit_map_default), +40 more
 
 ### G13
 
@@ -138,7 +138,7 @@ Arguments:
 | `Q` | `enum` | `ggggx.operator` |  | Write operator. |
 | `F` | `number` |  |  | Fill size |
 
-Examples: [blit_operator_add](cases.md#blit_operator_add), [matrix_write_read](cases.md#matrix_write_read), [matrix_write_missing](cases.md#matrix_write_missing), [matrix_write_alias_does_not_select](cases.md#matrix_write_alias_does_not_select), [op_add](cases.md#op_add), [op_sub](cases.md#op_sub), [op_mult](cases.md#op_mult), [op_min](cases.md#op_min), +6 more
+Examples: [blit_operator_add](cases.md#blit_operator_add), [blit_operator_add_by_index](cases.md#blit_operator_add_by_index), [matrix_write_read](cases.md#matrix_write_read), [matrix_write_missing](cases.md#matrix_write_missing), [matrix_write_alias_does_not_select](cases.md#matrix_write_alias_does_not_select), [op_add](cases.md#op_add), [op_compact_indexes](cases.md#op_compact_indexes), [op_clamp_index](cases.md#op_clamp_index), +11 more
 
 ### G25
 
@@ -185,7 +185,7 @@ Arguments:
 | `F` | `enum` | `ggggx.filter` | `comma-list:enum;continue-last` | Per-axis filter (list, continue-last): 0 linear / 1 nearest / 2 mean / 3 min / 4 max / 5 add. |
 | `E` | `enum` | `ggggx.edge` | `comma-list:enum;continue-last` | Per-axis edge (list, continue-last): 0 loop / 1 hold / 2 mirror / 3 zero. |
 
-Examples: [blit_box_default](cases.md#blit_box_default), [blit_box_full](cases.md#blit_box_full), [blit_box_subregion](cases.md#blit_box_subregion), [blit_box_flip_x](cases.md#blit_box_flip_x), [blit_box_flip_y](cases.md#blit_box_flip_y), [blit_box_flip_180](cases.md#blit_box_flip_180), [blit_map_axes](cases.md#blit_map_axes), [blit_map_default](cases.md#blit_map_default), +20 more
+Examples: [blit_box_default](cases.md#blit_box_default), [blit_box_full](cases.md#blit_box_full), [blit_box_subregion](cases.md#blit_box_subregion), [blit_box_flip_x](cases.md#blit_box_flip_x), [blit_box_flip_y](cases.md#blit_box_flip_y), [blit_box_flip_180](cases.md#blit_box_flip_180), [blit_map_axes](cases.md#blit_map_axes), [blit_map_default](cases.md#blit_map_default), +21 more
 
 ## gggdx — protocol self-description
 

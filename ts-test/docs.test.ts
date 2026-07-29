@@ -41,6 +41,18 @@ function markdownAnchors( file:string ) {
   return anchors
 }
 
+function tableColumnCount( line:string ) {
+  let separators = 0
+  for ( let index = 0; index < line.length; index++ ) {
+    if ( line[index] !== "|" ) continue
+    let slashes = 0
+    for ( let before = index - 1; before >= 0 && line[before] === "\\"; before-- )
+      slashes++
+    if ( slashes % 2 === 0 ) separators++
+  }
+  return separators - 1
+}
+
 describe( "documentation", () => {
   test( "hand-written GGG examples execute without a failure response", async () => {
     const commands = commandsFor( [ "gggpx", "gggtx", "ggggx", "gggdx" ] )
@@ -98,6 +110,36 @@ describe( "documentation", () => {
     }
 
     expect( missing ).toEqual( [] )
+  } )
+
+  test( "Markdown table rows have consistent column counts", () => {
+    const files = [
+      resolve( root, "README.md" ),
+      ...readdirSync( resolve( root, "docs" ) )
+        .filter( name => name.endsWith( ".md" ) )
+        .map( name => resolve( root, "docs", name ) ),
+    ]
+    const malformed:string[] = []
+
+    for ( const file of files ) {
+      const lines = readFileSync( file, "utf8" ).split( /\r?\n/ )
+      let expected:number | undefined
+      for ( let index = 0; index < lines.length; index++ ) {
+        const line = lines[index]
+        if ( !line.startsWith( "|" ) ) {
+          expected = undefined
+          continue
+        }
+        const columns = tableColumnCount( line )
+        if ( expected === undefined ) expected = columns
+        else if ( columns !== expected )
+          malformed.push(
+            `${file}:${index + 1}: expected ${expected} columns, found ${columns}`,
+          )
+      }
+    }
+
+    expect( malformed ).toEqual( [] )
   } )
 
   test( "published GGG example files execute without a failure response", async () => {

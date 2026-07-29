@@ -83,6 +83,45 @@
     G10 R0 P0 S3
   values: [ 15, 25, 35 ]
 
+- name: op_compact_indexes
+  description: "Frozen compact Q indexes execute the hot path: 2 add, 3 multiply, and 8 masked negate."
+  needs: [ ggggx ]
+  tags: [ matrix, operator, enum ]
+  program: |
+    G20 R0 P0 Q2 V5,5,5
+    G20 R0 P0 Q3 V2,2,2
+    G20 R0 P0 Q8 V0,1,0
+    G10 R0 P0 S3
+  values: [ -30, 50, -70 ]
+
+- name: op_clamp_index
+  description: "Q9 clamps current values to 0..1 where the incoming mask is zero."
+  needs: [ ggggx ]
+  tags: [ matrix, operator, enum ]
+  program: |
+    G20 R0 P0 V-1,0.5,2
+    G20 R0 P0 Q9 V0,1,0
+    G10 R0 P0 S3
+  values: [ 0, 0.5, 1 ]
+
+- name: op_hypot_index
+  description: "Q44 is genuinely binary: hypot(current, incoming)."
+  needs: [ ggggx ]
+  tags: [ matrix, operator, enum ]
+  program: |
+    G20 R0 P0 V3,5
+    G20 R0 P0 Q44 V4,12
+    G10 R0 P0 S2
+  values: [ 5, 13 ]
+
+- name: op_unknown
+  description: "An unpublished numeric Q value reports BadOperator instead of silently falling back to set."
+  needs: [ ggggx ]
+  tags: [ matrix, operator, failure ]
+  program: "G20 R0 P0 Q999 V5"
+  status: "OZ"
+  values: []
+
 - name: op_sub
   description: "Q\"sub\" subtracts the value from each cell."
   needs: [ ggggx ]

@@ -131,7 +131,7 @@ namespace ggg {
     std::vector<Coordinate> matrix;
     std::vector<Index> offset;
     std::vector<Index> size;
-    String op = "set";
+    OperatorId op = OperatorId::Set;
     std::vector<String> filter;      // F: per-axis filter (continue-last)
     std::vector<String> edges;       // E: per-axis edge (continue-last)
   };
@@ -166,6 +166,8 @@ namespace ggg {
   inline bool Blit( MatrixBaseT<T> *dest, MatrixBaseT<T> *source, const BlitOptionsT<T> &o ) {
     using Number = typename T::Number;
     using Coordinate = typename T::Coordinate;
+    if ( o.op == OperatorId::Unknown ) return false;
+
     int dimension = o.dimension;
     int rank = (int) dest->dim.size() - dimension;
     if ( rank < 0 ) rank = 0;
@@ -251,7 +253,7 @@ namespace ggg {
     return ok;
   }
 
-  // G40 -- blit between registers. Args: R/L source, W dest, M coeffs, T mode,
+  // G40 -- blit between registers. Args: R source, W dest, M coeffs, T mode,
   // P/S region, D channel dim, Q operator, F per-axis filter (linear/nearest point
   // or mean/min/max/add footprint fold), E per-axis edge.
   template <class T = DefaultTraits>
@@ -301,6 +303,7 @@ namespace ggg {
         case Offset:    opt.offset.push_back( (Index) number ); break;
         case Size:      opt.size.push_back( (Index) number ); break;
         case Dimension: opt.dimension = (Index) number; break;
+        case Operator:  opt.op = operatorIdByIndex( (Int) number ); break;
         case Failure:   opt.filter.push_back( blitOptionByIndex( EnumGroupIndex::Filter, number ) ); break;
         case Encoding:  opt.edges.push_back( blitOptionByIndex( EnumGroupIndex::Edge, number ) ); break;
         default: break;
@@ -312,7 +315,7 @@ namespace ggg {
         case Register: source = machine->resolveRegisterByName( string ); break;
         case Target:    dest = machine->resolveRegisterByName( string ); break;
         case Storage:   opt.mode = string; break;
-        case Operator:  opt.op = string; break;
+        case Operator:  opt.op = operatorIdByName( string ); break;
         case Failure:   opt.filter.push_back( string ); break;
         case Encoding:  opt.edges.push_back( string ); break;
         default: break;

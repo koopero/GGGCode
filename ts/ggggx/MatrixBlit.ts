@@ -3,6 +3,7 @@ import { isNumber, toInt } from "../common/util"
 import Matrix from "../ggg/Matrix"
 import { Blit, BlitOptions } from "./Blit"
 import { FilterList, EdgeList } from "./Sample"
+import { OperatorResolve } from "./Operators"
 import NamedList from "../ggg/NamedList"
 
 //
@@ -39,6 +40,7 @@ function reset( state: { [key: string]: any } ) {
   state.blitSize = []
   state.dimension = undefined
   state.operator = undefined
+  state.operatorInvalid = false
   state.filter = []    // F: per-axis filter names
   state.edges = []     // E: per-axis edge names
 }
@@ -79,7 +81,11 @@ function MatrixBlitHookValue( arg: HookArgs ) {
       state.dimension = toInt( value )
       break
     case GGG.Operator:
-      state.operator = value
+      {
+        const operator = OperatorResolve( value )
+        state.operator = operator?.name
+        state.operatorInvalid = !operator
+      }
       break
     case GGG.Failure:   // F -- per-axis filter (list)
       state.filter.push( optName( value, FilterList ) )
@@ -98,6 +104,11 @@ function MatrixBlitHookEnd( arg: HookArgs ) {
 
   if ( !source || !dest ) {
     machine.outputFail( GGGFail.BufferNotFound )
+    return
+  }
+
+  if ( state.operatorInvalid ) {
+    machine.outputFail( GGGFail.BlitFailed )
     return
   }
 

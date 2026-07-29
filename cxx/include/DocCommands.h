@@ -8,6 +8,7 @@
 #include "./gen/EnumRepository.h"
 #include "./gen/DocProtocol.h"
 #include "./gen/LanguageBasics.h"
+#include "./gen/Operators.h"
 
 namespace ggg {
 
@@ -311,10 +312,18 @@ namespace ggg {
   inline bool docEnumValueAvailable( Int group, Int value ) {
     if ( group != (Int) EnumGroupIndex::Operator ) return true;
     #if !GGGGX_TRIG_ENABLE
-    if ( ( value >= 22 && value <= 27 ) || value == 37 ) return false;
+    if (
+      value >= (Int) OperatorId::Sin
+      && value <= (Int) OperatorId::Atan2
+    ) return false;
     #elif !GGGGX_CORDIC_ENABLE
     if constexpr ( !std::is_floating_point<typename T::Number>::value ) {
-      if ( value == 22 || value == 23 || value == 27 || value == 37 )
+      if (
+        value == (Int) OperatorId::Sin
+        || value == (Int) OperatorId::Cos
+        || value == (Int) OperatorId::Atan
+        || value == (Int) OperatorId::Atan2
+      )
         return false;
     }
     #endif

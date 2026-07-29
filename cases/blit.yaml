@@ -236,6 +236,16 @@
     G10 R"bd"
   values: [ 11, 12, 13, 14, 15, 16, 17, 18, 19 ]
 
+- name: blit_operator_add_by_index
+  description: "G40 resolves the frozen compact operator value Q2 to add."
+  needs: [ ggggx ]
+  tags: [ blit, operator, enum ]
+  program: |
+    G20 R"bd" V10,10,10,10,10,10,10,10,10
+    G40 R"bs" W"bd" Q2
+    G10 R"bd"
+  values: [ 11, 12, 13, 14, 15, 16, 17, 18, 19 ]
+
 - name: blit_minify_lerp
   description: "Lerp WITH minify: a 1.5x oversized box [0,4.5] with the default linear filter (a point filter, no fold) ignores the footprint and just lerps the centre -- interpolated but aliased. linear coexists with minify; a fold (mean/min/max/add) is opt-in. Hold edge (E1)."
   needs: [ ggggx ]

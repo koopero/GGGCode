@@ -1,7 +1,7 @@
 import { isArray, isNumber, isString, isUndefined } from "../common/util"
 import { GGG, GGGFail, Hooks, HookArgs, VecArg } from "../ggg/Language"
 import { Matrix } from "../ggggx"
-import Operators, { OperatorApply, Ops } from "./Operators"
+import { OperatorApply, OperatorResolve, Ops } from "./Operators"
 import { TargetHookCode, TargetHookCommand, TargetHookValue, TargetResolveNumbers } from "./Target"
 import { DimNext, DimOffset } from "../ggg/Dim"
 
@@ -18,6 +18,7 @@ function MatrixWriteHookCommand( arg:HookArgs ) {
   state.coord = null
   state.data = []
   state.writingData = false
+  state.operatorInvalid = false
 }
 
 function MatrixWriteHookCode( arg:HookArgs ) {
@@ -49,7 +50,8 @@ function MatrixWriteHookValue( arg:HookArgs ) {
   const { code, state, value, machine } = arg
   switch( code ) {
     case GGG.Operator:
-      state.operator = Operators.get( value ) || Ops.set
+      state.operator = OperatorResolve( value )
+      state.operatorInvalid = !state.operator
       break
 
     case GGG.Repeat:
@@ -64,6 +66,9 @@ function MatrixWriteHookValue( arg:HookArgs ) {
         break
 
       if ( !buffer )
+        break
+
+      if ( state.operatorInvalid )
         break
 
       if ( repeat ) {
@@ -90,7 +95,7 @@ function MatrixWriteHookEndArg( arg:HookArgs ) {
   const { repeat } = state
   switch ( code ) {
     case GGG.Value:
-      if ( repeat && state.buffer ) {
+      if ( repeat && state.buffer && !state.operatorInvalid ) {
         const { data, operator, buffer, offset, dim } = state
         MatrixWrite( buffer, { data, operator, offset, size: dim, fill: true } )
       }
@@ -102,10 +107,12 @@ function MatrixWriteHookEnd( arg:HookArgs ) {
   const { machine, state } = arg
   const { buffer } = state
 
-  if ( buffer ) {
-    machine.outputOk()
-  } else {
+  if ( !buffer ) {
     machine.outputFail( GGGFail.BufferNotFound )
+  } else if ( state.operatorInvalid ) {
+    machine.outputFail( GGGFail.BadOperator )
+  } else {
+    machine.outputOk()
   }
 }
 
@@ -206,4 +213,3 @@ export function MatrixWrite( matrix?:Matrix, options:MatrixWriteArg = {} ) : Mat
 
   return { matrix: matrix as Matrix, offset: coord }
 }
-
