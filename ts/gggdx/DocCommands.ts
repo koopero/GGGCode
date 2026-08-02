@@ -34,6 +34,7 @@ export const gggdxCodes = {
   CommandResult: commandResultCode( CommandResultRecord.Command ),
   ArgumentResult: commandResultCode( CommandResultRecord.Argument ),
   ReturnResult: commandResultCode( CommandResultRecord.Return ),
+  ExampleResult: commandResultCode( CommandResultRecord.Example ),
   EnumGroupResult: enumResultCode( EnumResultRecord.Group ),
   EnumEntryResult: enumResultCode( EnumResultRecord.Entry ),
 } as const
@@ -115,6 +116,15 @@ function outputCommands( machine:any ) {
       )
       machine.output( line( gggdxCodes.ReturnResult, returnArgs ) )
     }
+
+    for ( const example of spec.examples || [] ) {
+      const exampleArgs = [
+        arg( GGG.Command, commandCode ),
+        arg( GGG.Value, example.source ),
+      ]
+      optionalStringArg( exampleArgs, GGG.Data, example.description )
+      machine.output( line( gggdxCodes.ExampleResult, exampleArgs ) )
+    }
   }
 }
 
@@ -156,6 +166,7 @@ const commandResponses = {
   [gggdxCodes.CommandResult]: "Command or result-record schema.",
   [gggdxCodes.ArgumentResult]: "Argument schema.",
   [gggdxCodes.ReturnResult]: "Command-to-command return relation.",
+  [gggdxCodes.ExampleResult]: "Command-relative source example.",
 }
 
 const enumResponses = {
@@ -171,6 +182,7 @@ const commandResultRecords = resultRecords( [
   gggdxCodes.CommandResult,
   gggdxCodes.ArgumentResult,
   gggdxCodes.ReturnResult,
+  gggdxCodes.ExampleResult,
 ] )
 
 const basicsResultRecords = resultRecords( [

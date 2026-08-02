@@ -22,6 +22,7 @@ namespace ggg {
     { -40, "command", "D1/D4 command or record schema." },
     { -41, "argument", "D1/D4 argument schema." },
     { -42, "return", "D1/D4 command-to-command return relation." },
+    { -45, "example", "D1/D4 command-relative source example." },
   };
 
   constexpr EnumValueDescriptor EnumValues_EnumResultRecord[] = {

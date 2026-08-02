@@ -50,7 +50,7 @@ namespace ggg {
     command->addDomain( EnumGroupIndex::GrammarExampleKind );
   }
 
-  // Build the seven non-executable result schemas from the same CommandType
+  // Build the eight non-executable result schemas from the same CommandType
   // metadata D1/D4 use for ordinary commands.
   template <class T>
   inline CommandTypeT<T>* grammarRuleResultRecordSpec() {
@@ -119,6 +119,18 @@ namespace ggg {
     record->addArg( Command, "Originating command code.", "", ArgumentKind::String );
     record->addArg( Target, "Returned command code.", "", ArgumentKind::String );
     record->addArg( Data, "Description.", "", ArgumentKind::String );
+    return record;
+  }
+
+  template <class T>
+  inline CommandTypeT<T>* exampleResultRecordSpec() {
+    auto *record = new CommandTypeT<T>();
+    record->name = docCommandResultCode( CommandResultRecord::Example );
+    record->description = "Provides one command-relative GGG source example.";
+    record->addArg( Command, "Owning command or record code.", "", ArgumentKind::String );
+    record->addArg( Value, "Source snippet interpreted in the owning command's context.",
+      "", ArgumentKind::String );
+    record->addArg( Data, "Explanation.", "", ArgumentKind::String );
     return record;
   }
 
@@ -225,6 +237,16 @@ namespace ggg {
       returnLine += End;
       machine->output( returnLine );
     }
+
+    for ( const auto &example : spec->examples ) {
+      String exampleLine = docCommandResultCode( CommandResultRecord::Example );
+      exampleLine += " " + docStringArg( Command, spec->name );
+      exampleLine += " " + docStringArg( Value, example.source );
+      if ( example.description && example.description[0] )
+        exampleLine += " " + docStringArg( Data, example.description );
+      exampleLine += End;
+      machine->output( exampleLine );
+    }
   }
 
   template <class T>
@@ -271,7 +293,8 @@ namespace ggg {
   using LanguageBasics = LanguageBasicsT<>;
 
   // D4 emits one D-40 per executable command or result schema, one D-41 per
-  // argument, and D-42 return relations, then the normal OK terminator.
+  // argument, D-42 return relations, and D-45 examples, then the normal OK
+  // terminator.
   template <class T = DefaultTraits>
   class CommandsListT : public CommandTypeT<T> {
   public:
@@ -286,6 +309,7 @@ namespace ggg {
       addRecord( commandResultRecordSpec<T>() );
       addRecord( argumentResultRecordSpec<T>() );
       addRecord( returnResultRecordSpec<T>() );
+      addRecord( exampleResultRecordSpec<T>() );
       this->addResponse(
         docCommandResultCode( CommandResultRecord::Command ),
         "Command or result-record schema."
@@ -297,6 +321,10 @@ namespace ggg {
       this->addResponse(
         docCommandResultCode( CommandResultRecord::Return ),
         "Command-to-command return relation."
+      );
+      this->addResponse(
+        docCommandResultCode( CommandResultRecord::Example ),
+        "Command-relative source example."
       );
       this->addResponse( "OK", "Command schemas listed successfully." );
     }
@@ -482,6 +510,10 @@ namespace ggg {
       this->addResponse(
         docCommandResultCode( CommandResultRecord::Return ),
         "Command-to-command return relation."
+      );
+      this->addResponse(
+        docCommandResultCode( CommandResultRecord::Example ),
+        "Command-relative source example."
       );
       this->addResponse(
         docEnumResultCode( EnumResultRecord::Group ),

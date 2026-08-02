@@ -65,6 +65,7 @@ export enum CommandResultRecord {
   Command = -40,
   Argument = -41,
   Return = -42,
+  Example = -45,
 }
 
 // Enum-catalog result records.
@@ -106,6 +107,7 @@ export const CommandResultRecordDomain = enumDomain(
     { index: CommandResultRecord.Command, name: "command", description: "D1/D4 command or record schema." },
     { index: CommandResultRecord.Argument, name: "argument", description: "D1/D4 argument schema." },
     { index: CommandResultRecord.Return, name: "return", description: "D1/D4 command-to-command return relation." },
+    { index: CommandResultRecord.Example, name: "example", description: "D1/D4 command-relative source example." },
   ] ),
   "Record types emitted by D1 and D4.",
 )
@@ -225,6 +227,14 @@ export const DocResultRecords: Record<string, CommandDescribed> = {
       [GGG.Command]: { description: "Originating command code.", kind: ArgumentKind.String },
       [GGG.Target]: { description: "Returned command code.", kind: ArgumentKind.String },
       [GGG.Data]: { description: "Description.", kind: ArgumentKind.String },
+    },
+  },
+  [commandResultCode( CommandResultRecord.Example )]: {
+    description: "Provides one command-relative GGG source example.",
+    args: {
+      [GGG.Command]: { description: "Owning command or record code.", kind: ArgumentKind.String },
+      [GGG.Value]: { description: "Source snippet interpreted in the owning command's context.", kind: ArgumentKind.String },
+      [GGG.Data]: { description: "Explanation.", kind: ArgumentKind.String },
     },
   },
   [enumResultCode( EnumResultRecord.Group )]: {

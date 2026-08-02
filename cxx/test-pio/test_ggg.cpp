@@ -646,7 +646,9 @@ void test_matrix_commands() {
 // streams all three, including result schemas and live reference domains.
 void test_doc_commands() {
   MatrixCmdMachine m;
-  m.addCommand( new ggg::MatrixReadT<ggg::FloatTraits>() );
+  auto *matrixRead = new ggg::MatrixReadT<ggg::FloatTraits>();
+  matrixRead->addExample( "R0 S1", "Read one scalar." );
+  m.addCommand( matrixRead );
   m.addCommand( new ggg::MatrixBlitT<ggg::FloatTraits>() );
   m.addCommand( new ggg::LanguageDescriptionT<ggg::FloatTraits>() );
   m.addCommand( new ggg::LanguageBasicsT<ggg::FloatTraits>() );
@@ -690,12 +692,17 @@ void test_doc_commands() {
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "D-40 B\"D-40\"" ) );
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "D-40 B\"D-41\"" ) );
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "D-40 B\"D-42\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "D-40 B\"D-45\"" ) );
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "D-40 B\"D-50\"" ) );
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "D-40 B\"D-51\"" ) );
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
     "D-41 B\"D-42\" U\"W\" T\"string\" A\"Returned command code.\"" ) );
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
     "D-42 B\"G10\" W\"G20\" A\"Replayable buffer write.\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-41 B\"D-45\" U\"V\" T\"string\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-45 B\"G10\" V\"R0 S1\" A\"Read one scalar.\"" ) );
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
     "D-42 B\"D1\" W\"D-42\" A\"Command-to-command return relation.\"" ) );
   TEST_ASSERT_NULL( strstr( m.out.c_str(), "\nD-50 " ) );
@@ -709,6 +716,8 @@ void test_doc_commands() {
     "D-51 R1 V-41 L\"argument\"" ) );
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
     "D-51 R1 V-42 L\"return\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-51 R1 V-45 L\"example\"" ) );
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
     "D-51 R2 V-50 L\"group\"" ) );
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),

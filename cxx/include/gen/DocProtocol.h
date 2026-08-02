@@ -4,6 +4,7 @@
 
 namespace ggg {
   enum class CommandResultRecord : int {
+    Example = -45,
     Return = -42,
     Argument = -41,
     Command = -40

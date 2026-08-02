@@ -136,7 +136,7 @@ Arguments:
 | `P` | `number` |  | `comma-list:axes=C,X,Y,Z` | Buffer position (component-first). |
 | `V` | `number` |  | `comma-list:number;one-or-more` | Values to write. |
 | `Q` | `enum` | `ggggx.operator` |  | Write operator. |
-| `F` | `number` |  |  | Fill size |
+| `G` | `boolean` |  |  | Repeat values to size. |
 
 Examples: [blit_operator_add](cases.md#blit_operator_add), [blit_operator_add_by_index](cases.md#blit_operator_add_by_index), [matrix_write_read](cases.md#matrix_write_read), [matrix_write_missing](cases.md#matrix_write_missing), [matrix_write_alias_does_not_select](cases.md#matrix_write_alias_does_not_select), [op_add](cases.md#op_add), [op_compact_indexes](cases.md#op_compact_indexes), [op_clamp_index](cases.md#op_clamp_index), +11 more
 
@@ -255,6 +255,18 @@ Arguments:
 | `W` | `string` |  |  | Returned command code. |
 | `A` | `string` |  |  | Description. |
 
+### D-45
+
+Provides one command-relative GGG source example.
+
+Arguments:
+
+| code | kind | domain | format | meaning |
+| --- | --- | --- | --- | --- |
+| `B` | `string` |  |  | Owning command or record code. |
+| `V` | `string` |  |  | Source snippet interpreted in the owning command's context. |
+| `A` | `string` |  |  | Explanation. |
+
 ### D-50
 
 Describes one enum/reference group.
@@ -293,6 +305,7 @@ Responses:
 - `D-40` — Command or result-record schema.
 - `D-41` — Argument schema.
 - `D-42` — Command-to-command return relation.
+- `D-45` — Command-relative source example.
 - `D-50` — Enum/reference group.
 - `D-51` — Enum/reference entry.
 - `OK` — Language described successfully.
@@ -320,6 +333,7 @@ Responses:
 - `D-40` — Command or result-record schema.
 - `D-41` — Argument schema.
 - `D-42` — Command-to-command return relation.
+- `D-45` — Command-relative source example.
 - `OK` — Command schemas listed successfully.
 
 Examples: [d4_command_catalog](cases.md#d4_command_catalog)

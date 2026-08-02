@@ -47,6 +47,7 @@ describe( "gggdx structured self-description", () => {
       throw new Error( "Result record domains must be static NamedLists." )
 
     expect( commandValues.get( -40 )?.name ).toBe( "command" )
+    expect( commandValues.get( -45 )?.name ).toBe( "example" )
     expect( enumValues.get( -50 )?.name ).toBe( "group" )
     expect( basicsValues.get( -20 )?.name ).toBe( "rule" )
     expect( gggdxCodes.LanguageDescription ).toBe( "D1" )
@@ -58,6 +59,7 @@ describe( "gggdx structured self-description", () => {
     expect( gggdxCodes.CommandResult ).toBe( `D${CommandResultRecord.Command}` )
     expect( gggdxCodes.ArgumentResult ).toBe( `D${CommandResultRecord.Argument}` )
     expect( gggdxCodes.ReturnResult ).toBe( `D${CommandResultRecord.Return}` )
+    expect( gggdxCodes.ExampleResult ).toBe( `D${CommandResultRecord.Example}` )
     expect( gggdxCodes.EnumGroupResult ).toBe( `D${EnumResultRecord.Group}` )
     expect( gggdxCodes.EnumEntryResult ).toBe( `D${EnumResultRecord.Entry}` )
   } )
@@ -118,6 +120,7 @@ describe( "gggdx structured self-description", () => {
     expect( output ).toContain( 'D-40 B"D-40"' )
     expect( output ).toContain( 'D-40 B"D-41"' )
     expect( output ).toContain( 'D-40 B"D-42"' )
+    expect( output ).toContain( 'D-40 B"D-45"' )
     expect( output ).toContain( 'D-40 B"D-50"' )
     expect( output ).toContain( 'D-40 B"D-51"' )
     expect( output ).toContain(
@@ -128,6 +131,15 @@ describe( "gggdx structured self-description", () => {
     )
     expect( output ).toContain(
       'D-42 B"G10" W"G20" A"Replayable buffer write."',
+    )
+    expect( output ).toContain(
+      'D-45 B"G20" V"GK" A"Repeat to size."',
+    )
+    expect( output ).toContain(
+      'D-41 B"D-45" U"V" T"string"',
+    )
+    expect( output ).toContain(
+      'D-41 B"D-45" U"A" T"string"',
     )
     expect( output ).toContain(
       'D-42 B"D1" W"D-42" A"Command-to-command return relation."',
@@ -148,6 +160,9 @@ describe( "gggdx structured self-description", () => {
     )
     expect( output ).toContain(
       `D-51 R${GGGDXEnumGroupIndex.CommandResultRecord} V-42 L"return"`,
+    )
+    expect( output ).toContain(
+      `D-51 R${GGGDXEnumGroupIndex.CommandResultRecord} V-45 L"example"`,
     )
     expect( output ).toContain(
       `D-51 R${GGGDXEnumGroupIndex.EnumResultRecord} V-50 L"group"`,

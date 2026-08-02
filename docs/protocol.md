@@ -17,7 +17,7 @@ advance:
 | --- | --- |
 | `D1` | Complete description: `D2`, then `D4`, then `D5`, followed by one `OK`. |
 | `D2` | Stable grammar rules (`D-20`) and complete valid/invalid examples (`D-21`). |
-| `D4` | Command/result schemas (`D-40`), arguments (`D-41`), and return relations (`D-42`). |
+| `D4` | Command/result schemas (`D-40`), arguments (`D-41`), return relations (`D-42`), and examples (`D-45`). |
 | `D5` | Enum/reference groups (`D-50`) and their entries (`D-51`). |
 
 Negative D codes are emitted records. They are not executable requests. Every
@@ -82,6 +82,16 @@ D-41 B"G40" U"M" T"number" M"comma-list:number;one-or-more" A"Transform coeffici
 Consumers should use these relations rather than guessing response types from
 command numbers.
 
+`D-45` carries a source example owned by the command named in `B`:
+
+```text
+D-45 B"G20" V"GK" A"Repeat to size."
+```
+
+Unlike the complete grammar lines in `D-21`, a `D-45` value is interpreted in
+its owning command's context. It may therefore be a snippet as small as one
+argument. `V` is the reusable source, while `A` carries its explanation.
+
 ## Enum and live-reference domains: `D5`
 
 `D-50` introduces a named domain. `T"enum"` is a fixed vocabulary;
@@ -123,7 +133,7 @@ repository-wide kitchen-sink catalog as if it were universally available.
 2. Parse every response line with the normal GGG parser.
 3. Store `D-50` groups by both `R` and `L`.
 4. Attach each `D-51` to its group and preserve its literal `V`.
-5. Store every `D-40` by `B`, then attach its `D-41` and `D-42` records.
+5. Store every `D-40` by `B`, then attach its `D-41`, `D-42`, and `D-45` records.
 6. Use `T"result"` to prevent emitted records from being offered as executable
    commands.
 7. Finish only on `OK`; treat a terminator carrying `F` as failure.

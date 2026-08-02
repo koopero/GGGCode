@@ -127,9 +127,17 @@ export type ResponseDescribed = string | {
   description?: string,
 }
 
+export type CommandExample = {
+  source:string,
+  description?:string,
+}
+
 export type CommandDescribed = Described & {
   name?:string 
   description?: string,
+  // Command-relative source snippets. The owning command supplies the context,
+  // so an example may be as small as one argument (for example `GK`).
+  examples?: CommandExample[],
   args?: { [key:string]: CommandArgDescribed },
   responds?: { [key:string]: ResponseDescribed },
   // Result records are message schemas too. They are not executable commands,
