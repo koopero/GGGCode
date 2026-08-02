@@ -6,6 +6,8 @@ import {
   BasicsResultRecordDomain,
   CommandResultRecord,
   CommandResultRecordDomain,
+  ControlResultRecord,
+  ControlResultRecordDomain,
   EnumResultRecord,
   EnumResultRecordDomain,
   GGGDXEnumGroupIndex,
@@ -25,6 +27,10 @@ function protocolMachine() {
     commands: {
       ...GXCommands,
       ...DocCommands,
+      U60: {
+        description: "Test control contributor.",
+        controls: [ { test: true, nested: { value: 2 } } ],
+      },
     },
   } )
   machine.getRegisterList( Matrix ).add(
@@ -39,10 +45,12 @@ describe( "gggdx structured self-description", () => {
     const commandValues = CommandResultRecordDomain.values
     const enumValues = EnumResultRecordDomain.values
     const basicsValues = BasicsResultRecordDomain.values
+    const controlValues = ControlResultRecordDomain.values
     if (
       typeof commandValues === "function"
       || typeof enumValues === "function"
       || typeof basicsValues === "function"
+      || typeof controlValues === "function"
     )
       throw new Error( "Result record domains must be static NamedLists." )
 
@@ -50,10 +58,12 @@ describe( "gggdx structured self-description", () => {
     expect( commandValues.get( -45 )?.name ).toBe( "example" )
     expect( enumValues.get( -50 )?.name ).toBe( "group" )
     expect( basicsValues.get( -20 )?.name ).toBe( "rule" )
+    expect( controlValues.get( -60 )?.name ).toBe( "description" )
     expect( gggdxCodes.LanguageDescription ).toBe( "D1" )
     expect( gggdxCodes.LanguageBasics ).toBe( "D2" )
     expect( gggdxCodes.CommandsList ).toBe( "D4" )
     expect( gggdxCodes.EnumsList ).toBe( "D5" )
+    expect( gggdxCodes.ControlsList ).toBe( "D6" )
     expect( gggdxCodes.GrammarRuleResult ).toBe( `D${BasicsResultRecord.Rule}` )
     expect( gggdxCodes.GrammarExampleResult ).toBe( `D${BasicsResultRecord.Example}` )
     expect( gggdxCodes.CommandResult ).toBe( `D${CommandResultRecord.Command}` )
@@ -62,6 +72,7 @@ describe( "gggdx structured self-description", () => {
     expect( gggdxCodes.ExampleResult ).toBe( `D${CommandResultRecord.Example}` )
     expect( gggdxCodes.EnumGroupResult ).toBe( `D${EnumResultRecord.Group}` )
     expect( gggdxCodes.EnumEntryResult ).toBe( `D${EnumResultRecord.Entry}` )
+    expect( gggdxCodes.ControlDescriptionResult ).toBe( `D${ControlResultRecord.Description}` )
   } )
 
   test( "D2 describes grammar with copyable valid and explicit invalid examples", async () => {
@@ -123,6 +134,8 @@ describe( "gggdx structured self-description", () => {
     expect( output ).toContain( 'D-40 B"D-45"' )
     expect( output ).toContain( 'D-40 B"D-50"' )
     expect( output ).toContain( 'D-40 B"D-51"' )
+    expect( output ).toContain( 'D-40 B"D6" T"command"' )
+    expect( output ).toContain( 'D-40 B"D-60" T"result" S1' )
     expect( output ).toContain(
       'D-41 B"D-41" U"R" T"reference" R"EnumGroup"',
     )
@@ -140,6 +153,9 @@ describe( "gggdx structured self-description", () => {
     )
     expect( output ).toContain(
       'D-41 B"D-45" U"A" T"string"',
+    )
+    expect( output ).toContain(
+      'D-41 B"D-60" U"V" T"string" M"json-object"',
     )
     expect( output ).toContain(
       'D-42 B"D1" W"D-42" A"Command-to-command return relation."',
@@ -186,6 +202,12 @@ describe( "gggdx structured self-description", () => {
       `D-51 R${GGGDXEnumGroupIndex.GrammarExampleKind} V${GrammarExampleKind.Invalid} L"invalid"`,
     )
     expect( output ).toContain(
+      `D-50 R${GGGDXEnumGroupIndex.ControlResultRecord} L"ControlResultRecord" S1 T"enum"`,
+    )
+    expect( output ).toContain(
+      `D-51 R${GGGDXEnumGroupIndex.ControlResultRecord} V-60 L"description"`,
+    )
+    expect( output ).toContain(
       'D-51 R11 V8 L"UNorm8" A"Normalized wire values 0..1; stored as unsigned 8-bit 0..255."',
     )
     expect( output ).toContain(
@@ -215,6 +237,14 @@ describe( "gggdx structured self-description", () => {
     expect( output.endsWith( "OK\n" ) ).toBe( true )
   } )
 
+  test( "D6 emits one compact, self-contained JSON object per control", async () => {
+    const output = await run( protocolMachine(), "D6" )
+
+    expect( output ).toBe(
+      'D-60 V`{"test":true,"nested":{"value":2}}\nOK\n',
+    )
+  } )
+
   test( "D1 describes basics, commands, then enums with one terminator", async () => {
     const output = await run( protocolMachine(), "D1" )
 
@@ -223,8 +253,10 @@ describe( "gggdx structured self-description", () => {
     expect( output ).toContain(
       `D-50 R${GGGDXEnumGroupIndex.CommandResultRecord} L"CommandResultRecord"`,
     )
+    expect( output ).toContain( 'D-60 V`{"test":true,"nested":{"value":2}}' )
     expect( output.indexOf( "\nD-20 " ) ).toBeLessThan( output.indexOf( "\nD-40 " ) )
     expect( output.indexOf( "\nD-40 " ) ).toBeLessThan( output.indexOf( "\nD-50 " ) )
+    expect( output.indexOf( "\nD-50 " ) ).toBeLessThan( output.indexOf( "\nD-60 " ) )
     expect( output.match( /^OK$/gm ) ).toHaveLength( 1 )
   } )
 } )

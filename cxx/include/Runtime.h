@@ -46,6 +46,7 @@ namespace ggg {
     machine->addCommand( new LanguageBasicsT<T>() );
     machine->addCommand( new CommandsListT<T>() );
     machine->addCommand( new EnumsListT<T>() );
+    machine->addCommand( new ControlsListT<T>() );
     #endif
   }
 

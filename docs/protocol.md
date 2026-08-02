@@ -10,15 +10,16 @@ the machine is a full “kitchen sink” build.
 
 ## Bootstrap requests
 
-Four executable requests are the only vocabulary a consumer must know in
+Five executable requests are the only vocabulary a consumer must know in
 advance:
 
 | request | result |
 | --- | --- |
-| `D1` | Complete description: `D2`, then `D4`, then `D5`, followed by one `OK`. |
+| `D1` | Complete description: `D2`, then `D4`, `D5`, and `D6`, followed by one `OK`. |
 | `D2` | Stable grammar rules (`D-20`) and complete valid/invalid examples (`D-21`). |
 | `D4` | Command/result schemas (`D-40`), arguments (`D-41`), return relations (`D-42`), and examples (`D-45`). |
 | `D5` | Enum/reference groups (`D-50`) and their entries (`D-51`). |
+| `D6` | Self-contained JSON UI control descriptions (`D-60`). |
 
 Negative D codes are emitted records. They are not executable requests. Every
 request ends with the normal GGG success terminator; an `F` argument on that
@@ -114,6 +115,24 @@ G40 `T` points to `ggggx.transform`, a fixed enum. Both are represented by the
 same group/entry record shape so a consumer can build one indexed repository
 while preserving their different semantics.
 
+## UI controls: `D6`
+
+`D6` emits zero or more `D-60` records. Each record contains exactly one
+self-contained JSON object in `V`:
+
+```text
+D-60 V`{}
+```
+
+The backtick begins a string through the end of the line, allowing JSON quotes
+without GGG escaping. The JSON must occupy one physical line; embedded newlines
+use normal JSON escapes. gggdx treats the object as opaque and does not define
+or interpret its fields. Its schema and semantics are specified separately.
+
+Commands contribute controls to their machine's catalogue. Consequently, only
+controls belonging to loaded commands are returned, in command-registration and
+control-registration order.
+
 ## Capability discovery
 
 Descriptions are machine-scoped:
@@ -129,14 +148,16 @@ repository-wide kitchen-sink catalog as if it were universally available.
 
 ## Consumer algorithm
 
-1. Send `D1`, or send `D2`, `D4`, and `D5` separately.
+1. Send `D1`, or send `D2`, `D4`, `D5`, and `D6` separately.
 2. Parse every response line with the normal GGG parser.
 3. Store `D-50` groups by both `R` and `L`.
 4. Attach each `D-51` to its group and preserve its literal `V`.
 5. Store every `D-40` by `B`, then attach its `D-41`, `D-42`, and `D-45` records.
-6. Use `T"result"` to prevent emitted records from being offered as executable
+6. Parse each D-60 `V` string as one JSON object using the separately defined
+   control schema.
+7. Use `T"result"` to prevent emitted records from being offered as executable
    commands.
-7. Finish only on `OK`; treat a terminator carrying `F` as failure.
+8. Finish only on `OK`; treat a terminator carrying `F` as failure.
 
 The TypeScript definitions live in
 [`ts/gggdx/Protocol.ts`](https://github.com/koopero/GGGCode/blob/main/ts/gggdx/Protocol.ts)

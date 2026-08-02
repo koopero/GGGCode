@@ -43,6 +43,9 @@ namespace ggg {
     const char* source;
     const char* description;
   };
+  struct CommandControl {
+    const char* json;
+  };
   #endif
 
   template <class T = DefaultTraits>
@@ -54,9 +57,12 @@ namespace ggg {
     std::vector<CommandResponse> responds;
     // Command-relative source snippets. D1/D4 emit these as D-45 records.
     std::vector<CommandExample> examples;
+    // Self-contained UI control objects. D1/D6 emit their opaque JSON as D-60.
+    std::vector<CommandControl> controls;
     // Non-executable result-record schemas emitted by this command. D2 owns
-    // D-20/D-21, D4 owns D-40/D-41/D-42/D-45, and D5 owns D-50/D-51. They use
-    // this exact metadata shape so the protocol can describe its descriptions.
+    // D-20/D-21, D4 owns D-40/D-41/D-42/D-45, D5 owns D-50/D-51, and D6 owns
+    // D-60. They use this exact metadata shape so the protocol can describe
+    // its descriptions.
     std::vector<CommandTypeT<T>*> records;
     // Domains required by result records even if no executable arg names them.
     std::vector<Int> domains;
@@ -95,6 +101,10 @@ namespace ggg {
     void addExample( const char* source, const char* desc = "" ) {
       examples.push_back({ source, desc });
     }
+
+    void addControl( const char* json ) {
+      controls.push_back({ json });
+    }
     #else
     virtual ~CommandTypeT() = default;
 
@@ -108,6 +118,7 @@ namespace ggg {
     inline void addRecord( CommandTypeT<T>* ) {}
     inline void addResponse( const String&, const char* = "" ) {}
     inline void addExample( const char*, const char* = "" ) {}
+    inline void addControl( const char* ) {}
     #endif
 
     virtual void hookBefore() { }

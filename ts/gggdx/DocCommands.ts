@@ -1,7 +1,8 @@
-import { Command, GGG, Hooks, Token } from "../ggg/Language"
+import { Command, ControlDescription, GGG, Hooks, Token } from "../ggg/Language"
 import {
   BasicsResultRecord,
   CommandResultRecord,
+  ControlResultRecord,
   DocEnumDomains,
   DocResultRecords,
   DocRequest,
@@ -9,6 +10,7 @@ import {
   MessageKind,
   basicsResultCode,
   commandResultCode,
+  controlResultCode,
   docRequestCode,
   enumResultCode,
   grammarExampleKindNames,
@@ -29,6 +31,7 @@ export const gggdxCodes = {
   LanguageBasics: docRequestCode( DocRequest.Basics ),
   CommandsList: docRequestCode( DocRequest.Commands ),
   EnumsList: docRequestCode( DocRequest.Enums ),
+  ControlsList: docRequestCode( DocRequest.Controls ),
   GrammarRuleResult: basicsResultCode( BasicsResultRecord.Rule ),
   GrammarExampleResult: basicsResultCode( BasicsResultRecord.Example ),
   CommandResult: commandResultCode( CommandResultRecord.Command ),
@@ -37,6 +40,7 @@ export const gggdxCodes = {
   ExampleResult: commandResultCode( CommandResultRecord.Example ),
   EnumGroupResult: enumResultCode( EnumResultRecord.Group ),
   EnumEntryResult: enumResultCode( EnumResultRecord.Entry ),
+  ControlDescriptionResult: controlResultCode( ControlResultRecord.Description ),
 } as const
 
 function arg( code:string, data:string|number|boolean ): Token {
@@ -153,6 +157,30 @@ function outputEnums( machine:any ) {
   } )
 }
 
+function controlJson( control:ControlDescription ) {
+  if ( !control || typeof control !== "object" || Array.isArray( control ) ) {
+    throw new Error( "A D-60 control description must be a JSON object." )
+  }
+  const json = JSON.stringify( control )
+  if ( !json || !json.startsWith( "{" ) ) {
+    throw new Error( "A D-60 control description must serialize as a JSON object." )
+  }
+  return json
+}
+
+function outputControls( machine:any ) {
+  for ( const spec of Object.values( machine.commands ) as Command[] ) {
+    for ( const control of spec.controls || [] ) {
+      // Backtick strings consume the rest of the line, so JSON quotes need no
+      // GGG escaping. JSON.stringify keeps the record on one physical line.
+      machine.output(
+        `${gggdxCodes.ControlDescriptionResult} ${GGG.Value}${GGG.StringToEOL}`
+        + `${controlJson( control )}${GGG.End}`,
+      )
+    }
+  }
+}
+
 const protocolMetadata = {
   domains: DocEnumDomains,
 }
@@ -172,6 +200,10 @@ const commandResponses = {
 const enumResponses = {
   [gggdxCodes.EnumGroupResult]: "Enum/reference group.",
   [gggdxCodes.EnumEntryResult]: "Enum/reference entry.",
+}
+
+const controlResponses = {
+  [gggdxCodes.ControlDescriptionResult]: "Self-contained JSON UI control description.",
 }
 
 function resultRecords( codes:string[] ) {
@@ -195,6 +227,10 @@ const enumResultRecords = resultRecords( [
   gggdxCodes.EnumEntryResult,
 ] )
 
+const controlResultRecords = resultRecords( [
+  gggdxCodes.ControlDescriptionResult,
+] )
+
 const DocCommands:Record<string,Command> = {
   [ gggdxCodes.LanguageDescription ]: {
     description: "Describe the language.",
@@ -202,6 +238,7 @@ const DocCommands:Record<string,Command> = {
       ...basicsResponses,
       ...commandResponses,
       ...enumResponses,
+      ...controlResponses,
       "OK": "Language described successfully.",
     },
     domains: DocEnumDomains,
@@ -209,6 +246,7 @@ const DocCommands:Record<string,Command> = {
       outputLanguageBasics( machine )
       outputCommands( machine )
       outputEnums( machine )
+      outputControls( machine )
       machine.outputOk()
     },
   },
@@ -248,6 +286,19 @@ const DocCommands:Record<string,Command> = {
     domains: DocEnumDomains,
     [Hooks.End]: ( { machine }:any ) => {
       outputEnums( machine )
+      machine.outputOk()
+    },
+  },
+  [ gggdxCodes.ControlsList ]: {
+    description: "List self-contained JSON UI control descriptions.",
+    responds: {
+      ...controlResponses,
+      "OK": "Control descriptions listed successfully.",
+    },
+    records: controlResultRecords,
+    domains: DocEnumDomains,
+    [Hooks.End]: ( { machine }:any ) => {
+      outputControls( machine )
       machine.outputOk()
     },
   },

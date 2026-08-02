@@ -294,6 +294,16 @@ Arguments:
 | `L` | `string` |  |  | Stable value name. |
 | `A` | `string` |  |  | Description. |
 
+### D-60
+
+Provides one self-contained JSON UI control description.
+
+Arguments:
+
+| code | kind | domain | format | meaning |
+| --- | --- | --- | --- | --- |
+| `V` | `string` |  | `json-object` | Opaque JSON object whose schema and semantics are defined externally. |
+
 ### D1
 
 Describe the language.
@@ -308,6 +318,7 @@ Responses:
 - `D-45` — Command-relative source example.
 - `D-50` — Enum/reference group.
 - `D-51` — Enum/reference entry.
+- `D-60` — Self-contained JSON UI control description.
 - `OK` — Language described successfully.
 
 Examples: [d1_self_description](cases.md#d1_self_description)
@@ -349,6 +360,17 @@ Responses:
 - `OK` — Enum domains listed successfully.
 
 Examples: [d5_enum_catalog](cases.md#d5_enum_catalog)
+
+### D6
+
+List self-contained JSON UI control descriptions.
+
+Responses:
+
+- `D-60` — Self-contained JSON UI control description.
+- `OK` — Control descriptions listed successfully.
+
+Examples: [d6_control_catalog](cases.md#d6_control_catalog)
 
 ## Responses & failures
 

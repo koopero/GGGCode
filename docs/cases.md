@@ -8,13 +8,14 @@ Programs run in the conformance harness. It preloads these fixtures: `r` dim `[3
 
 See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) · [runtime](runtime.md) · [protocol](protocol.md).
 
-153 cases across 32 tags.
+154 cases across 33 tags.
 
 ## Tags
 
 - [async](#async) (6)
 - [blit](#blit) (29)
 - [conditionals](#conditionals) (6)
+- [controls](#controls) (1)
 - [decimals](#decimals) (15)
 - [enum](#enum) (4)
 - [failure](#failure) (4)
@@ -31,14 +32,14 @@ See also: [tour](tour.md) · [commands](commands.md) · [glossary](glossary.md) 
 - [offset](#offset) (9)
 - [operator](#operator) (15)
 - [procedures](#procedures) (8)
-- [protocol](#protocol) (4)
+- [protocol](#protocol) (5)
 - [ranges](#ranges) (15)
 - [reference](#reference) (2)
 - [references](#references) (17)
 - [region](#region) (1)
 - [registers](#registers) (1)
 - [rotate](#rotate) (3)
-- [self-description](#self-description) (4)
+- [self-description](#self-description) (5)
 - [signs](#signs) (1)
 - [subscript](#subscript) (9)
 - [trig](#trig) (4)
@@ -626,6 +627,19 @@ P10 V2
 
 - values: `[2]`
 - needs: `gggpx`, `gggtx`
+
+## controls
+
+### d6_control_catalog
+
+D6 lists self-contained JSON UI control objects as D-60 records.
+
+```
+D6
+```
+
+- output: structured GGG records ending in `OK`; see the [self-description protocol](protocol.md)
+- needs: `gggdx`
 
 ## decimals
 
@@ -2497,7 +2511,7 @@ T11 L"p"
 
 ### d1_self_description
 
-D1 describes the complete language by returning basics, command, and enum sections as GGG records.
+D1 describes the complete language by returning basics, command, enum, and control sections as GGG records.
 
 ```
 D1
@@ -2534,6 +2548,17 @@ D5 lists enum groups and entries as GGG records.
 
 ```
 D5
+```
+
+- output: structured GGG records ending in `OK`; see the [self-description protocol](protocol.md)
+- needs: `gggdx`
+
+### d6_control_catalog
+
+D6 lists self-contained JSON UI control objects as D-60 records.
+
+```
+D6
 ```
 
 - output: structured GGG records ending in `OK`; see the [self-description protocol](protocol.md)
@@ -3032,7 +3057,7 @@ G10 R"bd"
 
 ### d1_self_description
 
-D1 describes the complete language by returning basics, command, and enum sections as GGG records.
+D1 describes the complete language by returning basics, command, enum, and control sections as GGG records.
 
 ```
 D1
@@ -3069,6 +3094,17 @@ D5 lists enum groups and entries as GGG records.
 
 ```
 D5
+```
+
+- output: structured GGG records ending in `OK`; see the [self-description protocol](protocol.md)
+- needs: `gggdx`
+
+### d6_control_catalog
+
+D6 lists self-contained JSON UI control objects as D-60 records.
+
+```
+D6
 ```
 
 - output: structured GGG records ending in `OK`; see the [self-description protocol](protocol.md)

@@ -20,6 +20,10 @@ namespace ggg {
     Rule = -20
   };
 
+  enum class ControlResultRecord : int {
+    Description = -60
+  };
+
   enum class MessageKind : int {
     Command = 0,
     Result = 1
@@ -41,7 +45,8 @@ namespace ggg {
     Language = 1,
     Basics = 2,
     Commands = 4,
-    Enums = 5
+    Enums = 5,
+    Controls = 6
   };
 
 }

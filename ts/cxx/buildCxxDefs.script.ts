@@ -13,6 +13,7 @@ import {
 import {
   BasicsResultRecord,
   CommandResultRecord,
+  ControlResultRecord,
   DocRequest,
   EnumResultRecord,
   GGGDXEnumDomains,
@@ -327,6 +328,7 @@ function emitDocProtocol() {
   str += emitCxxEnum( "CommandResultRecord", CommandResultRecord )
   str += emitCxxEnum( "EnumResultRecord", EnumResultRecord )
   str += emitCxxEnum( "BasicsResultRecord", BasicsResultRecord )
+  str += emitCxxEnum( "ControlResultRecord", ControlResultRecord )
   str += emitCxxEnum( "MessageKind", MessageKind )
   str += emitCxxEnum( "GrammarRuleKind", GrammarRuleKind )
   str += emitCxxEnum( "GrammarExampleKind", GrammarExampleKind )

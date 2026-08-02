@@ -324,6 +324,7 @@ struct ConformanceMachineT : public ggg::MachineT<T> {
       this->addCommand( new ggg::LanguageBasicsT<T>() );
       this->addCommand( new ggg::CommandsListT<T>() );
       this->addCommand( new ggg::EnumsListT<T>() );
+      this->addCommand( new ggg::ControlsListT<T>() );
     }
     // A fixed register "r" = [10,20,30] so reference cases ($r) have data.
     auto *reg = new Matrix( {1,3} );
@@ -642,18 +643,20 @@ void test_matrix_commands() {
   delete mat;
 }
 
-// Self-documentation: D2, D4, and D5 stream their individual sections; D1
-// streams all three, including result schemas and live reference domains.
+// Self-documentation: D2, D4, D5, and D6 stream their individual sections; D1
+// streams all four, including result schemas, live references, and controls.
 void test_doc_commands() {
   MatrixCmdMachine m;
   auto *matrixRead = new ggg::MatrixReadT<ggg::FloatTraits>();
   matrixRead->addExample( "R0 S1", "Read one scalar." );
+  matrixRead->addControl( R"({"test":true,"nested":{"value":2}})" );
   m.addCommand( matrixRead );
   m.addCommand( new ggg::MatrixBlitT<ggg::FloatTraits>() );
   m.addCommand( new ggg::LanguageDescriptionT<ggg::FloatTraits>() );
   m.addCommand( new ggg::LanguageBasicsT<ggg::FloatTraits>() );
   m.addCommand( new ggg::CommandsListT<ggg::FloatTraits>() );
   m.addCommand( new ggg::EnumsListT<ggg::FloatTraits>() );
+  m.addCommand( new ggg::ControlsListT<ggg::FloatTraits>() );
   auto *reg = new ggg::Matrix<float,false,ggg::FloatTraits>( {1} );
   reg->allocate();
   reg->name = "r";
@@ -695,6 +698,8 @@ void test_doc_commands() {
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "D-40 B\"D-45\"" ) );
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "D-40 B\"D-50\"" ) );
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "D-40 B\"D-51\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "D-40 B\"D6\" T\"command\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "D-40 B\"D-60\" T\"result\" S1" ) );
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
     "D-41 B\"D-42\" U\"W\" T\"string\" A\"Returned command code.\"" ) );
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
@@ -704,8 +709,17 @@ void test_doc_commands() {
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
     "D-45 B\"G10\" V\"R0 S1\" A\"Read one scalar.\"" ) );
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-41 B\"D-60\" U\"V\" T\"string\" M\"json-object\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
     "D-42 B\"D1\" W\"D-42\" A\"Command-to-command return relation.\"" ) );
   TEST_ASSERT_NULL( strstr( m.out.c_str(), "\nD-50 " ) );
+
+  m.out.clear();
+  m.run( "D6\n" );
+  TEST_ASSERT_EQUAL_STRING(
+    "D-60 V`{\"test\":true,\"nested\":{\"value\":2}}\nOK\n",
+    m.out.c_str()
+  );
 
   m.out.clear();
   m.run( "D5\n" );
@@ -731,6 +745,10 @@ void test_doc_commands() {
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
     "D-51 R9 V1 L\"invalid\"" ) );
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-50 R17 L\"ControlResultRecord\" S1 T\"enum\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-51 R17 V-60 L\"description\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
     "D-50 R13 L\"ggggx.operator\" S58 T\"enum\"" ) );
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
     "D-51 R13 V2 L\"add\" A\"Add: current + incoming.\"" ) );
@@ -753,6 +771,8 @@ void test_doc_commands() {
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(), "D-40 B\"D4\"" ) );
   TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
     "D-50 R1 L\"CommandResultRecord\"" ) );
+  TEST_ASSERT_NOT_NULL( strstr( m.out.c_str(),
+    "D-60 V`{\"test\":true,\"nested\":{\"value\":2}}" ) );
 }
 
 // Quoted-string arguments: an L"..." token (a quoted string under a code) must

@@ -204,6 +204,10 @@ namespace ggg {
   };
 
   #endif
+  constexpr EnumValueDescriptor EnumValues_ControlResultRecord[] = {
+    { -60, "description", "D1/D6 self-contained JSON control description." },
+  };
+
   constexpr EnumDomainDescriptor EnumDomainDescriptors[] = {
     { EnumGroupIndex::EnumGroup, "EnumGroup", "Enum groups available on this machine.", EnumDomainKind::Reference, nullptr, 0 },
     { EnumGroupIndex::CommandResultRecord, "CommandResultRecord", "Record types emitted by D1 and D4.", EnumDomainKind::Enum, EnumValues_CommandResultRecord, sizeof( EnumValues_CommandResultRecord ) / sizeof( EnumValues_CommandResultRecord[0] ) },
@@ -236,6 +240,7 @@ namespace ggg {
   #if GGGGX_ENABLE
     { EnumGroupIndex::Edge, "ggggx.edge", "G40 per-axis edge modes.", EnumDomainKind::Enum, EnumValues_ggggx_edge, sizeof( EnumValues_ggggx_edge ) / sizeof( EnumValues_ggggx_edge[0] ) },
   #endif
+    { EnumGroupIndex::ControlResultRecord, "ControlResultRecord", "Record types emitted by D1 and D6.", EnumDomainKind::Enum, EnumValues_ControlResultRecord, sizeof( EnumValues_ControlResultRecord ) / sizeof( EnumValues_ControlResultRecord[0] ) },
   #if GGGTX_ENABLE
     { EnumGroupIndex::ProcedureRegister, "gggtx.procedure", "Live procedure register index/name pairs.", EnumDomainKind::Reference, nullptr, 0 },
   #endif

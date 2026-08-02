@@ -44,7 +44,7 @@ function renderCase( c: Case, assets: Assets ): string {
   if ( c.needs.includes( "gggdx" ) ) {
     // D responses are structured records whose strings and relationships are
     // the documentation. A flattened numeric V stream is actively misleading
-    // (D2/D4 appear empty; D1/D5 lose the group each value belongs to).
+    // (D2/D4/D6 appear empty; D1/D5 lose the group each value belongs to).
     s += "- output: structured GGG records ending in `OK`; see the "
     s += "[self-description protocol](protocol.md)\n"
   } else {

@@ -107,9 +107,18 @@ The six supported feature combinations are compile-tested by
 
 C++ command classes own their executable hooks. When `GGGDX_ENABLE=1`, the same
 classes also carry generated descriptions for their arguments, responses,
-result records, and enum domains. `addConfiguredCommands()` registers both the
-handler and its domains with the machine. `D4` walks that command/message
-metadata; `D5` walks the machine-scoped domain repository.
+examples, controls, result records, and enum domains. `addConfiguredCommands()`
+registers both the handler and its domains with the machine. `D4` walks that
+command/message metadata; `D5` walks the machine-scoped domain repository; and
+`D6` emits the opaque JSON objects registered with `addControl()`:
+
+```cpp
+addExample( "GK", "Repeat to size." );
+addControl( R"({})" ); // Replace with an object from the external UI schema.
+```
+
+Each `addControl()` value must be one compact JSON object. It is emitted through
+`D-60 V\`` without requiring a JSON library in the embedded runtime.
 
 With `GGGDX_ENABLE=0`, those fields do not exist in the compiled types. This is
 a compile-time boundary rather than a runtime flag, so documentation strings

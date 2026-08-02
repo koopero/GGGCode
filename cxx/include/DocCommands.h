@@ -28,6 +28,10 @@ namespace ggg {
     return String( "D" ) + std::to_string( (Int) record );
   }
 
+  inline String docControlResultCode( ControlResultRecord record ) {
+    return String( "D" ) + std::to_string( (Int) record );
+  }
+
   inline String docStringArg( Char code, const String &value ) {
     return String( 1, code ) + FormatString( value );
   }
@@ -48,9 +52,10 @@ namespace ggg {
     command->addDomain( EnumGroupIndex::BasicsResultRecord );
     command->addDomain( EnumGroupIndex::GrammarRuleKind );
     command->addDomain( EnumGroupIndex::GrammarExampleKind );
+    command->addDomain( EnumGroupIndex::ControlResultRecord );
   }
 
-  // Build the eight non-executable result schemas from the same CommandType
+  // Build the non-executable result schemas from the same CommandType
   // metadata D1/D4 use for ordinary commands.
   template <class T>
   inline CommandTypeT<T>* grammarRuleResultRecordSpec() {
@@ -163,6 +168,17 @@ namespace ggg {
   }
 
   template <class T>
+  inline CommandTypeT<T>* controlDescriptionResultRecordSpec() {
+    auto *record = new CommandTypeT<T>();
+    record->name = docControlResultCode( ControlResultRecord::Description );
+    record->description = "Provides one self-contained JSON UI control description.";
+    record->addArg( Value,
+      "Opaque JSON object whose schema and semantics are defined externally.",
+      "json-object", ArgumentKind::String );
+    return record;
+  }
+
+  template <class T>
   inline void outputLanguageBasics( MachineT<T> *machine ) {
     for ( Index i = 0; i < GrammarRuleDescriptorCount; i++ ) {
       const auto &rule = GrammarRuleDescriptors[i];
@@ -257,6 +273,22 @@ namespace ggg {
       outputCommandSpec( machine, command, MessageKind::Command );
       for ( auto *record : command->records )
         outputCommandSpec( machine, record, MessageKind::Result );
+    }
+  }
+
+  template <class T>
+  inline void outputControls( MachineT<T> *machine ) {
+    for ( Index i = 0; ; i++ ) {
+      CommandTypeT<T> *command = machine->commands->getByIndex( i );
+      if ( !command ) break;
+      for ( const auto &control : command->controls ) {
+        if ( !control.json ) continue;
+        String line = docControlResultCode( ControlResultRecord::Description );
+        line += " V`";
+        line += control.json;
+        line += End;
+        machine->output( line );
+      }
     }
   }
 
@@ -479,8 +511,35 @@ namespace ggg {
   };
   using EnumsList = EnumsListT<>;
 
-  // D1 is the one-shot language description: D2 basics, the D4 command
-  // catalogue, and the D5 enum catalogue followed by one final terminator.
+  // D6 streams one opaque, self-contained JSON object per D-60 record.
+  template <class T = DefaultTraits>
+  class ControlsListT : public CommandTypeT<T> {
+  public:
+    using Base = CommandTypeT<T>;
+    using Base::machine; using Base::name; using Base::description;
+    using Base::addRecord;
+
+    ControlsListT() {
+      name = docCommandCode( DocRequest::Controls );
+      description = "List self-contained JSON UI control descriptions.";
+      addCoreProtocolDomains<T>( this );
+      addRecord( controlDescriptionResultRecordSpec<T>() );
+      this->addResponse(
+        docControlResultCode( ControlResultRecord::Description ),
+        "Self-contained JSON UI control description."
+      );
+      this->addResponse( "OK", "Control descriptions listed successfully." );
+    }
+
+    void hookFinish() override {
+      outputControls( machine );
+      machine->outputOK();
+    }
+  };
+  using ControlsList = ControlsListT<>;
+
+  // D1 is the one-shot language description: D2 basics, D4 commands, D5 enums,
+  // and D6 controls followed by one final terminator.
   template <class T = DefaultTraits>
   class LanguageDescriptionT : public CommandTypeT<T> {
   public:
@@ -523,6 +582,10 @@ namespace ggg {
         docEnumResultCode( EnumResultRecord::Entry ),
         "Enum/reference entry."
       );
+      this->addResponse(
+        docControlResultCode( ControlResultRecord::Description ),
+        "Self-contained JSON UI control description."
+      );
       this->addResponse( "OK", "Language described successfully." );
     }
 
@@ -530,6 +593,7 @@ namespace ggg {
       outputLanguageBasics( machine );
       outputCommandCatalog( machine );
       outputEnumCatalog( machine );
+      outputControls( machine );
       machine->outputOK();
     }
   };
