@@ -50,6 +50,24 @@
       "import": "./dist/node/ggg.js",
       "require": "./dist/node/ggg.js"
     },
+    "./ParseLine": {
+      "types": "./dist/node/ggg/ParseLine.d.ts",
+      "browser": "./dist/browser/ggg/ParseLine.js",
+      "import": "./dist/node/ggg/ParseLine.js",
+      "require": "./dist/node/ggg/ParseLine.js"
+    },
+    "./KitchenSinkMachine": {
+      "types": "./dist/node/KitchenSinkMachine.d.ts",
+      "browser": "./dist/browser/KitchenSinkMachine.js",
+      "import": "./dist/node/KitchenSinkMachine.js",
+      "require": "./dist/node/KitchenSinkMachine.js"
+    },
+    "./Format": {
+      "types": "./dist/node/ggg/Format.d.ts",
+      "browser": "./dist/browser/ggg/Format.js",
+      "import": "./dist/node/ggg/Format.js",
+      "require": "./dist/node/ggg/Format.js"
+    },
     "./ggggx": {
       "types": "./dist/node/ggggx.d.ts",
       "browser": "./dist/browser/ggggx.js",

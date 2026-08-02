@@ -1,10 +1,12 @@
 import DocCommands from "./gggdx/DocCommands"
 import { GXCommands } from "./ggggx/GXCommands"
 import PrintCommands from "./gggpx/PrintCommands"
+import gggtxCommands from "./gggtx/gggtxCommands"
 
-const BuiltinCommands = {
+export const BuiltinCommands = {
   ...DocCommands,
   ...GXCommands,
+  ...gggtxCommands,
   ...PrintCommands,
 }
 

@@ -12,6 +12,11 @@ export { Format }
 
 import Machine from "./ggg/Machine"
 export { Machine }
+export type { MachineProps } from "./ggg/Machine"
+
+import KitchenSinkMachine from "./KitchenSinkMachine"
+export { KitchenSinkMachine }
+export type { KitchenSinkMachineProps } from "./KitchenSinkMachine"
 
 import { GGG, Hooks } from "./ggg/Language"
 export { GGG, Hooks }

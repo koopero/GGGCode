@@ -210,6 +210,22 @@ example, numeric traits, all flags, and measured ESP32 size effects.
 
 ## Implementing custom commands
 
+For a ready-to-run TypeScript host with every built-in subsystem installed,
+use `KitchenSinkMachine`. It includes `gggpx`, `ggggx`, `gggtx`, and `gggdx`,
+so loopbacks and interactive hosts expose the same complete machine that the
+CLI loads with `--all`:
+
+```typescript
+import { KitchenSinkMachine } from "gggcode"
+
+const machine = new KitchenSinkMachine()
+await machine.run( 'G30 L"frame" S1,8,8' )
+await machine.run( "D1" )
+```
+
+Constructor options are the normal `Machine` options. Additional `commands`
+extend or override the kitchen-sink defaults.
+
 Define a command set, create a `Machine`, and run code. A command supplies hooks at the points the parser reaches (`Command` → `Code` → `Value` → `End`):
 
 ```typescript
