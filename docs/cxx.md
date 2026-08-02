@@ -120,24 +120,31 @@ See the [protocol guide](protocol.md) for the record model visible on the wire.
 
 ## Numeric traits
 
-The default `ggg::FixedTraits` uses signed Q16.16 values:
+The default `ggg::FloatTraits` uses single-precision float language/register
+values and double-precision sampler coordinates. Select another IEEE backend
+per runtime when needed:
+
+```cpp
+ggg::RuntimeT<ggg::DoubleTraits> precise;
+```
+
+Fixed point is an explicit opt-in. `ggg::FixedTraits` uses signed Q16.16 values:
 
 - storage: `int32_t`
 - resolution: `1/65536`
 - approximate range: `-32768` through `32767.99998`
 - integer parsing, formatting, ranges, matrix sampling, and CORDIC
 
-Select an IEEE backend per runtime:
+Select it per runtime:
 
 ```cpp
-ggg::RuntimeT<ggg::FloatTraits> floating;
-ggg::RuntimeT<ggg::DoubleTraits> precise;
+ggg::RuntimeT<ggg::FixedTraits> fixed;
 ```
 
-Or select it for the build:
+Or select it for the whole build:
 
 ```text
--DGGG_DEFAULT_TRAITS=::ggg::FloatTraits
+-DGGG_DEFAULT_TRAITS=::ggg::FixedTraits
 ```
 
 The fixed number type deliberately has no implicit floating-point constructor

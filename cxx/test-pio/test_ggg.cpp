@@ -501,9 +501,9 @@ static_assert( !std::is_convertible<double, ggg::FixedTraits::Number>::value,
                "fixed machine numbers cannot silently enter through double" );
 static_assert( !std::is_convertible<ggg::FixedTraits::Number, double>::value,
                "fixed machine numbers cannot silently leave through double" );
-static_assert( std::is_same<ggg::DefaultTraits, ggg::FixedTraits>::value,
-               "Q16.16 fixed point is the default backend" );
-// ...and the legacy alias names that fixed default configuration.
+static_assert( std::is_same<ggg::DefaultTraits, ggg::FloatTraits>::value,
+               "single-precision float is the default backend" );
+// ...and the legacy alias names that default configuration.
 static_assert( std::is_same<ggg::Machine, ggg::MachineT<ggg::DefaultTraits>>::value,
                "ggg::Machine is the default instantiation" );
 
