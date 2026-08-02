@@ -205,6 +205,17 @@ An example is written as `D-45 B"G20" V"GK" A"Repeat to size."`. `B` supplies
 the command context, so `V` may be an argument-sized snippet rather than a
 complete executable line; `A` explains it separately.
 
+TypeScript hosts can turn complete D1 wire text, `Runner` tokens, or direct
+`Machine.run()` output into linked lookups with `ParseLanguageDescription`:
+
+```ts
+const language = ParseLanguageDescription( d1Output )
+language.commands.G20.args.R.domain       // ggggx.register
+language.records["D-60"]                  // emitted control schema
+language.domains["ggggx.operator"].valuesByName.add
+language.controls                         // parsed JSON control objects
+```
+
 The C++17 runtime can be assembled from the same subsystem boundaries with
 compile-time feature gates. See the [C++ guide](docs/cxx.md) for a compiling
 example, numeric traits, all flags, and measured ESP32 size effects.

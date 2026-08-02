@@ -56,6 +56,12 @@
       "import": "./dist/node/ggg/ParseLine.js",
       "require": "./dist/node/ggg/ParseLine.js"
     },
+    "./ParseLanguageDescription": {
+      "types": "./dist/node/gggdx/ParseLanguageDescription.d.ts",
+      "browser": "./dist/browser/gggdx/ParseLanguageDescription.js",
+      "import": "./dist/node/gggdx/ParseLanguageDescription.js",
+      "require": "./dist/node/gggdx/ParseLanguageDescription.js"
+    },
     "./KitchenSinkMachine": {
       "types": "./dist/node/KitchenSinkMachine.d.ts",
       "browser": "./dist/browser/KitchenSinkMachine.js",

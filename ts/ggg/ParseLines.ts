@@ -1,6 +1,5 @@
 import { isArray, isString } from "../common/util"
 import { Token, ParseOptions } from "./Language"
-import { gggLimits } from "./gggLimits"
 import ParseLine from "./ParseLine"
 
 export type ParseLinesArg = undefined | string 
@@ -30,10 +29,13 @@ export default function ParseLines( arg:ParseLinesArgs, options:ParseOptions = {
     }
 
     if ( chunk ) {
-      const { command, args } = chunk
+      const { command, code } = chunk
 
-      if ( command && args ) {
-        lines.push( { command, args, row: row++ } )
+      // Parsed source lines carry `command`; emitted Machine tokens may carry
+      // only `code` (notably OK / failure terminators). Preserve the whole
+      // token shape so response parsers can inspect either representation.
+      if ( command || code ) {
+        lines.push( { ...chunk, row: row++ } )
       }
       return
     }

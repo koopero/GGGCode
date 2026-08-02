@@ -159,6 +159,28 @@ repository-wide kitchen-sink catalog as if it were universally available.
    commands.
 8. Finish only on `OK`; treat a terminator carrying `F` as failure.
 
+## TypeScript parser
+
+`ParseLanguageDescription` performs the algorithm above for complete D1 wire
+text, raw line arrays, parsed tokens from `Runner`, or direct `Machine.run()`
+output:
+
+```ts
+import { ParseLanguageDescription } from "gggcode"
+
+const language = ParseLanguageDescription( d1Output )
+const write = language.commands.G20
+const registers = write.args.R.domain
+const controlSchema = language.records["D-60"]
+```
+
+The returned object provides code-keyed `messages`, `commands`, and `records`;
+name-keyed `domains` plus `domainsByIndex`; grammar basics; and parsed JSON
+`controls`. Argument domains and described response messages are linked to the
+same objects in those repositories. Unknown future records remain available in
+`unknownRecords`. Structural counts and references are checked by default;
+pass `{ strict: false }` when intentionally parsing a partial description.
+
 The TypeScript definitions live in
 [`ts/gggdx/Protocol.ts`](https://github.com/koopero/GGGCode/blob/main/ts/gggdx/Protocol.ts)
 and the enum repository in
