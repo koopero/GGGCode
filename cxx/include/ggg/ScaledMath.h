@@ -261,6 +261,54 @@ namespace ggg {
   }
   #endif
 
+
+  // --- circular trig via a 256-entry Q15 lookup + linear interp -----------
+  // Range reduction is one modulo + one divide; then two table reads and a
+  // lerp -- a small fraction of the 24-round int64 CORDIC's cost, at ~1.4e-4
+  // (Q16.16). The table is integer (Q15), so the firmware carries no floating
+  // constants. Self-contained: tau/pi come from NumberOps, not the CORDIC block.
+  struct SinLutQ15 {
+    static const int Bits = 8;
+    static const int Size = 1 << Bits;   // entries per cycle (power of two)
+    inline static constexpr std::int16_t table[Size + 1] = {
+           0,    804,   1608,   2410,   3212,   4011,   4808,   5602,   6393,   7179,   7962,   8739,   9512,  10278,  11039,  11793,
+       12539,  13279,  14010,  14732,  15446,  16151,  16846,  17530,  18204,  18868,  19519,  20159,  20787,  21403,  22005,  22594,
+       23170,  23731,  24279,  24811,  25329,  25832,  26319,  26790,  27245,  27683,  28105,  28510,  28898,  29268,  29621,  29956,
+       30273,  30571,  30852,  31113,  31356,  31580,  31785,  31971,  32137,  32285,  32412,  32521,  32609,  32678,  32728,  32757,
+       32767,  32757,  32728,  32678,  32609,  32521,  32412,  32285,  32137,  31971,  31785,  31580,  31356,  31113,  30852,  30571,
+       30273,  29956,  29621,  29268,  28898,  28510,  28105,  27683,  27245,  26790,  26319,  25832,  25329,  24811,  24279,  23731,
+       23170,  22594,  22005,  21403,  20787,  20159,  19519,  18868,  18204,  17530,  16846,  16151,  15446,  14732,  14010,  13279,
+       12539,  11793,  11039,  10278,   9512,   8739,   7962,   7179,   6393,   5602,   4808,   4011,   3212,   2410,   1608,    804,
+           0,   -804,  -1608,  -2410,  -3212,  -4011,  -4808,  -5602,  -6393,  -7179,  -7962,  -8739,  -9512, -10278, -11039, -11793,
+      -12539, -13279, -14010, -14732, -15446, -16151, -16846, -17530, -18204, -18868, -19519, -20159, -20787, -21403, -22005, -22594,
+      -23170, -23731, -24279, -24811, -25329, -25832, -26319, -26790, -27245, -27683, -28105, -28510, -28898, -29268, -29621, -29956,
+      -30273, -30571, -30852, -31113, -31356, -31580, -31785, -31971, -32137, -32285, -32412, -32521, -32609, -32678, -32728, -32757,
+      -32767, -32757, -32728, -32678, -32609, -32521, -32412, -32285, -32137, -31971, -31785, -31580, -31356, -31113, -30852, -30571,
+      -30273, -29956, -29621, -29268, -28898, -28510, -28105, -27683, -27245, -26790, -26319, -25832, -25329, -24811, -24279, -23731,
+      -23170, -22594, -22005, -21403, -20787, -20159, -19519, -18868, -18204, -17530, -16846, -16151, -15446, -14732, -14010, -13279,
+      -12539, -11793, -11039, -10278,  -9512,  -8739,  -7962,  -7179,  -6393,  -5602,  -4808,  -4011,  -3212,  -2410,  -1608,   -804,
+           0
+    };
+  };
+
+  GGG_SN GGG_N sinLut( GGG_N a ) {
+    static const std::int64_t tauRaw = static_cast<std::int64_t>( NumberOps<GGG_N>::tau().raw() );
+    std::int64_t raw = static_cast<std::int64_t>( a.raw() ) % tauRaw;
+    if ( raw < 0 ) raw += tauRaw;
+    const std::int64_t SUB = 4096;                                  // interp resolution
+    const std::int64_t pos = raw * ( (std::int64_t) SinLutQ15::Size * SUB ) / tauRaw;
+    const int idx = (int) ( ( pos / SUB ) & ( SinLutQ15::Size - 1 ) );
+    const std::int64_t frac = pos % SUB;
+    const std::int64_t A = SinLutQ15::table[idx];
+    const std::int64_t B = SinLutQ15::table[idx + 1];
+    const std::int64_t q15 = A + ( B - A ) * frac / SUB;            // Q15
+    return GGG_N::fromRaw( static_cast<W>( q15 * S / 32768 ) );     // Q15 -> this format
+  }
+  GGG_SN GGG_N cosLut( GGG_N a ) {
+    static const GGG_N halfPi = NumberOps<GGG_N>::pi() / GGG_N( 2 );
+    return sinLut( a + halfPi );
+  }
+
   GGG_SN GGG_N radians( GGG_N d ) { return d * NumberOps<GGG_N>::pi() / GGG_N( 180 ); }
   GGG_SN GGG_N degrees( GGG_N r ) { return r * GGG_N( 180 ) / NumberOps<GGG_N>::pi(); }
 
