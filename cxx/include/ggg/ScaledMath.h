@@ -69,6 +69,7 @@ namespace ggg {
     return GGG_N::fromRaw( ggg_isqrt<R, S, W, F>( static_cast<W>( v.raw() ) * static_cast<W>( S ) ) );
   }
   GGG_SN GGG_N inversesqrt( GGG_N v ) { return GGG_N( 1 ) / sqrt( v ); }
+  GGG_SN GGG_N rsqrt( GGG_N v ) { return inversesqrt( v ); }   // GLSL/CxxSwizzle spelling
 
   #if GGGGX_CORDIC_ENABLE
   // --- circular trig (CORDIC) --------------------------------------------
