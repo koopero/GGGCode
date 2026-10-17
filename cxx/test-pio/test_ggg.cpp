@@ -502,6 +502,37 @@ void test_conformance() {
   runConformance<ggg::FloatTraits>();
 }
 
+// Line-granularity drip (invariant I2 of docs/cooperative-runtime.md): the same
+// program fed under a tiny per-slice budget must produce byte-identical output
+// to the unbudgeted run. Draining one queued item at a time exercises the
+// suspend/resume path in drainPending() -- including the persistent maxQueue
+// counter across slices -- so any divergence is a save/restore bug. The
+// unbudgeted run is already checked against the golden by runConformance(); this
+// only has to prove the budget is invisible.
+template <class T>
+static void runConformanceDrip() {
+  for ( int i = 0; i < ggg_conformance::caseCount; i++ ) {
+    const auto &c = ggg_conformance::cases[i];
+
+    ConformanceMachineT<T> whole;
+    whole.setupFor( c.needs );
+    whole.run( c.program );
+    for ( int k = 0; k < c.pollCount; k++ ) whole.poll( c.polls[k] );
+
+    ConformanceMachineT<T> drip;
+    drip.setupFor( c.needs );
+    drip.drainBudget.operations = 1;      // one queued item per drain slice
+    drip.run( c.program );
+    for ( int k = 0; k < c.pollCount; k++ ) drip.poll( c.polls[k] );
+
+    TEST_ASSERT_EQUAL_STRING_MESSAGE( whole.out.c_str(), drip.out.c_str(), c.name );
+  }
+}
+
+void test_conformance_drip() {
+  runConformanceDrip<ggg::FloatTraits>();
+}
+
 // The seam itself, checked at compile time. runConformance<DoubleTraits> below
 // proves the tree BEHAVES under a substituted NumberType; these prove the
 // substitution is real rather than two names for one float machine. Note that
@@ -877,6 +908,20 @@ void test_flow_procedures() {
       "V1\nOK\nV1\nOK\nV1\nOK\nV1\nOK\nV1\nOK\nOK F2\n", m.out.c_str() );
   }
 
+  // Draining the self-running procedure one queued item at a time must trip the
+  // SAME maxQueue budget at the SAME point: the per-drive overflow counter
+  // persists across budgeted slices, so byte output is identical to the
+  // unbudgeted drain above. This is the overflow-across-slices path the corpus
+  // drip test cannot reach at the default (large) maxQueue.
+  {
+    FlowMachine m; m.setup();
+    m.limits.maxQueue = 10;
+    m.drainBudget.operations = 1;        // one item per drain slice
+    m.run( "T10 L\"boom\"\nP10 V1\nT11 R\"boom\"\nT0\nT11 R\"boom\"\n" );
+    TEST_ASSERT_EQUAL_STRING(
+      "V1\nOK\nV1\nOK\nV1\nOK\nV1\nOK\nV1\nOK\nOK F2\n", m.out.c_str() );
+  }
+
   // Redefining a procedure overwrites the previous body.
   {
     FlowMachine m; m.setup();
@@ -1244,6 +1289,7 @@ int main() {
   RUN_TEST(test_sample);
   RUN_TEST(test_blit);
   RUN_TEST(test_conformance);
+  RUN_TEST(test_conformance_drip);
   RUN_TEST(test_conformance_double);
   RUN_TEST(test_conformance_fixed);
   RUN_TEST(test_fixed_number_machine);

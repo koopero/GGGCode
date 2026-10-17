@@ -72,6 +72,24 @@ namespace ggg {
   };
   using MachineState = MachineStateT<>;
 
+  // Cooperative scheduling (Stage 1 of docs/cooperative-runtime.md).
+  //
+  // What one unit of host-driven advancement reports back. `Done` means the work
+  // the host asked about completed; `Yielded` means the budget was spent with
+  // more still to do, so the host should call back to continue. (`Idle` and
+  // `Blocked` are reserved for the unified step() driver in later stages.)
+  enum class StepStatus { Idle, Yielded, Blocked, Done };
+
+  // The currency the host grants a slice of work. `operations` caps how many
+  // queued items a drain spends before yielding; 0 means unbounded, which
+  // reproduces the historical run-to-completion behaviour. `deadline` is part of
+  // the published interface but is only consulted by the step() driver added in
+  // a later stage -- drainPending() has no clock of its own.
+  struct StepBudget {
+    Index operations = 0;
+    unsigned long deadline = 0;
+  };
+
 
   template <class T = DefaultTraits>
   class MachineT {
@@ -103,6 +121,19 @@ namespace ggg {
     List<TProcedure> *procedures = new List<TProcedure>();
     std::vector<PendingItem> pending;
     bool draining = false;
+
+    // Slice size used when finishLine()/poll() drain the queue. The default is
+    // unbounded, so draining runs to completion exactly as before. The drip
+    // conformance test sets a tiny budget to prove the budgeted path is
+    // byte-for-byte identical across slice sizes.
+    StepBudget drainBudget;
+
+    // maxQueue is a budget of machine-enqueued work per host DRIVE, not a queue
+    // depth (see docs/runtime.md). When a drive is suspended and resumed across
+    // several budgeted slices this counter persists, so the overflow guard trips
+    // at the same cumulative total regardless of slice size; it resets only when
+    // a drive drains to completion.
+    Index drainProcessed = 0;
 
     // Procedures exported as asynchronous (T12), fired by the host via poll().
     // Insertion-ordered: due procedures run in the order they were exported.
@@ -139,8 +170,55 @@ namespace ggg {
       state.pendingNegative = false;
     }
 
+    // Flag to indicate that this machine execution should be interrupted
+    volatile bool interrupted = false;
+    
+    void interrupt() {
+        interrupted = true;
+    }
+    
+    bool isInterrupted() const {
+        return interrupted;
+    }
+    
+    // Reset the interruption flag for new processing
+    void clearInterrupt() {
+        interrupted = false;
+    }
+
+    // Process input with interruption capability - process only one line at a time  
+    bool runOneLine( String _code ) {
+        // If already interrupted, stop immediately 
+        if (interrupted) return false;
+        
+        bool gotEOL = false;
+        for ( Char _char : _code ) {
+            // Check interruption points during parsing (every 100 chars)
+            static int interruptCheck = 0;
+            if (++interruptCheck > 100) {
+                interruptCheck = 0;
+                if (interrupted) {
+                    return false; // Interrupted while processing
+                }
+            }
+            
+            parse( _char );
+            if ( _char == End ) {
+                gotEOL = true;
+                break;
+            }
+        }
+        return gotEOL;
+    }
+
     void run( String _code ) {
       for ( Char _char : _code ) {
+        // Additional interruption check before processing each character
+        if (interrupted) {
+            // Reset interrupt flag and return early
+            interrupted = false; 
+            return;
+        }
         parse( _char );
       }
     }
@@ -868,7 +946,7 @@ namespace ggg {
       #endif
       resetLine();
       #if GGGTX_ENABLE
-      drainPending();
+      drainToCompletion();
       #endif
     }
 
@@ -1146,7 +1224,7 @@ namespace ggg {
         if ( done ) cancelProcedure( name );
 
         enqueueLines( lines );
-        drainPending();
+        drainToCompletion();
         fired++;
       }
       return fired;
@@ -1210,23 +1288,41 @@ namespace ggg {
     // Drain queued procedure/loop items by feeding lines back through the parser
     // and running callbacks. The re-entrancy guard lets a nested enqueue (from a
     // body line) push onto the front while this outer loop keeps draining in order.
-    void drainPending() {
-      if ( draining ) return;
+    // Drain queued procedure/loop items by feeding lines back through the parser
+    // and running callbacks, spending at most `budget.operations` items before
+    // yielding (0 == unbounded, the historical behaviour). Returns Done when the
+    // queue empties, Yielded when the budget is spent with items remaining; the
+    // host calls back to continue, and drainProcessed carries the per-drive
+    // overflow count across those slices.
+    StepStatus drainPending( const StepBudget &budget = StepBudget{} ) {
+      // Re-entrant call (a draining line fed another line that reached
+      // finishLine): the outer loop owns the queue, so this nested invocation
+      // has nothing of its own to do. Report Done so a pump loop around it exits
+      // at once rather than spinning on a Yielded it can never satisfy.
+      if ( draining ) return StepStatus::Done;
       draining = true;
-      // Bound the TOTAL work of one drain, not just the instantaneous queue
+      // Bound the TOTAL work of one drive, not just the instantaneous queue
       // depth. Items are popped as they run, so pending.size() stays small and
       // the enqueueLines guard never trips on self-recursion -- a procedure that
       // runs itself would spin here forever, which on embedded means until
       // reset. (The TS queue accumulates instead, so its guard catches this.)
-      Index processed = 0;
+      Index spent = 0;
       while ( !pending.empty() ) {
-        if ( limits.maxQueue && ++processed > limits.maxQueue ) {
+        // Yield once this slice's operation budget is spent. drainProcessed is
+        // deliberately NOT reset on yield: a suspended drive must trip the
+        // overflow guard at the same cumulative point it would unbudgeted.
+        if ( budget.operations && spent >= budget.operations ) {
+          draining = false;
+          return StepStatus::Yielded;
+        }
+        if ( limits.maxQueue && ++drainProcessed > limits.maxQueue ) {
           pending.clear();
           outputFail( (Int) GGGFail::QueueOverflow );
           break;
         }
         PendingItem item = pending.front();
         pending.erase( pending.begin() );
+        spent++;
         if ( item.isCallback ) {
           if ( item.callback ) item.callback();
         } else {
@@ -1235,6 +1331,15 @@ namespace ggg {
         }
       }
       draining = false;
+      drainProcessed = 0;    // drive complete: reset the per-drive overflow count
+      return StepStatus::Done;
+    }
+
+    // Drain the queue to completion in drainBudget-sized slices. With the
+    // default unbounded budget this is a single drain identical to before; a
+    // small budget makes draining cooperative without changing the output.
+    void drainToCompletion() {
+      while ( drainPending( drainBudget ) == StepStatus::Yielded ) {}
     }
     #else
     // Keep the host polling surface stable when flow control is compiled out.

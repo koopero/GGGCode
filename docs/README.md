@@ -9,6 +9,10 @@ Start with the **[tour](tour.md)** for a guided introduction, then use the refer
 - **[protocol.md](protocol.md)** — how a machine describes its grammar, commands, result records, enums, live references, and UI controls through `D1`/`D2`/`D4`/`D5`/`D6`.
 - **[cxx.md](cxx.md)** — C++17 setup, feature gates, numeric traits, the gggdx metadata boundary, and ESP32 size measurements.
 
+## Design
+
+- **[cooperative-runtime.md](cooperative-runtime.md)** — *proposal.* Refactoring the C++ runtime for cooperative multitasking on embedded targets: budgeted, resumable execution (`StepStatus`, `step(budget)`, continuations), staged so each step ships independently and preserves conformance.
+
 ## Reference
 
 - **[cases.md](cases.md)** — *generated.* The living reference: every language feature as a runnable, visualized, conformance-tested example, grouped by tag. Built from `cases/*.yaml`.
