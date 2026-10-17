@@ -93,8 +93,8 @@ namespace ggg_conformance {
   static const double values_number_hex_prefix_not_absorbed[] = { 0.0 };
   static const double values_number_leading_dot[] = { 0.50000000000000000, 1.0 };
   static const double values_number_second_dot[] = { 1.2000000000000000, 0.29999999999999999 };
-  static const double values_d1_self_description[] = { 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, -40.0, -41.0, -42.0, -50.0, -51.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 0.0, 1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 0.0, 1.0, -20.0, -21.0, 0.0, 1.0, 2.0, 3.0, 0.0, 1.0 };
-  static const double values_d5_enum_catalog[] = { 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, -40.0, -41.0, -42.0, -50.0, -51.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 0.0, 1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 0.0, 1.0, -20.0, -21.0, 0.0, 1.0, 2.0, 3.0, 0.0, 1.0 };
+  static const double values_d1_self_description[] = { 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 17.0, -40.0, -41.0, -42.0, -45.0, -50.0, -51.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 0.0, 1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 0.0, 1.0, -20.0, -21.0, 0.0, 1.0, 2.0, 3.0, 0.0, 1.0, -60.0 };
+  static const double values_d5_enum_catalog[] = { 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 17.0, -40.0, -41.0, -42.0, -45.0, -50.0, -51.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 0.0, 1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 0.0, 1.0, -20.0, -21.0, 0.0, 1.0, 2.0, 3.0, 0.0, 1.0, -60.0 };
   static const double values_range_incl[] = { 1.0, 2.0, 3.0, 4.0, 5.0 };
   static const double values_range_excl[] = { 1.0, 2.0, 3.0, 4.0 };
   static const double values_range_count[] = { 0.0, 2.5000000000000000, 5.0, 7.5000000000000000, 10.0 };
@@ -256,10 +256,11 @@ namespace ggg_conformance {
     { "number_hex_prefix_not_absorbed", "P10 V-0x10\n", "OK", 1u, values_number_hex_prefix_not_absorbed, 1, "V0 X10\nOK", false, nullptr, 0 },
     { "number_leading_dot", "P10 V.5,1\n", "OK", 1u, values_number_leading_dot, 2, nullptr, false, nullptr, 0 },
     { "number_second_dot", "P10 V1.2.3\n", "OK", 1u, values_number_second_dot, 2, nullptr, false, nullptr, 0 },
-    { "d1_self_description", "D1\n", "OK", 8u, values_d1_self_description, 41, nullptr, false, nullptr, 0 },
+    { "d1_self_description", "D1\n", "OK", 8u, values_d1_self_description, 44, nullptr, false, nullptr, 0 },
     { "d2_language_basics", "D2\n", "OK", 8u, nullptr, 0, nullptr, false, nullptr, 0 },
     { "d4_command_catalog", "D4\n", "OK", 8u, nullptr, 0, nullptr, false, nullptr, 0 },
-    { "d5_enum_catalog", "D5\n", "OK", 8u, values_d5_enum_catalog, 41, nullptr, false, nullptr, 0 },
+    { "d5_enum_catalog", "D5\n", "OK", 8u, values_d5_enum_catalog, 44, nullptr, false, nullptr, 0 },
+    { "d6_control_catalog", "D6\n", "OK", 8u, nullptr, 0, nullptr, false, nullptr, 0 },
     { "range_incl", "P10 V1:5\n", "OK", 1u, values_range_incl, 5, nullptr, false, nullptr, 0 },
     { "range_excl", "P10 V1>5\n", "OK", 1u, values_range_excl, 4, nullptr, false, nullptr, 0 },
     { "range_count", "P10 V0:10/5\n", "OK", 1u, values_range_count, 5, nullptr, false, nullptr, 0 },

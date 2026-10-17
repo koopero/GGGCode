@@ -72,6 +72,24 @@ namespace ggg {
   };
   using MachineState = MachineStateT<>;
 
+  // Cooperative scheduling (Stage 1 of docs/cooperative-runtime.md).
+  //
+  // What one unit of host-driven advancement reports back. `Done` means the work
+  // the host asked about completed; `Yielded` means the budget was spent with
+  // more still to do, so the host should call back to continue. (`Idle` and
+  // `Blocked` are reserved for the unified step() driver in later stages.)
+  enum class StepStatus { Idle, Yielded, Blocked, Done };
+
+  // The currency the host grants a slice of work. `operations` caps how many
+  // queued items a drain spends before yielding; 0 means unbounded, which
+  // reproduces the historical run-to-completion behaviour. `deadline` is part of
+  // the published interface but is only consulted by the step() driver added in
+  // a later stage -- drainPending() has no clock of its own.
+  struct StepBudget {
+    Index operations = 0;
+    unsigned long deadline = 0;
+  };
+
 
   template <class T = DefaultTraits>
   class MachineT {
@@ -103,6 +121,13 @@ namespace ggg {
     List<TProcedure> *procedures = new List<TProcedure>();
     std::vector<PendingItem> pending;
     bool draining = false;
+
+    // maxQueue is a budget of machine-enqueued work per host DRIVE, not a queue
+    // depth (see docs/runtime.md). When a drive is suspended and resumed across
+    // several budgeted slices this counter persists, so the overflow guard trips
+    // at the same cumulative total regardless of slice size; it resets only when
+    // a drive drains to completion.
+    Index drainProcessed = 0;
 
     // Procedures exported as asynchronous (T12), fired by the host via poll().
     // Insertion-ordered: due procedures run in the order they were exported.
@@ -139,10 +164,108 @@ namespace ggg {
       state.pendingNegative = false;
     }
 
-    void run( String _code ) {
-      for ( Char _char : _code ) {
-        parse( _char );
+    // Flag to indicate that this machine execution should be interrupted
+    volatile bool interrupted = false;
+    
+    void interrupt() {
+        interrupted = true;
+    }
+    
+    bool isInterrupted() const {
+        return interrupted;
+    }
+    
+    // Reset the interruption flag for new processing
+    void clearInterrupt() {
+        interrupted = false;
+    }
+
+    // Input ring: host bytes are buffered here and pulled by step(), rather than
+    // pushed straight through parse(). Offering a byte is all an ISR / transport
+    // callback has to do; the actual parsing happens cooperatively in step().
+    // Consumed bytes are erased at each line boundary so the buffer stays small.
+    String inputBuffer;
+    Index inputPos = 0;
+
+    // Accept host bytes into the ring. Returns the number accepted; the ring is
+    // unbounded for now, so this always accepts everything (a bounded ring with
+    // real backpressure is a later stage). Host input is NOT queue work and so
+    // never counts against maxQueue -- it flows straight to parse() in step(),
+    // exactly as the TS reference feeds host input outside its queue.
+    Index offer( const char *bytes, Index count ) {
+      inputBuffer.append( bytes, (size_t) count );
+      return count;
+    }
+    Index offer( const String &s ) { return offer( s.data(), (Index) s.size() ); }
+    Index offer( Char byte ) { return offer( &byte, 1 ); }
+
+    // Parse one buffered line (up to and including its End), or whatever is
+    // buffered if no End has arrived yet. Returns true if any byte was consumed.
+    // A command enqueues its work during this call (at End / a command break);
+    // step() drains that work before pulling the next line, which preserves the
+    // "a body runs after the current line" ordering.
+    bool parseHostLine() {
+      bool any = false;
+      while ( inputPos < (Index) inputBuffer.size() ) {
+        Char c = inputBuffer[(size_t) inputPos++];
+        any = true;
+        parse( c );
+        if ( c == End ) break;              // line boundary
       }
+      inputBuffer.erase( 0, (size_t) inputPos );   // drop what we consumed
+      inputPos = 0;
+      return any;
+    }
+
+    // The unified cooperative driver (Stage 2 of docs/cooperative-runtime.md).
+    // Advances execution by at most `budget`, servicing queued work first (so a
+    // body runs before subsequent host input) and then host input. Each loop
+    // iteration is one work unit: one queued item drained or one host line
+    // parsed. Returns Yielded when the budget is spent with work remaining, Idle
+    // when nothing is buffered or queued. `budget` with no operations/deadline is
+    // unbounded and drives to Idle, which is how the run()/input() wrappers
+    // reproduce the historical run-to-completion behaviour.
+    //
+    // Timers are not serviced here: the host still calls poll(now) for the clock
+    // (one fire per drive, no catch-up -- see docs/runtime.md). Folding the timer
+    // phase into step() waits for the resumable executor in a later stage, where
+    // a fired body can itself yield.
+    StepStatus step( unsigned long now, const StepBudget &budget = StepBudget{} ) {
+      Index spent = 0;
+      while ( true ) {
+        if ( interrupted ) { interrupted = false; return StepStatus::Idle; }
+        if ( budget.operations && spent >= budget.operations ) return StepStatus::Yielded;
+        if ( budget.deadline && now >= budget.deadline ) return StepStatus::Yielded;
+
+        #if GGGTX_ENABLE
+        // 1. Queued work first. One item per unit; drainProcessed persists across
+        //    these calls so the maxQueue guard trips at the same cumulative point.
+        if ( !pending.empty() ) {
+          drainPending( StepBudget{ 1 } );
+          spent++;
+          continue;
+        }
+        #endif
+
+        // 2. Host input: one line.
+        if ( inputPos < (Index) inputBuffer.size() ) {
+          parseHostLine();
+          spent++;
+          continue;
+        }
+
+        return StepStatus::Idle;            // nothing buffered or queued
+      }
+    }
+
+    StepStatus step( const StepBudget &budget = StepBudget{} ) { return step( 0, budget ); }
+
+    // Offer host source and drive it to completion. Unchanged behaviour: the
+    // unbounded step() drains every line (and any work it enqueues) before
+    // returning, so callers that read output right after run() still see it all.
+    void run( String _code ) {
+      offer( _code );
+      step( 0, StepBudget{} );
     }
 
     void input( String _code ) {
@@ -150,7 +273,17 @@ namespace ggg {
     }
 
     void input( Char _char ) {
-      parse( _char );
+      offer( _char );
+      step( 0, StepBudget{} );
+    }
+
+    // Feed source and run the complete lines in it. Retained for API
+    // compatibility; returns whether the source contained a line terminator.
+    bool runOneLine( String _code ) {
+      if ( interrupted ) return false;
+      bool gotEOL = _code.find( (char) End ) != String::npos;
+      run( _code );
+      return gotEOL;
     }
 
     void parse( Char _char ) {
@@ -867,9 +1000,9 @@ namespace ggg {
       }
       #endif
       resetLine();
-      #if GGGTX_ENABLE
-      drainPending();
-      #endif
+      // The queue is NOT drained here. Draining is owned by the driver -- step()
+      // between host lines, or poll() after firing a timer -- so a line's
+      // enqueued body runs before the next host line is pulled, under budget.
     }
 
 
@@ -1146,6 +1279,9 @@ namespace ggg {
         if ( done ) cancelProcedure( name );
 
         enqueueLines( lines );
+        // Drain this body to completion before firing the next due procedure, so
+        // multiple procedures due at the same `now` run in schedule order. The
+        // unbounded drainPending() returns after one call (Stage 1 semantics).
         drainPending();
         fired++;
       }
@@ -1210,23 +1346,41 @@ namespace ggg {
     // Drain queued procedure/loop items by feeding lines back through the parser
     // and running callbacks. The re-entrancy guard lets a nested enqueue (from a
     // body line) push onto the front while this outer loop keeps draining in order.
-    void drainPending() {
-      if ( draining ) return;
+    // Drain queued procedure/loop items by feeding lines back through the parser
+    // and running callbacks, spending at most `budget.operations` items before
+    // yielding (0 == unbounded, the historical behaviour). Returns Done when the
+    // queue empties, Yielded when the budget is spent with items remaining; the
+    // host calls back to continue, and drainProcessed carries the per-drive
+    // overflow count across those slices.
+    StepStatus drainPending( const StepBudget &budget = StepBudget{} ) {
+      // Re-entrant call (a draining line fed another line that reached
+      // finishLine): the outer loop owns the queue, so this nested invocation
+      // has nothing of its own to do. Report Done so a pump loop around it exits
+      // at once rather than spinning on a Yielded it can never satisfy.
+      if ( draining ) return StepStatus::Done;
       draining = true;
-      // Bound the TOTAL work of one drain, not just the instantaneous queue
+      // Bound the TOTAL work of one drive, not just the instantaneous queue
       // depth. Items are popped as they run, so pending.size() stays small and
       // the enqueueLines guard never trips on self-recursion -- a procedure that
       // runs itself would spin here forever, which on embedded means until
       // reset. (The TS queue accumulates instead, so its guard catches this.)
-      Index processed = 0;
+      Index spent = 0;
       while ( !pending.empty() ) {
-        if ( limits.maxQueue && ++processed > limits.maxQueue ) {
+        // Yield once this slice's operation budget is spent. drainProcessed is
+        // deliberately NOT reset on yield: a suspended drive must trip the
+        // overflow guard at the same cumulative point it would unbudgeted.
+        if ( budget.operations && spent >= budget.operations ) {
+          draining = false;
+          return StepStatus::Yielded;
+        }
+        if ( limits.maxQueue && ++drainProcessed > limits.maxQueue ) {
           pending.clear();
           outputFail( (Int) GGGFail::QueueOverflow );
           break;
         }
         PendingItem item = pending.front();
         pending.erase( pending.begin() );
+        spent++;
         if ( item.isCallback ) {
           if ( item.callback ) item.callback();
         } else {
@@ -1235,6 +1389,8 @@ namespace ggg {
         }
       }
       draining = false;
+      drainProcessed = 0;    // drive complete: reset the per-drive overflow count
+      return StepStatus::Done;
     }
     #else
     // Keep the host polling surface stable when flow control is compiled out.

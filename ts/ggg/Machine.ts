@@ -32,7 +32,7 @@ type MachineRegisterList = NamedList<gggRegister>
 
 
 
-type MachineProps = {
+export type MachineProps = {
   commands?: Commands
   state?:{ [key:string]:any }
   limits?:MachineLimits

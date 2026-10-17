@@ -127,9 +127,23 @@ export type ResponseDescribed = string | {
   description?: string,
 }
 
+export type CommandExample = {
+  source:string,
+  description?:string,
+}
+
+// One self-contained UI control definition. gggdx transports these objects as
+// opaque JSON through D6/D-60; the object schema is intentionally owned
+// elsewhere.
+export type ControlDescription = Record<string, unknown>
+
 export type CommandDescribed = Described & {
   name?:string 
   description?: string,
+  // Command-relative source snippets. The owning command supplies the context,
+  // so an example may be as small as one argument (for example `GK`).
+  examples?: CommandExample[],
+  controls?: ControlDescription[],
   args?: { [key:string]: CommandArgDescribed },
   responds?: { [key:string]: ResponseDescribed },
   // Result records are message schemas too. They are not executable commands,

@@ -1,13 +1,13 @@
 # gggdx: structured, machine-readable protocol self-description.
 
 - name: d1_self_description
-  description: "D1 describes the complete language by returning basics, command, and enum sections as GGG records."
+  description: "D1 describes the complete language by returning basics, command, enum, and control sections as GGG records."
   needs: [ gggdx ]
   tags: [ protocol, self-description ]
   program: D1
   values: [
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-    -40, -41, -42,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 17,
+    -40, -41, -42, -45,
     -50, -51,
     0, 1, 2, 3, 4, 5,
     0, 1,
@@ -16,6 +16,7 @@
     -20, -21,
     0, 1, 2, 3,
     0, 1,
+    -60,
   ]
 
 - name: d2_language_basics
@@ -38,8 +39,8 @@
   tags: [ protocol, self-description ]
   program: D5
   values: [
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-    -40, -41, -42,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 17,
+    -40, -41, -42, -45,
     -50, -51,
     0, 1, 2, 3, 4, 5,
     0, 1,
@@ -48,4 +49,12 @@
     -20, -21,
     0, 1, 2, 3,
     0, 1,
+    -60,
   ]
+
+- name: d6_control_catalog
+  description: "D6 lists self-contained JSON UI control objects as D-60 records."
+  needs: [ gggdx ]
+  tags: [ protocol, self-description, controls ]
+  program: D6
+  values: []

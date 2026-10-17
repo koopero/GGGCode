@@ -6,8 +6,12 @@ Start with the **[tour](tour.md)** for a guided introduction, then use the refer
 
 - **[tour.md](tour.md)** — a guided walk through the language: numbers & encodings → ranges & sweeps → references → matrices → blit → flow control. Every GGG snippet is executed by the documentation test suite, with focused links into the conformance cases.
 - **[runtime.md](runtime.md)** — how the runtime executes: the machine, the parse pipeline, the hook lifecycle, the lazy `Solve` generator, and matrix registers.
-- **[protocol.md](protocol.md)** — how a machine describes its grammar, commands, result records, enums, and live references through `D1`/`D2`/`D4`/`D5`.
+- **[protocol.md](protocol.md)** — how a machine describes its grammar, commands, result records, enums, live references, and UI controls through `D1`/`D2`/`D4`/`D5`/`D6`.
 - **[cxx.md](cxx.md)** — C++17 setup, feature gates, numeric traits, the gggdx metadata boundary, and ESP32 size measurements.
+
+## Design
+
+- **[cooperative-runtime.md](cooperative-runtime.md)** — *proposal.* Refactoring the C++ runtime for cooperative multitasking on embedded targets: budgeted, resumable execution (`StepStatus`, `step(budget)`, continuations), staged so each step ships independently and preserves conformance.
 
 ## Reference
 

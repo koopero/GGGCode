@@ -35,12 +35,12 @@ namespace ggg {
 
   // The traits every legacy alias (ggg::Machine, ggg::MatrixBase, ...) resolves
   // to, and the default for every template parameter. Override for a whole
-  // build with -DGGG_DEFAULT_TRAITS=::ggg::FloatTraits (or custom traits); there
+  // build with -DGGG_DEFAULT_TRAITS=::ggg::FixedTraits (or custom traits); there
   // is deliberately no
   // way to change it per translation unit, since the aliases would then differ
   // across TUs and quietly break the one-definition rule.
   #ifndef GGG_DEFAULT_TRAITS
-  #define GGG_DEFAULT_TRAITS ::ggg::FixedTraits
+  #define GGG_DEFAULT_TRAITS ::ggg::FloatTraits
   #endif
   using DefaultTraits = GGG_DEFAULT_TRAITS;
 }; // namespace ggg

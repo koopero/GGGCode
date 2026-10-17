@@ -209,23 +209,23 @@ feature gates.
 
 ### C++ numeric backends
 
-The C++ runtime defaults to `ggg::FixedTraits`: language and register values are signed
-Q16.16 (`int32_t`, step `1/65536`, range approximately `-32768..32768`). Parsing,
-formatting, arithmetic, constants, range solving, and matrix sampling all stay in integer
-code. The sampler uses the same `ScaledNumber` primitive with a higher-precision internal
-coordinate scale; “normalized” and “fixed” are therefore formats of one primitive rather
-than separate numeric systems.
+The C++ runtime defaults to `ggg::FloatTraits`: language and register values use
+single-precision float, while normalized sampler/blitter coordinates use double.
+`ggg::DoubleTraits` is available when language/register values also need double
+precision.
 
-Code that genuinely needs IEEE range or math operators absent from the fixed profile can
-opt into `ggg::FloatTraits` or `ggg::DoubleTraits`, either as a template argument or for
-the whole build:
+Fixed-point is an explicit opt-in, either as a template argument or for the whole build:
 
 ```cpp
-ggg::MachineT<ggg::FloatTraits> machine;
-// or: -DGGG_DEFAULT_TRAITS=::ggg::FloatTraits
+ggg::MachineT<ggg::FixedTraits> machine;
+// or: -DGGG_DEFAULT_TRAITS=::ggg::FixedTraits
 ```
 
-The fixed type deliberately has no floating-point constructor or conversion, so an
+`ggg::FixedTraits` uses signed Q16.16 language/register values (`int32_t`, step
+`1/65536`, range approximately `-32768..32768`) and a higher-precision fixed
+sampler coordinate. Parsing, formatting, arithmetic, constants, range solving,
+and matrix sampling stay in integer code. The fixed type deliberately has no
+floating-point constructor or conversion, so an
 accidental float seam fails to compile instead of quietly pulling floating-point helpers
 into embedded firmware. Its `sin`, `cos`, `atan`, and `atan2` matrix operators use a
 24-step integer CORDIC kernel with 30 fractional working bits. Fixed matrix operators not

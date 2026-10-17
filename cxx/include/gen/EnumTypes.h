@@ -21,6 +21,7 @@ namespace ggg {
     Transform = 14,
     Filter = 15,
     Edge = 16,
+    ControlResultRecord = 17,
     ProcedureRegister = 20
   };
 

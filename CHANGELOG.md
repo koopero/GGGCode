@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Command metadata can publish command-relative source snippets. `D1` and `D4`
+  emit them as `D-45` records with a `B` owner, quoted `V` source, and separate
+  `A` explanation.
+
+### Breaking changes
+
+- The default C++ numeric traits are float-first again: `ggg::DefaultTraits`
+  now resolves to `ggg::FloatTraits`. Fixed-point runtimes remain available
+  explicitly through `FixedTraits` and the named fixed presets, or build-wide
+  with `-DGGG_DEFAULT_TRAITS=::ggg::FixedTraits`.
+
 ## 0.3.0 — 2026-07-29
 
 GGGCode 0.3.0 makes the language self-describing, freezes compact operator

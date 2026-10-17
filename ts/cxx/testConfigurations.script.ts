@@ -24,7 +24,7 @@ const scenarios:Scenario[] = [
   {
     name: "default",
     definitions: {},
-    commands: 14,
+    commands: 15,
   },
   {
     name: "minimal",
@@ -75,7 +75,7 @@ const scenarios:Scenario[] = [
       GGGDX_ENABLE: 1,
       GGGGX_TRIG_ENABLE: 0,
     },
-    commands: 7,
+    commands: 8,
   },
   {
     name: "docs-only",
@@ -85,7 +85,7 @@ const scenarios:Scenario[] = [
       GGGTX_ENABLE: 0,
       GGGDX_ENABLE: 1,
     },
-    commands: 4,
+    commands: 5,
     forbidden: [
       "Matrix storage representations.",
       "G40 transform modes.",

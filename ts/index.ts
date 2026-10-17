@@ -12,11 +12,17 @@ export { Format }
 
 import Machine from "./ggg/Machine"
 export { Machine }
+export type { MachineProps } from "./ggg/Machine"
+
+import KitchenSinkMachine from "./KitchenSinkMachine"
+export { KitchenSinkMachine }
+export type { KitchenSinkMachineProps } from "./KitchenSinkMachine"
 
 import { GGG, Hooks } from "./ggg/Language"
 export { GGG, Hooks }
 export * from "./ggg/EnumRepository"
 export * from "./gggdx/Protocol"
+export * from "./gggdx/ParseLanguageDescription"
 export { default as NamedList } from "./ggg/NamedList"
 
 import { Runner } from "./stream/Runner"

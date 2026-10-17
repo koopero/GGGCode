@@ -85,7 +85,7 @@
   description: "Scientific notation is unaffected by unitary completion."
   needs: [ gggpx ]
   tags: [ unitary, ranges ]
-  # 5e4 is outside the default Q16.16 fixed Number's finite range.
+  # 5e4 is outside the Q16.16 fixed Number's finite range.
   requiresFloat: true
   program: "P10 V5e4"
   values: [ 50000 ]

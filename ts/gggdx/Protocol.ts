@@ -18,6 +18,7 @@ export enum GGGDXEnumGroupIndex {
   BasicsResultRecord = 7,
   GrammarRuleKind = 8,
   GrammarExampleKind = 9,
+  ControlResultRecord = 17,
 }
 
 export enum MessageKind {
@@ -65,12 +66,18 @@ export enum CommandResultRecord {
   Command = -40,
   Argument = -41,
   Return = -42,
+  Example = -45,
 }
 
 // Enum-catalog result records.
 export enum EnumResultRecord {
   Group = -50,
   Entry = -51,
+}
+
+// UI-control result records.
+export enum ControlResultRecord {
+  Description = -60,
 }
 
 // D request numbers are bootstrap vocabulary. Everything returned by them is
@@ -80,6 +87,7 @@ export enum DocRequest {
   Basics = 2,
   Commands = 4,
   Enums = 5,
+  Controls = 6,
 }
 
 export function commandResultCode( record:CommandResultRecord ) {
@@ -91,6 +99,10 @@ export function enumResultCode( record:EnumResultRecord ) {
 }
 
 export function basicsResultCode( record:BasicsResultRecord ) {
+  return `D${record}`
+}
+
+export function controlResultCode( record:ControlResultRecord ) {
   return `D${record}`
 }
 
@@ -106,6 +118,7 @@ export const CommandResultRecordDomain = enumDomain(
     { index: CommandResultRecord.Command, name: "command", description: "D1/D4 command or record schema." },
     { index: CommandResultRecord.Argument, name: "argument", description: "D1/D4 argument schema." },
     { index: CommandResultRecord.Return, name: "return", description: "D1/D4 command-to-command return relation." },
+    { index: CommandResultRecord.Example, name: "example", description: "D1/D4 command-relative source example." },
   ] ),
   "Record types emitted by D1 and D4.",
 )
@@ -165,6 +178,20 @@ export const GrammarExampleKindDomain = enumDomain(
   "Whether a D2 source example is valid or invalid.",
 )
 
+export const ControlResultRecordDomain = enumDomain(
+  GGGDXEnumGroupIndex.ControlResultRecord,
+  "ControlResultRecord",
+  EnumDomainKind.Enum,
+  enumValues( [
+    {
+      index: ControlResultRecord.Description,
+      name: "description",
+      description: "D1/D6 self-contained JSON control description.",
+    },
+  ] ),
+  "Record types emitted by D1 and D6.",
+)
+
 export const GGGDXEnumDomains = [
   CommandResultRecordDomain,
   EnumResultRecordDomain,
@@ -172,6 +199,7 @@ export const GGGDXEnumDomains = [
   BasicsResultRecordDomain,
   GrammarRuleKindDomain,
   GrammarExampleKindDomain,
+  ControlResultRecordDomain,
 ]
 
 // Domains required by the documentation extension itself.
@@ -227,6 +255,14 @@ export const DocResultRecords: Record<string, CommandDescribed> = {
       [GGG.Data]: { description: "Description.", kind: ArgumentKind.String },
     },
   },
+  [commandResultCode( CommandResultRecord.Example )]: {
+    description: "Provides one command-relative GGG source example.",
+    args: {
+      [GGG.Command]: { description: "Owning command or record code.", kind: ArgumentKind.String },
+      [GGG.Value]: { description: "Source snippet interpreted in the owning command's context.", kind: ArgumentKind.String },
+      [GGG.Data]: { description: "Explanation.", kind: ArgumentKind.String },
+    },
+  },
   [enumResultCode( EnumResultRecord.Group )]: {
     description: "Describes one enum/reference group.",
     args: {
@@ -244,6 +280,16 @@ export const DocResultRecords: Record<string, CommandDescribed> = {
       [GGG.Value]: { description: "Actual wire value or reference index.", kind: ArgumentKind.Number },
       [GGG.Alias]: { description: "Stable value name.", kind: ArgumentKind.String },
       [GGG.Data]: { description: "Description.", kind: ArgumentKind.String },
+    },
+  },
+  [controlResultCode( ControlResultRecord.Description )]: {
+    description: "Provides one self-contained JSON UI control description.",
+    args: {
+      [GGG.Value]: {
+        description: "Opaque JSON object whose schema and semantics are defined externally.",
+        kind: ArgumentKind.String,
+        format: "json-object",
+      },
     },
   },
 }

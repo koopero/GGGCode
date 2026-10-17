@@ -13,6 +13,9 @@ import { GXCommandNumbers, GXNamespace, GXNamespaceArg } from "./GXLanguage"
 import { MatrixWriteHooks } from "./MatrixWrite"
 import { MatrixBlitHooks } from "./MatrixBlit"
 import {
+  ArgumentKind,
+} from "../ggg/EnumRepository"
+import {
   EdgeDomain,
   FilterDomain,
   MatrixRegisterDomain,
@@ -96,6 +99,9 @@ function GXCommandsForNamespace( namespace?: GXNamespaceArg ) {
   if ( MatrixWrite ) {
     commands[ `${code}${MatrixWrite}` ] = {
       description: "Write to buffer.",
+      examples: [
+        { source: "GK", description: "Repeat to size." },
+      ],
       args: {
         [GGG.Register]: ArgsBufferRef,
         [GGG.Offset]: ArgsPosition,
@@ -108,9 +114,9 @@ function GXCommandsForNamespace( namespace?: GXNamespaceArg ) {
           description: "Write operator.",
           domain: OperatorDomain,
         },
-        ["F"]: {
-          description: "Fill size",
-          type: ArgType.Number,
+        [GGG.Repeat]: {
+          description: "Repeat values to size.",
+          kind: ArgumentKind.Boolean,
         }
       },
 

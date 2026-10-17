@@ -4,6 +4,7 @@
 
 namespace ggg {
   enum class CommandResultRecord : int {
+    Example = -45,
     Return = -42,
     Argument = -41,
     Command = -40
@@ -17,6 +18,10 @@ namespace ggg {
   enum class BasicsResultRecord : int {
     Example = -21,
     Rule = -20
+  };
+
+  enum class ControlResultRecord : int {
+    Description = -60
   };
 
   enum class MessageKind : int {
@@ -40,7 +45,8 @@ namespace ggg {
     Language = 1,
     Basics = 2,
     Commands = 4,
-    Enums = 5
+    Enums = 5,
+    Controls = 6
   };
 
 }

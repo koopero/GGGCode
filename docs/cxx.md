@@ -107,9 +107,18 @@ The six supported feature combinations are compile-tested by
 
 C++ command classes own their executable hooks. When `GGGDX_ENABLE=1`, the same
 classes also carry generated descriptions for their arguments, responses,
-result records, and enum domains. `addConfiguredCommands()` registers both the
-handler and its domains with the machine. `D4` walks that command/message
-metadata; `D5` walks the machine-scoped domain repository.
+examples, controls, result records, and enum domains. `addConfiguredCommands()`
+registers both the handler and its domains with the machine. `D4` walks that
+command/message metadata; `D5` walks the machine-scoped domain repository; and
+`D6` emits the opaque JSON objects registered with `addControl()`:
+
+```cpp
+addExample( "GK", "Repeat to size." );
+addControl( R"({})" ); // Replace with an object from the external UI schema.
+```
+
+Each `addControl()` value must be one compact JSON object. It is emitted through
+`D-60 V\`` without requiring a JSON library in the embedded runtime.
 
 With `GGGDX_ENABLE=0`, those fields do not exist in the compiled types. This is
 a compile-time boundary rather than a runtime flag, so documentation strings
@@ -120,24 +129,31 @@ See the [protocol guide](protocol.md) for the record model visible on the wire.
 
 ## Numeric traits
 
-The default `ggg::FixedTraits` uses signed Q16.16 values:
+The default `ggg::FloatTraits` uses single-precision float language/register
+values and double-precision sampler coordinates. Select another IEEE backend
+per runtime when needed:
+
+```cpp
+ggg::RuntimeT<ggg::DoubleTraits> precise;
+```
+
+Fixed point is an explicit opt-in. `ggg::FixedTraits` uses signed Q16.16 values:
 
 - storage: `int32_t`
 - resolution: `1/65536`
 - approximate range: `-32768` through `32767.99998`
 - integer parsing, formatting, ranges, matrix sampling, and CORDIC
 
-Select an IEEE backend per runtime:
+Select it per runtime:
 
 ```cpp
-ggg::RuntimeT<ggg::FloatTraits> floating;
-ggg::RuntimeT<ggg::DoubleTraits> precise;
+ggg::RuntimeT<ggg::FixedTraits> fixed;
 ```
 
-Or select it for the build:
+Or select it for the whole build:
 
 ```text
--DGGG_DEFAULT_TRAITS=::ggg::FloatTraits
+-DGGG_DEFAULT_TRAITS=::ggg::FixedTraits
 ```
 
 The fixed number type deliberately has no implicit floating-point constructor
