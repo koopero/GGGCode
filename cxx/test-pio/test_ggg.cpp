@@ -503,12 +503,13 @@ void test_conformance() {
 }
 
 // Line-granularity drip (invariant I2 of docs/cooperative-runtime.md): the same
-// program fed under a tiny per-slice budget must produce byte-identical output
-// to the unbudgeted run. Draining one queued item at a time exercises the
-// suspend/resume path in drainPending() -- including the persistent maxQueue
-// counter across slices -- so any divergence is a save/restore bug. The
-// unbudgeted run is already checked against the golden by runConformance(); this
-// only has to prove the budget is invisible.
+// program driven ONE work unit at a time through step() must produce
+// byte-identical output to the unbudgeted run. Each step( budget{1} ) drains a
+// single queued item or parses a single host line, exercising the whole
+// suspend/resume path -- the input ring, step()'s queue-before-input ordering,
+// and the persistent maxQueue counter across slices -- so any divergence is a
+// save/restore bug. The unbudgeted run is already checked against the golden by
+// runConformance(); this only has to prove the budget is invisible.
 template <class T>
 static void runConformanceDrip() {
   for ( int i = 0; i < ggg_conformance::caseCount; i++ ) {
@@ -521,8 +522,9 @@ static void runConformanceDrip() {
 
     ConformanceMachineT<T> drip;
     drip.setupFor( c.needs );
-    drip.drainBudget.operations = 1;      // one queued item per drain slice
-    drip.run( c.program );
+    drip.offer( c.program );
+    // One unit per call until there is nothing left buffered or queued.
+    while ( drip.step( 0, ggg::StepBudget{ 1 } ) != ggg::StepStatus::Idle ) {}
     for ( int k = 0; k < c.pollCount; k++ ) drip.poll( c.polls[k] );
 
     TEST_ASSERT_EQUAL_STRING_MESSAGE( whole.out.c_str(), drip.out.c_str(), c.name );
@@ -908,16 +910,16 @@ void test_flow_procedures() {
       "V1\nOK\nV1\nOK\nV1\nOK\nV1\nOK\nV1\nOK\nOK F2\n", m.out.c_str() );
   }
 
-  // Draining the self-running procedure one queued item at a time must trip the
-  // SAME maxQueue budget at the SAME point: the per-drive overflow counter
-  // persists across budgeted slices, so byte output is identical to the
-  // unbudgeted drain above. This is the overflow-across-slices path the corpus
+  // Driving the self-running procedure one unit at a time through step() must
+  // trip the SAME maxQueue budget at the SAME point: the per-drive overflow
+  // counter persists across step slices, so byte output is identical to the
+  // unbudgeted run above. This is the overflow-across-slices path the corpus
   // drip test cannot reach at the default (large) maxQueue.
   {
     FlowMachine m; m.setup();
     m.limits.maxQueue = 10;
-    m.drainBudget.operations = 1;        // one item per drain slice
-    m.run( "T10 L\"boom\"\nP10 V1\nT11 R\"boom\"\nT0\nT11 R\"boom\"\n" );
+    m.offer( "T10 L\"boom\"\nP10 V1\nT11 R\"boom\"\nT0\nT11 R\"boom\"\n" );
+    while ( m.step( 0, ggg::StepBudget{ 1 } ) != ggg::StepStatus::Idle ) {}
     TEST_ASSERT_EQUAL_STRING(
       "V1\nOK\nV1\nOK\nV1\nOK\nV1\nOK\nV1\nOK\nOK F2\n", m.out.c_str() );
   }
@@ -953,6 +955,60 @@ void test_flow_procedures() {
     FlowMachine m; m.setup();
     m.run( "T10 L\"a\"\nP10 V1\nT0\nT10 L\"b\"\nT11 R\"a\"\nP10 V2\nT0\nT11 R\"b\"\n" );
     TEST_ASSERT_EQUAL_STRING( "V1\nOK\nV2\nOK\n", m.out.c_str() );
+  }
+}
+
+// Stage 2 (docs/cooperative-runtime.md): the input ring + unified step() driver.
+void test_cooperative_step() {
+  // Incremental offer across chunks: bytes buffered now, parsed later by step().
+  // A line split across two offers parses as one line once its End arrives.
+  {
+    FlowMachine m; m.setup();
+    m.offer( "P10 V1\nP1" );
+    m.step();                                  // unbounded: drains what's complete
+    TEST_ASSERT_EQUAL_STRING( "V1\nOK\n", m.out.c_str() );   // 2nd line still partial
+    m.offer( "0 V2\n" );
+    m.step();
+    TEST_ASSERT_EQUAL_STRING( "V1\nOK\nV2\nOK\n", m.out.c_str() );
+  }
+
+  // A partial line (no terminator) produces no output until its End is offered.
+  {
+    FlowMachine m; m.setup();
+    m.offer( "P10 V7" );
+    TEST_ASSERT_EQUAL_INT( (int) ggg::StepStatus::Idle, (int) m.step() );
+    TEST_ASSERT_EQUAL_STRING( "", m.out.c_str() );
+    m.offer( ggg::End );
+    m.step();
+    TEST_ASSERT_EQUAL_STRING( "V7\nOK\n", m.out.c_str() );
+  }
+
+  // Ordering hazard: a procedure body enqueued by one host line must run BEFORE
+  // the next host line, even under a one-unit budget. step() drains the queue
+  // before pulling more input, so the body (V1) precedes V99 either way.
+  {
+    const char *prog = "T10 L\"p\"\nP10 V1\nT0\nT11 R\"p\"\nP10 V99\n";
+    FlowMachine whole; whole.setup();
+    whole.run( prog );
+    TEST_ASSERT_EQUAL_STRING( "V1\nOK\nV99\nOK\n", whole.out.c_str() );
+
+    FlowMachine drip; drip.setup();
+    drip.offer( prog );
+    while ( drip.step( 0, ggg::StepBudget{ 1 } ) != ggg::StepStatus::Idle ) {}
+    TEST_ASSERT_EQUAL_STRING( whole.out.c_str(), drip.out.c_str() );
+  }
+
+  // Budget granularity: step( {1} ) advances by exactly one work unit (here one
+  // host line) and reports Yielded while work remains, so the host can bound how
+  // long it holds the CPU per call.
+  {
+    FlowMachine m; m.setup();
+    m.offer( "P10 V1\nP10 V2\n" );
+    TEST_ASSERT_EQUAL_INT( (int) ggg::StepStatus::Yielded, (int) m.step( 0, ggg::StepBudget{ 1 } ) );
+    TEST_ASSERT_EQUAL_STRING( "V1\nOK\n", m.out.c_str() );     // only the first line
+    m.step( 0, ggg::StepBudget{ 1 } );
+    TEST_ASSERT_EQUAL_STRING( "V1\nOK\nV2\nOK\n", m.out.c_str() );
+    TEST_ASSERT_EQUAL_INT( (int) ggg::StepStatus::Idle, (int) m.step( 0, ggg::StepBudget{ 1 } ) );
   }
 }
 
@@ -1284,6 +1340,7 @@ int main() {
   RUN_TEST(test_string_arg);
   RUN_TEST(test_references);
   RUN_TEST(test_flow_procedures);
+  RUN_TEST(test_cooperative_step);
   RUN_TEST(test_flow_conditionals);
   RUN_TEST(test_flow_iteration);
   RUN_TEST(test_sample);

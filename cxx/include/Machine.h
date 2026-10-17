@@ -122,12 +122,6 @@ namespace ggg {
     std::vector<PendingItem> pending;
     bool draining = false;
 
-    // Slice size used when finishLine()/poll() drain the queue. The default is
-    // unbounded, so draining runs to completion exactly as before. The drip
-    // conformance test sets a tiny budget to prove the budgeted path is
-    // byte-for-byte identical across slice sizes.
-    StepBudget drainBudget;
-
     // maxQueue is a budget of machine-enqueued work per host DRIVE, not a queue
     // depth (see docs/runtime.md). When a drive is suspended and resumed across
     // several budgeted slices this counter persists, so the overflow guard trips
@@ -186,41 +180,92 @@ namespace ggg {
         interrupted = false;
     }
 
-    // Process input with interruption capability - process only one line at a time  
-    bool runOneLine( String _code ) {
-        // If already interrupted, stop immediately 
-        if (interrupted) return false;
-        
-        bool gotEOL = false;
-        for ( Char _char : _code ) {
-            // Check interruption points during parsing (every 100 chars)
-            static int interruptCheck = 0;
-            if (++interruptCheck > 100) {
-                interruptCheck = 0;
-                if (interrupted) {
-                    return false; // Interrupted while processing
-                }
-            }
-            
-            parse( _char );
-            if ( _char == End ) {
-                gotEOL = true;
-                break;
-            }
-        }
-        return gotEOL;
+    // Input ring: host bytes are buffered here and pulled by step(), rather than
+    // pushed straight through parse(). Offering a byte is all an ISR / transport
+    // callback has to do; the actual parsing happens cooperatively in step().
+    // Consumed bytes are erased at each line boundary so the buffer stays small.
+    String inputBuffer;
+    Index inputPos = 0;
+
+    // Accept host bytes into the ring. Returns the number accepted; the ring is
+    // unbounded for now, so this always accepts everything (a bounded ring with
+    // real backpressure is a later stage). Host input is NOT queue work and so
+    // never counts against maxQueue -- it flows straight to parse() in step(),
+    // exactly as the TS reference feeds host input outside its queue.
+    Index offer( const char *bytes, Index count ) {
+      inputBuffer.append( bytes, (size_t) count );
+      return count;
+    }
+    Index offer( const String &s ) { return offer( s.data(), (Index) s.size() ); }
+    Index offer( Char byte ) { return offer( &byte, 1 ); }
+
+    // Parse one buffered line (up to and including its End), or whatever is
+    // buffered if no End has arrived yet. Returns true if any byte was consumed.
+    // A command enqueues its work during this call (at End / a command break);
+    // step() drains that work before pulling the next line, which preserves the
+    // "a body runs after the current line" ordering.
+    bool parseHostLine() {
+      bool any = false;
+      while ( inputPos < (Index) inputBuffer.size() ) {
+        Char c = inputBuffer[(size_t) inputPos++];
+        any = true;
+        parse( c );
+        if ( c == End ) break;              // line boundary
+      }
+      inputBuffer.erase( 0, (size_t) inputPos );   // drop what we consumed
+      inputPos = 0;
+      return any;
     }
 
-    void run( String _code ) {
-      for ( Char _char : _code ) {
-        // Additional interruption check before processing each character
-        if (interrupted) {
-            // Reset interrupt flag and return early
-            interrupted = false; 
-            return;
+    // The unified cooperative driver (Stage 2 of docs/cooperative-runtime.md).
+    // Advances execution by at most `budget`, servicing queued work first (so a
+    // body runs before subsequent host input) and then host input. Each loop
+    // iteration is one work unit: one queued item drained or one host line
+    // parsed. Returns Yielded when the budget is spent with work remaining, Idle
+    // when nothing is buffered or queued. `budget` with no operations/deadline is
+    // unbounded and drives to Idle, which is how the run()/input() wrappers
+    // reproduce the historical run-to-completion behaviour.
+    //
+    // Timers are not serviced here: the host still calls poll(now) for the clock
+    // (one fire per drive, no catch-up -- see docs/runtime.md). Folding the timer
+    // phase into step() waits for the resumable executor in a later stage, where
+    // a fired body can itself yield.
+    StepStatus step( unsigned long now, const StepBudget &budget = StepBudget{} ) {
+      Index spent = 0;
+      while ( true ) {
+        if ( interrupted ) { interrupted = false; return StepStatus::Idle; }
+        if ( budget.operations && spent >= budget.operations ) return StepStatus::Yielded;
+        if ( budget.deadline && now >= budget.deadline ) return StepStatus::Yielded;
+
+        #if GGGTX_ENABLE
+        // 1. Queued work first. One item per unit; drainProcessed persists across
+        //    these calls so the maxQueue guard trips at the same cumulative point.
+        if ( !pending.empty() ) {
+          drainPending( StepBudget{ 1 } );
+          spent++;
+          continue;
         }
-        parse( _char );
+        #endif
+
+        // 2. Host input: one line.
+        if ( inputPos < (Index) inputBuffer.size() ) {
+          parseHostLine();
+          spent++;
+          continue;
+        }
+
+        return StepStatus::Idle;            // nothing buffered or queued
       }
+    }
+
+    StepStatus step( const StepBudget &budget = StepBudget{} ) { return step( 0, budget ); }
+
+    // Offer host source and drive it to completion. Unchanged behaviour: the
+    // unbounded step() drains every line (and any work it enqueues) before
+    // returning, so callers that read output right after run() still see it all.
+    void run( String _code ) {
+      offer( _code );
+      step( 0, StepBudget{} );
     }
 
     void input( String _code ) {
@@ -228,7 +273,17 @@ namespace ggg {
     }
 
     void input( Char _char ) {
-      parse( _char );
+      offer( _char );
+      step( 0, StepBudget{} );
+    }
+
+    // Feed source and run the complete lines in it. Retained for API
+    // compatibility; returns whether the source contained a line terminator.
+    bool runOneLine( String _code ) {
+      if ( interrupted ) return false;
+      bool gotEOL = _code.find( (char) End ) != String::npos;
+      run( _code );
+      return gotEOL;
     }
 
     void parse( Char _char ) {
@@ -945,9 +1000,9 @@ namespace ggg {
       }
       #endif
       resetLine();
-      #if GGGTX_ENABLE
-      drainToCompletion();
-      #endif
+      // The queue is NOT drained here. Draining is owned by the driver -- step()
+      // between host lines, or poll() after firing a timer -- so a line's
+      // enqueued body runs before the next host line is pulled, under budget.
     }
 
 
@@ -1224,7 +1279,10 @@ namespace ggg {
         if ( done ) cancelProcedure( name );
 
         enqueueLines( lines );
-        drainToCompletion();
+        // Drain this body to completion before firing the next due procedure, so
+        // multiple procedures due at the same `now` run in schedule order. The
+        // unbounded drainPending() returns after one call (Stage 1 semantics).
+        drainPending();
         fired++;
       }
       return fired;
@@ -1333,13 +1391,6 @@ namespace ggg {
       draining = false;
       drainProcessed = 0;    // drive complete: reset the per-drive overflow count
       return StepStatus::Done;
-    }
-
-    // Drain the queue to completion in drainBudget-sized slices. With the
-    // default unbounded budget this is a single drain identical to before; a
-    // small budget makes draining cooperative without changing the output.
-    void drainToCompletion() {
-      while ( drainPending( drainBudget ) == StepStatus::Yielded ) {}
     }
     #else
     // Keep the host polling surface stable when flow control is compiled out.

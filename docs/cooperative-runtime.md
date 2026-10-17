@@ -1,6 +1,8 @@
 # Design: Cooperative Multitasking in the C++ Runtime
 
-**Status:** proposal / exploratory. Nothing here is implemented yet.
+**Status:** in progress. **Stage 1** (budgeted queue draining) and **Stage 2**
+(input ring + unified `step()`) are implemented and covered by the cxx tests;
+Stages 3–4 remain proposals.
 **Scope:** `cxx/` only. The TypeScript reference is unaffected; it remains the
 behavioural source of truth and the conformance partner (see
 [runtime.md](runtime.md)).
@@ -152,25 +154,31 @@ them into one scheduler the host calls from its superloop.
 
 ```cpp
 // Advance execution by at most `budget`. Services, in priority order:
-//   1. buffered input bytes (foreground REPL / transport)
-//   2. due async procedures (the former poll())
-//   3. the pending work queue (procedure/loop bodies)
-//   4. a parked continuation (a half-finished command/expansion)
-// Returns the aggregate StepStatus for the slice.
-StepStatus step( unsigned long now, const StepBudget &budget );
+//   1. the pending work queue (procedure/loop bodies)   <- queue before input,
+//      so a body runs before the next host line         so ordering is preserved
+//   2. buffered host input bytes (REPL / transport), one line per unit
+// Returns Yielded when the budget is spent with work left, Idle when done.
+StepStatus step( unsigned long now, const StepBudget &budget = {} );
 
 // Convenience overload for hosts without a clock axis.
-StepStatus step( const StepBudget &budget ) { return step( 0, budget ); }
+StepStatus step( const StepBudget &budget = {} ) { return step( 0, budget ); }
 ```
+
+**As implemented, `step()` services the queue and host input; timers stay in
+`poll()`** (see the Stage 2 note below). Phases 3–4 of the original sketch — a
+timer phase and a parked continuation — arrive with the resumable executor in
+Stage 3, where a fired body can itself yield mid-flight.
 
 Input stops being pushed synchronously through `parse()`. Instead the host
 *offers* bytes into a ring buffer, and `step()` pulls them under budget:
 
 ```cpp
-// ISR-safe: a byte arriving on UART/socket is just an enqueue. Returns the
-// number of bytes accepted (fewer than offered means the input ring is full).
+// A byte arriving on UART/socket is just an enqueue. Returns the number of bytes
+// accepted. The ring is unbounded for now, so it always accepts everything; a
+// bounded ring that returns a short count under backpressure is a later stage.
 Index offer( const char *bytes, Index count );
-Index offer( char byte );
+Index offer( const String &s );
+Index offer( Char byte );
 ```
 
 The existing `run()`/`input()`/`poll()` become thin compatibility wrappers that
@@ -338,16 +346,36 @@ line granularity).
 
 ### Stage 2 — Input ring + unified `step()`
 
-*The superloop kernel.*
+*The superloop kernel.* **Implemented.**
 
-- Add the input ring and `offer()`.
-- Implement `step(now, budget)` as the single scheduler over input → timers →
-  queue, with an explicit priority/fairness policy and the per-call WCET bound.
-- `run()`/`input()` become `offer()` + unbounded `step()`.
+- Added the input ring and `offer()`; host bytes are buffered and pulled by
+  `step()` rather than pushed straight through `parse()`.
+- `step(now, budget)` drains the queue then parses host input, one work unit
+  (one queued item **or** one host line) per loop iteration, yielding when the
+  budget is spent. `finishLine()` no longer drains — the driver owns draining,
+  so a line's enqueued body runs before the next host line, under budget.
+- `run()`/`input()`/`runOneLine()` became `offer()` + unbounded `step()`;
+  behaviour is unchanged for every existing caller, including the char-at-a-time
+  `input(Char)` path.
 
-**Test:** a host harness that interleaves `offer()` of two logical streams and
-asserts ordering; WCET measured on the ESP32 reference build (extend the size
-table in [cxx.md](cxx.md#esp32-reference-size) with a slice-time row).
+**Scope decision:** timers stay in `poll()` for now. A standalone `poll(now)`
+call must drain to completion, and folding the "one fire per drive, no catch-up"
+timer semantics into a budgeted `step()` is entangled with making a *fired body*
+itself yield — which is Stage 3 work. So `step()` covers input + queue; the host
+still calls `poll(millis())` for the clock, exactly as [runtime.md](runtime.md)
+describes.
+
+**Tests:** `test_cooperative_step` covers incremental `offer()` across chunks, a
+held partial line, the queue-before-input ordering hazard under a one-unit
+budget, and that `step({1})` advances exactly one unit and reports `Yielded`. The
+drip tests (`test_conformance_drip`, and the self-running-overflow case) now
+drive every conformance case one unit at a time through `step()` and assert
+byte-identical output to the unbudgeted run.
+
+**Still open:** a true per-call WCET *measurement* on the ESP32 reference build
+(a slice-time row in [cxx.md](cxx.md#esp32-reference-size)) needs hardware and is
+not done here; the work-unit accounting that makes such a bound meaningful is in
+place.
 
 ### Stage 3 — Continuations: value and I/O cooperation
 
